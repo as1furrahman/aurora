@@ -9,11 +9,12 @@ use anstream::println;
 use aurora_core::catalog::{Catalog, RecommendRequest, Recommendation, builtin_catalog, parse_catalog_str};
 use aurora_core::presets::{PRESETS, get_preset};
 use aurora_core::workflow::{WorkflowDefinition, parse_workflow_bytes, parse_workflow_str};
+use aurora_skills::apply::{ApplyError, ApplyInput, apply, undo};
 use aurora_skills::overlay::strip_frontmatter_keys;
 use aurora_skills::plan::{
     ActionKind, Gate, InstallPlan, Lock, Observed, PlanInput, PreparedRules, PreparedSkill, SourcePin, plan,
 };
-use aurora_skills::scan::Readiness;
+use aurora_skills::scan::{Readiness, readiness, scan};
 use aurora_skills::skill::{listing_chars, parse_skill};
 use aurora_skills::tree::{Limits, SkillTree, collect};
 use clap::Args;
@@ -70,6 +71,10 @@ pub(crate) struct Planned {
     pub project: PathBuf,
     pub recommendation: Recommendation,
     pub plan: InstallPlan,
+    /// Entry -> the tree to install (overlays applied).
+    pub contents: BTreeMap<String, SkillTree>,
+    /// Entry -> files a human must read before it is installed.
+    pub review_files: BTreeMap<String, Vec<String>>,
     pub warnings: Vec<String>,
 }
 
@@ -175,6 +180,8 @@ pub(crate) fn compute(args: &PlanArgs) -> Result<Planned, String> {
 
     let strip: Vec<&str> = if args.keep_hooks { vec!["allowed-tools"] } else { vec!["allowed-tools", "hooks"] };
     let mut skills = Vec::new();
+    let mut contents = BTreeMap::new();
+    let mut review_files = BTreeMap::new();
     for (id, providers) in &wanted {
         let pin: Pin = pin_for_entry(&catalog, id)?;
         let fetched = fetch_checked(&pin, &cache, args.mirror.as_deref())?;
@@ -186,6 +193,14 @@ pub(crate) fn compute(args: &PlanArgs) -> Result<Planned, String> {
         let original = skill_md(&fetched.tree).map_err(|e| format!("'{id}': {e}"))?;
         let (text, overlays) = strip_frontmatter_keys(&original, &strip).map_err(|e| format!("'{id}': {e}"))?;
         let installed = with_skill_md(&fetched.tree, &text);
+        // Integrity was checked on the upstream copy; the review gate judges what is installed,
+        // so findings an overlay removed (allowed-tools, hooks) no longer need review. A catalog
+        // review note covers the verified upstream content, which overlays only reduce.
+        let installed_gate =
+            readiness(&installed, &scan(&installed), Some(&installed.content_hash()), pin.review.clone());
+        if let Readiness::NeedsReview(paths) = &installed_gate {
+            review_files.insert(id.clone(), paths.clone());
+        }
         let name = pin.path.rsplit('/').next().unwrap_or(id).to_string();
         let parsed = parse_skill(&text, &name).map_err(|e| format!("'{id}': {e}"))?;
         let listing = rec
@@ -204,10 +219,11 @@ pub(crate) fn compute(args: &PlanArgs) -> Result<Planned, String> {
             },
             installed_sha256: installed.content_hash(),
             overlays,
-            gate: gate(&fetched.readiness),
+            gate: gate(&installed_gate),
             listing_chars: listing,
             providers: providers.clone(),
         });
+        contents.insert(id.clone(), installed);
     }
 
     let mut rules = Vec::new();
@@ -286,7 +302,7 @@ pub(crate) fn compute(args: &PlanArgs) -> Result<Planned, String> {
         budgets: &budgets,
         prune: args.prune,
     });
-    Ok(Planned { project, recommendation: rec, plan: result, warnings })
+    Ok(Planned { project, recommendation: rec, plan: result, contents, review_files, warnings })
 }
 
 pub fn run_plan(args: &PlanArgs) -> u8 {
@@ -383,4 +399,157 @@ pub(crate) fn print_plan(project: &Path, rec: &Recommendation, p: &InstallPlan, 
         p.lock.skills.len(),
         p.lock.rules.values().map(BTreeMap::len).sum::<usize>()
     );
+}
+
+#[derive(Debug, Args)]
+pub struct ApplyArgs {
+    #[command(flatten)]
+    plan: PlanArgs,
+    /// Apply without asking (required when not running in a terminal)
+    #[arg(long)]
+    yes: bool,
+    /// Confirm you read the flagged files of this entry (repeatable)
+    #[arg(long, value_name = "ENTRY")]
+    reviewed: Vec<String>,
+}
+
+fn op_id() -> String {
+    let secs =
+        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0);
+    format!("{}-{}", aurora_core::util::format_utc(secs).replace(':', ""), std::process::id())
+}
+
+fn confirm(question: &str) -> bool {
+    use std::io::{BufRead, IsTerminal, Write};
+    if !std::io::stdin().is_terminal() {
+        return false;
+    }
+    print!("{question} [y/N] ");
+    let _ = std::io::stdout().flush();
+    let mut answer = String::new();
+    std::io::stdin().lock().read_line(&mut answer).is_ok() && matches!(answer.trim(), "y" | "Y" | "yes")
+}
+
+pub fn run_apply(args: &ApplyArgs) -> u8 {
+    let planned = match compute(&args.plan) {
+        Ok(p) => p,
+        Err(e) => return error(e),
+    };
+    let Planned { project, recommendation: rec, plan: p, contents, review_files, warnings: pre } = &planned;
+    let policy = aurora_fs::boundaries::BoundaryPolicy::host();
+    if let Err(e) =
+        aurora_fs::boundaries::validate_security_preconditions(project, &[project.as_path()], false, &policy)
+    {
+        return error(format!("refusing to install into {}: {e}", project.display()));
+    }
+    let mut warnings = pre.clone();
+    warnings.extend(p.warnings.iter().cloned());
+    if !args.plan.json {
+        print_plan(project, rec, p, &warnings);
+    }
+    let unreviewed: Vec<String> = p
+        .actions
+        .iter()
+        .filter(|a| a.needs_review && !args.reviewed.contains(&a.entry))
+        .map(|a| a.entry.clone())
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    if !unreviewed.is_empty() {
+        let list: Vec<String> = unreviewed
+            .iter()
+            .map(|e| format!("{e} (read: {})", review_files.get(e).map(|f| f.join(", ")).unwrap_or_default()))
+            .collect();
+        let flags: Vec<String> = unreviewed.iter().map(|e| format!("--reviewed {e}")).collect();
+        return error(format!(
+            "these skills need your review before they are installed: {}. Read the files in the cache \
+             (`aurora skills fetch <entry>` shows where), then rerun with {}",
+            list.join("; "),
+            flags.join(" ")
+        ));
+    }
+    if !p.changed {
+        println!("\nNothing to do: the project already matches the plan.");
+        return 0;
+    }
+    let changes = p
+        .actions
+        .iter()
+        .filter(|a| matches!(a.kind, ActionKind::Create | ActionKind::Update | ActionKind::Remove))
+        .count();
+    if !args.yes && !confirm(&format!("\nApply {changes} changes to {}?", project.display())) {
+        return error("not applied: confirm in a terminal, or pass --yes");
+    }
+    let id = op_id();
+    let input = ApplyInput { project, plan: p, contents, op_id: &id, fault_before_step: None };
+    match apply(&input) {
+        Ok(record) => {
+            if args.plan.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(
+                        &json!({"project": project.display().to_string(), "operation": record})
+                    )
+                    .unwrap_or_default()
+                );
+            } else {
+                println!("\n{} {changes} changes (operation {id}).", paint(OK, "Applied"));
+                println!("  Undo: aurora skills undo --project {}", project.display());
+            }
+            0
+        }
+        Err(e @ ApplyError::Pending(_)) => error(e),
+        Err(e) => error(format!("not applied: {e}")),
+    }
+}
+
+#[derive(Debug, Args)]
+pub struct UndoArgs {
+    /// Project directory (default: the current directory)
+    #[arg(long, default_value = ".")]
+    project: PathBuf,
+    /// Operation id (default: the most recent one)
+    #[arg(long, value_name = "ID")]
+    op: Option<String>,
+    /// Output in JSON format
+    #[arg(long)]
+    json: bool,
+}
+
+pub fn run_undo(args: &UndoArgs) -> u8 {
+    let project = match std::fs::canonicalize(&args.project) {
+        Ok(p) => p,
+        Err(e) => return error(format!("project {}: {e}", args.project.display())),
+    };
+    match undo(&project, args.op.as_deref()) {
+        Ok(report) => {
+            if args.json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
+                return 0;
+            }
+            println!("{} {} items from operation {}:", paint(OK, "Restored"), report.restored.len(), report.op_id);
+            for r in &report.restored {
+                println!("  {r}");
+            }
+            if !report.skipped.is_empty() {
+                println!("\nSkipped (changed since the operation; left as they are):");
+                for s in &report.skipped {
+                    println!("  {} {s}", paint(WARN, "!"));
+                }
+            }
+            println!(
+                "\n{}",
+                paint(
+                    DIM,
+                    format!(
+                        "Removed items were moved aside to {}/.aurora/ops/{}/, not deleted.",
+                        project.display(),
+                        report.op_id
+                    )
+                )
+            );
+            0
+        }
+        Err(e) => error(e),
+    }
 }

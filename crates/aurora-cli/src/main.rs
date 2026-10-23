@@ -64,6 +64,10 @@ enum SkillsCommand {
     Fetch(skills::FetchArgs),
     /// Dry run: what installing a workflow's recommended skills into a project would do
     Plan(install::PlanArgs),
+    /// Install the plan into the project (shows the plan, asks, journals every step)
+    Apply(install::ApplyArgs),
+    /// Undo the last apply (or --op ID); never deletes, never overwrites your changes
+    Undo(install::UndoArgs),
     /// Hash every file and run the static scanner (exit 0 clean, 4 needs review, 3 blocked)
     Scan {
         /// Skill directory
@@ -219,6 +223,8 @@ fn main() -> ExitCode {
             SkillsCommand::Scan { dir, json } => skills::scan(&dir, json),
             SkillsCommand::Fetch(args) => skills::fetch(&args),
             SkillsCommand::Plan(args) => install::run_plan(&args),
+            SkillsCommand::Apply(args) => install::run_apply(&args),
+            SkillsCommand::Undo(args) => install::run_undo(&args),
         },
         Some(Command::Catalog { command }) => match command {
             CatalogCommand::List { json } => catalog::list(json),

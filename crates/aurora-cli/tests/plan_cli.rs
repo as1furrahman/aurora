@@ -59,6 +59,8 @@ fn fixture() -> Fixture {
             "---\nname: checker\ndescription: Review diffs.\nallowed-tools: Read Bash\n---\nReview.\n",
         ),
         ("skills/house-rules/SKILL.md", "---\nname: house-rules\ndescription: Team rules.\n---\nKeep changes small.\n"),
+        ("skills/scripted/SKILL.md", "---\nname: scripted\ndescription: Has a helper.\n---\nRun run.sh.\n"),
+        ("skills/scripted/run.sh", "echo hi\n"),
     ] {
         let p = repo.join(path);
         fs::create_dir_all(p.parent().expect("parent")).expect("mkdir");
@@ -137,10 +139,22 @@ roles = ["reviewer"]
 description_chars = 13
 sha256 = "{checker}"
 why = "x"
+
+[[entries]]
+id = "scripted"
+kind = "skill"
+source = "team"
+path = "skills/scripted"
+tier = "stage"
+roles = ["implementer"]
+description_chars = 14
+sha256 = "{scripted}"
+why = "x"
 "#,
         rules = h("house-rules"),
         demo = h("demo"),
         checker = h("checker"),
+        scripted = h("scripted"),
     );
     let catalog_path = tmp.path().join("catalog.toml");
     fs::write(&catalog_path, catalog).expect("write catalog");
@@ -260,4 +274,87 @@ fn a_corrupt_lock_is_an_error() {
     let (code, _, err) = plan(&f, &[]);
     assert_eq!(code, 1);
     assert!(err.contains("aurora.lock"), "{err}");
+}
+
+fn apply(f: &Fixture, extra: &[&str]) -> (i32, String, String) {
+    let project = f.project.display().to_string();
+    let mut args = vec![
+        "skills",
+        "apply",
+        "--preset",
+        "bugfix",
+        "--catalog",
+        &f.catalog,
+        "--mirror",
+        &f.mirror,
+        "--cache",
+        &f.cache,
+        "--project",
+        &project,
+    ];
+    args.extend_from_slice(extra);
+    aurora(&args)
+}
+
+fn undo(f: &Fixture) -> (i32, String, String) {
+    aurora(&["skills", "undo", "--project", f.project.to_str().expect("utf-8")])
+}
+
+/// Files only (directories Aurora created stay), excluding Aurora's own state.
+fn files(dir: &Path) -> Vec<(String, Vec<u8>)> {
+    snapshot(dir).into_iter().filter(|(p, _)| !p.starts_with(".aurora/")).collect()
+}
+
+#[test]
+fn review_findings_removed_by_overlays_do_not_need_review() {
+    let f = fixture();
+    let (_, out, _) = plan(&f, &["--json"]);
+    let v: Value = serde_json::from_str(&out).expect("json");
+    let needs = |target: &str| {
+        v["actions"].as_array().expect("a").iter().find(|a| a["target"] == target).expect("act")["needs_review"].clone()
+    };
+    assert_eq!(needs(".agents/skills/checker"), false, "its only finding was the allowed-tools the overlay removes");
+    assert_eq!(needs(".claude/skills/scripted"), true, "a bundled script still needs review");
+}
+
+#[test]
+fn apply_needs_confirmation_and_the_review_flag() {
+    let f = fixture();
+    let before = files(&f.project);
+    let (code, _, err) = apply(&f, &[]);
+    assert_eq!(code, 1);
+    assert!(err.contains("--reviewed scripted"), "{err}");
+    let (code, _, err) = apply(&f, &["--reviewed", "scripted"]);
+    assert_eq!(code, 1, "not a terminal and no --yes");
+    assert!(err.contains("--yes"), "{err}");
+    assert_eq!(files(&f.project), before, "nothing written by refused applies");
+    assert!(!f.project.join(".aurora").exists());
+}
+
+#[test]
+fn apply_then_undo_round_trips() {
+    let f = fixture();
+    let before = files(&f.project);
+    let (code, out, err) = apply(&f, &["--yes", "--reviewed", "scripted"]);
+    assert_eq!(code, 0, "{out}{err}");
+    assert!(out.contains("Applied") && out.contains("aurora skills undo"), "{out}");
+    assert!(f.project.join(".claude/skills/demo/SKILL.md").is_file());
+    assert!(f.project.join(".claude/skills/scripted/run.sh").is_file());
+    let checker = fs::read_to_string(f.project.join(".agents/skills/checker/SKILL.md")).expect("read");
+    assert!(!checker.contains("allowed-tools"), "overlay applied: {checker}");
+    let agents = fs::read_to_string(f.project.join("AGENTS.md")).expect("read");
+    assert!(agents.starts_with("# Project\n") && agents.contains("Keep changes small."), "{agents}");
+    assert!(f.project.join("aurora.lock").is_file());
+
+    let (code, out, _) = apply(&f, &["--yes", "--reviewed", "scripted"]);
+    assert_eq!(code, 0);
+    assert!(out.contains("Nothing to do"), "{out}");
+
+    let (code, out, err) = undo(&f);
+    assert_eq!(code, 0, "{out}{err}");
+    assert!(out.contains("Restored"), "{out}");
+    assert_eq!(files(&f.project), before, "the project is back to where it started");
+    let (code, _, err) = undo(&f);
+    assert_eq!(code, 1);
+    assert!(err.contains("no operation"), "{err}");
 }
