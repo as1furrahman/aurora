@@ -88,8 +88,9 @@ fn gate2_positive_control_nested_boundary() {
 fn gate3_safe_read_rejects_fifo_without_blocking() {
     let (_t, root) = tmp();
     let fifo = root.join("pipe");
-    rustix::fs::mknodat(rustix::fs::CWD, &fifo, rustix::fs::FileType::Fifo, rustix::fs::Mode::from(0o600), 0)
-        .expect("mkfifo");
+    // The mkfifo command, not mknodat: rustix has no mknodat on macOS.
+    let made = std::process::Command::new("mkfifo").arg(&fifo).status().expect("mkfifo runs");
+    assert!(made.success(), "mkfifo");
     let err = safe_read(&fifo, &[&root], 1024).expect_err("fifo refused");
     assert!(matches!(err, FsError::Fifo(_)), "{err}");
 }

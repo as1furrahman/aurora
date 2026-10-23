@@ -101,7 +101,10 @@ pub fn atomic_write_with_fault(
             injected(fault, Fault::DuringWrite)?;
         }
         staged.write_all(content).map_err(|e| FsError::io("write staging file", e))?;
-        rustix::fs::fchmod(&staged, Mode::from(mode)).map_err(|e| FsError::io("chmod staging file", e))?;
+        // std takes a u32 mode on every Unix (rustix's Mode is u16 on macOS).
+        staged
+            .set_permissions(std::os::unix::fs::PermissionsExt::from_mode(mode))
+            .map_err(|e| FsError::io("chmod staging file", e))?;
         injected(fault, Fault::BeforeFsync)?;
         staged.sync_all().map_err(|e| FsError::io("fsync staging file", e))?;
         let meta = staged.metadata().map_err(|e| FsError::io("fstat staging file", e))?;

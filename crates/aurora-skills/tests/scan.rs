@@ -86,14 +86,9 @@ fn symlinks_and_special_files_are_blocked_and_never_followed() {
     assert!(report.findings.iter().any(|f| f.rule == "symlink" && f.path == "notes.md"));
 
     let fifo_dir = skill_dir(&tmp.path().join("f"), &[]);
-    rustix::fs::mknodat(
-        rustix::fs::CWD,
-        fifo_dir.join("pipe"),
-        rustix::fs::FileType::Fifo,
-        rustix::fs::Mode::from_raw_mode(0o644),
-        0,
-    )
-    .expect("mkfifo");
+    // The mkfifo command, not mknodat: rustix has no mknodat on macOS.
+    let made = std::process::Command::new("mkfifo").arg(fifo_dir.join("pipe")).status().expect("mkfifo runs");
+    assert!(made.success(), "mkfifo");
     let (verdict, found) = rules(&fifo_dir);
     assert_eq!(verdict, Verdict::Blocked);
     assert!(has(&found, "special-file", Level::Block), "{found:?}");

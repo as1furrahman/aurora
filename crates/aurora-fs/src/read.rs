@@ -99,13 +99,8 @@ pub fn safe_read(target: &Path, allowed_roots: &[&Path], max_size: u64) -> Resul
         )));
     }
     let sha256 = Sha256::digest(&content).iter().map(|b| format!("{b:02x}")).collect();
-    Ok(ReadInfo {
-        path: canon,
-        size: content.len() as u64,
-        content,
-        sha256,
-        dev: st.st_dev,
-        ino: st.st_ino,
-        mode: st.st_mode,
-    })
+    // Widths differ by platform (macOS: st_dev is i32 and st_mode u16); a no-op on Linux.
+    #[allow(clippy::unnecessary_cast)]
+    let (dev, mode) = (st.st_dev as u64, st.st_mode as u32);
+    Ok(ReadInfo { path: canon, size: content.len() as u64, content, sha256, dev, ino: st.st_ino, mode })
 }
