@@ -7,6 +7,7 @@
 
 pub mod atomic;
 pub mod boundaries;
+pub mod dirs;
 pub mod engine;
 mod error;
 pub mod lock;
