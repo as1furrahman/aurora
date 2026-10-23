@@ -1,0 +1,11 @@
+start exit=0
+Stage plan: PASSED [attempt 1]
+Stage implement: PASSED [attempt 1]
+Stage test: PASSED [attempt 1]
+Stage review: PASSED [attempt 1]
+Stage remediate: NOT_APPLICABLE [attempt 0]
+Stage final-verify: RUNNING (gate satisfied; awaiting approval) [attempt 1]
+Stage final-verify: PASSED (approved by thesriz)
+Aurora — Run full [plan-implement-review v1.0.0] (mode: single): COMPLETE
+  [independence] reduced (same provider): final-verify, review
+  [warning] Stages declaring independent_of share a provider with the stage they should be independent of: reduced independence. Do not treat these reviews as independent verification. Running them in a fresh-session context is a weaker control and is not verified by Aurora.

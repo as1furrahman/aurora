@@ -1,0 +1,471 @@
+test_adapter_paths_are_strictly_distinct (test_adapters.TestAdapters.test_adapter_paths_are_strictly_distinct)
+Ensure all adapter discovery paths are distinct and non-overlapping. ... ok
+test_antigravity_cli_discovery_in_sandbox (test_adapters.TestAdapters.test_antigravity_cli_discovery_in_sandbox)
+Antigravity CLI adapter discovers skills with valid SKILL.md. ... ok
+test_codex_adapter_rejects_symlink_aliases_to_system (test_adapters.TestAdapters.test_codex_adapter_rejects_symlink_aliases_to_system)
+Reject symlinked skill entries aliasing .system via direct or relative traversal. ... ok
+test_codex_adapter_rejects_target_path_inside_system (test_adapters.TestAdapters.test_codex_adapter_rejects_target_path_inside_system)
+Adapter initialization must fail closed if target path points to or inside .system. ... ok
+test_codex_adapter_strictly_protects_system_directory (test_adapters.TestAdapters.test_codex_adapter_strictly_protects_system_directory)
+Codex adapter must never list or expose .system/ internal skills. ... ok
+test_conformance_suite_all_adapters (test_adapters.TestAdapters.test_conformance_suite_all_adapters)
+Run non-mutating conformance tests for all adapters against isolated sandboxes. ... ok
+test_adversarial_install_rollback_on_step_failure (test_audit_phase4.TestAuditPhase4.test_adversarial_install_rollback_on_step_failure)
+Verify that failure during installation steps triggers automatic reverse rollback. ... ok
+test_adversarial_remover_rejects_altered_hash_manifest (test_audit_phase4.TestAuditPhase4.test_adversarial_remover_rejects_altered_hash_manifest)
+Verify SkillRemover detects when manifest hash has been tampered with or desynchronized. ... ok
+test_adversarial_remover_rejects_malformed_json_manifest (test_audit_phase4.TestAuditPhase4.test_adversarial_remover_rejects_malformed_json_manifest)
+Verify SkillRemover fails closed with OwnershipError on corrupted JSON manifest. ... ok
+test_adversarial_revalidation_aborts_on_concurrent_file_modification (test_audit_phase4.TestAuditPhase4.test_adversarial_revalidation_aborts_on_concurrent_file_modification)
+Verify that if a managed file is modified between plan_remove and lock acquisition, ... ok
+test_adversarial_revalidation_aborts_on_concurrent_skill_creation (test_audit_phase4.TestAuditPhase4.test_adversarial_revalidation_aborts_on_concurrent_skill_creation)
+Verify that if an external process creates the target skill directory ... ok
+test_sec04_accepts_legitimate_disposable_sandbox (test_audit_phase4.TestAuditPhase4.test_sec04_accepts_legitimate_disposable_sandbox)
+SEC-04: Legitimate disposable sandboxes inside allowed_roots pass validation. ... ok
+test_sec04_rejects_overly_broad_allowed_roots (test_audit_phase4.TestAuditPhase4.test_sec04_rejects_overly_broad_allowed_roots)
+SEC-04: Overly broad allowed roots (/, /home, user home) must be rejected. ... ok
+test_sec04_rejects_protected_project_exact_targets (test_audit_phase4.TestAuditPhase4.test_sec04_rejects_protected_project_exact_targets)
+SEC-04: Targets that equal protected project paths must be rejected unconditionally. ... ok
+test_sec04_rejects_symlink_aliases_to_protected_projects (test_audit_phase4.TestAuditPhase4.test_sec04_rejects_symlink_aliases_to_protected_projects)
+SEC-04: Symlink aliases resolving to protected directories must be rejected. ... ok
+test_sec04_rejects_target_enclosing_protected_project (test_audit_phase4.TestAuditPhase4.test_sec04_rejects_target_enclosing_protected_project)
+SEC-04: Target directories that enclose protected projects must be rejected. ... ok
+test_sec04_rejects_target_residing_within_protected_project (test_audit_phase4.TestAuditPhase4.test_sec04_rejects_target_residing_within_protected_project)
+SEC-04: Targets nested inside protected project directories must be rejected. ... ok
+test_sec05_create_dir_boundary_escape_rejected_at_execution_time (test_audit_phase4.TestAuditPhase4.test_sec05_create_dir_boundary_escape_rejected_at_execution_time)
+SEC-05: In TransactionEngine, CREATE_DIR targeting out-of-root path fails closed. ... ok
+test_sec05_create_dir_symlink_ancestor_rejected_at_execution_time (test_audit_phase4.TestAuditPhase4.test_sec05_create_dir_symlink_ancestor_rejected_at_execution_time)
+SEC-05: In TransactionEngine, CREATE_DIR traversing a symlinked ancestor fails closed. ... ok
+test_sec07_accepts_group_writable_directory_with_sticky_bit (test_audit_phase4.TestAuditPhase4.test_sec07_accepts_group_writable_directory_with_sticky_bit)
+SEC-07: Group-writable directory WITH sticky bit (e.g. 01775) is accepted. ... ok
+test_sec07_rejects_group_writable_directory_without_sticky_bit (test_audit_phase4.TestAuditPhase4.test_sec07_rejects_group_writable_directory_without_sticky_bit)
+SEC-07: Insecure group-writable directory without sticky bit raises SecurityPreconditionError. ... ok
+test_sec07_rejects_world_writable_directory_without_sticky_bit (test_audit_phase4.TestAuditPhase4.test_sec07_rejects_world_writable_directory_without_sticky_bit)
+SEC-07: Insecure world-writable directory without sticky bit raises SecurityPreconditionError. ... ok
+test_canonical_aurora_and_compatibility_awb_alias (test_cli.TestCLI.test_canonical_aurora_and_compatibility_awb_alias)
+Verify that CLI functions identically under both canonical 'aurora' and alias 'awb'. ... ok
+test_cli_help (test_cli.TestCLI.test_cli_help)
+CLI --help prints usage and exits cleanly. ... ok
+test_cli_help_for_both_aliases (test_cli.TestCLI.test_cli_help_for_both_aliases)
+CLI --help prints appropriate prog name for both aurora and awb. ... ok
+test_cli_version (test_cli.TestCLI.test_cli_version)
+CLI --version prints version and exits cleanly. ... ok
+test_cmd_detect (test_cli.TestCLI.test_cmd_detect)
+aurora detect executes non-mutating detection and returns code 0. ... ok
+test_cmd_detect_json (test_cli.TestCLI.test_cmd_detect_json)
+awb detect --json outputs valid JSON. ... ok
+test_cmd_doctor (test_cli.TestCLI.test_cmd_doctor)
+awb doctor performs diagnostics without error. ... ok
+test_cmd_install_and_remove_lifecycle (test_cli.TestCLI.test_cmd_install_and_remove_lifecycle)
+awb install and awb remove full lifecycle via CLI in isolated sandbox with explicit root. ... ok
+test_cmd_install_destination_required (test_cli.TestCLI.test_cmd_install_destination_required)
+awb install without --target or --adapter fails with clear error. ... Error: Destination required. Specify either --target <path> or --adapter <name>.
+ok
+test_cmd_install_dry_run (test_cli.TestCLI.test_cmd_install_dry_run)
+awb install --dry-run prints plan and leaves target unmodified when trusted root is provided. ... ok
+test_cmd_install_fails_without_explicit_root (test_cli.TestCLI.test_cmd_install_fails_without_explicit_root)
+SEC-04: awb install with --target but without --root fails closed. ... Error: No trusted sandbox root configured. You must specify an explicit trusted root via --root <path> or set the AURORA_ALLOWED_ROOTS (or AWB_ALLOWED_ROOTS) environment variable.
+ok
+test_cmd_install_global_blocked (test_cli.TestCLI.test_cmd_install_global_blocked)
+awb install targeting global adapter fails closed with GlobalMutationBlockedError. ... Error: Direct mutation of global agent directory '/home/thesriz/.codex/skills' is blocked pending separate operational authorization. Use an isolated test directory or sandbox.
+ok
+test_cmd_install_rejects_protected_project_targets (test_cli.TestCLI.test_cmd_install_rejects_protected_project_targets)
+SEC-04: awb install targeting protected project directories is rejected. ... Error: Target path '/home/asif/projects/token-efficient-workflow' conflicts with protected project directory '/home/asif/projects/token-efficient-workflow'. Target cannot equal, contain, or reside within protected projects.
+ok
+test_cmd_list (test_cli.TestCLI.test_cmd_list)
+awb list displays canonical skills from registry/skills.toml. ... ok
+test_cmd_validate (test_cli.TestCLI.test_cmd_validate)
+awb validate verifies canonical registry and prints resolution order. ... ok
+test_basic_acquire_and_release (test_locking.TestProcessLock.test_basic_acquire_and_release)
+Lock acquires cleanly, writes metadata, and remains persistent on release to avoid split-brain. ... ok
+test_contested_lock_times_out (test_locking.TestProcessLock.test_contested_lock_times_out)
+Contested lock fails with LockTimeoutError after specified timeout. ... ok
+test_inode_desynchronization_detection_and_safe_recovery (test_locking.TestProcessLock.test_inode_desynchronization_detection_and_safe_recovery)
+Adversarial test for SEC-01: ... ok
+test_lock_enforces_path_boundaries (test_locking.TestProcessLock.test_lock_enforces_path_boundaries)
+ProcessLock rejects lock files placed outside allowed boundaries. ... ok
+test_revalidation_callback_executes_under_lock (test_locking.TestProcessLock.test_revalidation_callback_executes_under_lock)
+revalidate() executes callback and returns state under active lock. ... ok
+test_stale_lock_is_broken_when_pid_is_dead (test_locking.TestProcessLock.test_stale_lock_is_broken_when_pid_is_dead)
+Stale lock held by a nonexistent PID is detected and safely broken. ... ok
+test_install_rejects_existing_unmanaged_directory (test_operations.TestOperations.test_install_rejects_existing_unmanaged_directory)
+Existing directory without AWB manifest is rejected to avoid clobbering user files. ... ok
+test_install_rejects_global_agent_directories (test_operations.TestOperations.test_install_rejects_global_agent_directories)
+Direct installation into real global agent directories is blocked in Phase 4. ... ok
+test_install_rejects_system_directory (test_operations.TestOperations.test_install_rejects_system_directory)
+Installation targeting or residing inside .system/ is rejected. ... ok
+test_install_rejects_unauthorized_boundary (test_operations.TestOperations.test_install_rejects_unauthorized_boundary)
+Installation outside declared allowed roots fails closed. ... ok
+test_install_single_skill_success (test_operations.TestOperations.test_install_single_skill_success)
+Install a single canonical skill and verify files, manifest, and lock persistence. ... ok
+test_multi_file_skill_install_and_remove (test_operations.TestOperations.test_multi_file_skill_install_and_remove)
+Install and remove a multi-file skill (token-efficient-workflow with nested rules). ... ok
+test_plan_install_dry_run_leaves_filesystem_pristine (test_operations.TestOperations.test_plan_install_dry_run_leaves_filesystem_pristine)
+Dry-run installation constructs valid plan without modifying disk. ... ok
+test_remove_dry_run_leaves_skill_intact (test_operations.TestOperations.test_remove_dry_run_leaves_skill_intact)
+Dry-run removal constructs plan without unlinking any file. ... ok
+test_remove_rejects_extraneous_unmanaged_files (test_operations.TestOperations.test_remove_rejects_extraneous_unmanaged_files)
+Extraneous unmanaged files inside skill directory abort removal. ... ok
+test_remove_rejects_global_agent_directories (test_operations.TestOperations.test_remove_rejects_global_agent_directories)
+Direct removal against real global agent directories is blocked. ... ok
+test_remove_rejects_modified_files_content_drift (test_operations.TestOperations.test_remove_rejects_modified_files_content_drift)
+Content-drift protection: modified files abort removal to prevent data loss. ... ok
+test_remove_rejects_symlink_inside_skill (test_operations.TestOperations.test_remove_rejects_symlink_inside_skill)
+Symlinks inside skill directory trigger safety rejection. ... ok
+test_remove_rejects_unmanaged_directory (test_operations.TestOperations.test_remove_rejects_unmanaged_directory)
+Attempting to remove an unmanaged directory raises OwnershipError. ... ok
+test_remove_single_skill_success (test_operations.TestOperations.test_remove_single_skill_success)
+Remove a demonstrably owned AWB skill and verify complete deletion. ... ok
+test_cli_update_command_syntax (test_phase5_reliability.TestPhase5Reliability.test_cli_update_command_syntax)
+awb update command is recognized by CLI and executes cleanly. ... ok
+test_concurrent_lock_contention_raises_timeout (test_phase5_reliability.TestPhase5Reliability.test_concurrent_lock_contention_raises_timeout)
+When one process holds ProcessLock, a competing contender with a short ... ok
+test_failure_injection_at_each_install_step (test_phase5_reliability.TestPhase5Reliability.test_failure_injection_at_each_install_step)
+Force failures after each individual transaction step during installation. ... ok
+test_failure_injection_during_removal_restores_unlinked_files (test_phase5_reliability.TestPhase5Reliability.test_failure_injection_during_removal_restores_unlinked_files)
+If a failure occurs during skill removal, previously unlinked files must ... ok
+test_failure_injection_during_update_restores_prior_content (test_phase5_reliability.TestPhase5Reliability.test_failure_injection_during_update_restores_prior_content)
+When updating an existing installed skill, a failure during file write must ... ok
+test_lock_inode_never_changes_across_acquisitions (test_phase5_reliability.TestPhase5Reliability.test_lock_inode_never_changes_across_acquisitions)
+SEC-01 Invariant: .awb.lock is persistent and its device and inode ... ok
+test_manifest_missing_mandatory_fields_rejected (test_phase5_reliability.TestPhase5Reliability.test_manifest_missing_mandatory_fields_rejected)
+Manifest missing awb_managed or skill_id fails closed with OwnershipError. ... ok
+test_permission_change_between_plan_and_execute_aborts (test_phase5_reliability.TestPhase5Reliability.test_permission_change_between_plan_and_execute_aborts)
+If target parent directory permissions are changed to insecure mode (e.g. 0777) ... ok
+test_reinstall_over_unmanaged_directory_fails_closed (test_phase5_reliability.TestPhase5Reliability.test_reinstall_over_unmanaged_directory_fails_closed)
+Attempting repeat install or update over an unmanaged directory ... ok
+test_removal_after_aborted_update (test_phase5_reliability.TestPhase5Reliability.test_removal_after_aborted_update)
+If an update operation fails and rolls back, the skill remains in a valid ... ok
+test_repeat_install_idempotent (test_phase5_reliability.TestPhase5Reliability.test_repeat_install_idempotent)
+Installing an already-installed skill twice (repeat install) is safe, ... ok
+test_rollback_preserves_unrelated_sibling_files (test_phase5_reliability.TestPhase5Reliability.test_rollback_preserves_unrelated_sibling_files)
+Rollback of a failed skill operation must never unlink unrelated files ... ok
+test_simulated_process_crash_holding_lock_releases_cleanly (test_phase5_reliability.TestPhase5Reliability.test_simulated_process_crash_holding_lock_releases_cleanly)
+When a process holding ProcessLock terminates abruptly (crash), the kernel ... ok
+test_symlink_substitution_at_leaf_rejected (test_phase5_reliability.TestPhase5Reliability.test_symlink_substitution_at_leaf_rejected)
+Substituting a skill file with a symlink triggers safety rejection. ... ok
+test_symlink_substitution_at_manifest_rejected (test_phase5_reliability.TestPhase5Reliability.test_symlink_substitution_at_manifest_rejected)
+Substituting .awb-manifest.json with a symlink triggers safety rejection. ... ok
+test_symlink_substitution_at_skill_directory_rejected (test_phase5_reliability.TestPhase5Reliability.test_symlink_substitution_at_skill_directory_rejected)
+Substituting the skill directory itself with a symlink triggers safety rejection. ... ok
+test_unexpected_unmanaged_file_inside_skill_rejected (test_phase5_reliability.TestPhase5Reliability.test_unexpected_unmanaged_file_inside_skill_rejected)
+If a user or rogue process drops an unmanaged file into a skill directory, ... ok
+test_modified_obsolete_file_fails_closed_state_drift (test_phase5_remediation.TestSEC09ObsoleteFilePruning.test_modified_obsolete_file_fails_closed_state_drift)
+If an obsolete file has been modified out-of-band by the user, ... ok
+test_non_empty_obsolete_parent_dir_preserved (test_phase5_remediation.TestSEC09ObsoleteFilePruning.test_non_empty_obsolete_parent_dir_preserved)
+If an obsolete file is pruned from a directory that still contains ... ok
+test_obsolete_file_and_empty_dir_pruned_on_update (test_phase5_remediation.TestSEC09ObsoleteFilePruning.test_obsolete_file_and_empty_dir_pruned_on_update)
+When a skill update removes a previously managed file, the obsolete file ... ok
+test_rollback_restores_pruned_obsolete_files_and_dirs (test_phase5_remediation.TestSEC09ObsoleteFilePruning.test_rollback_restores_pruned_obsolete_files_and_dirs)
+If a subsequent step fails during an update, reverse rollback restores ... ok
+test_symlinked_obsolete_file_fails_closed_safety_error (test_phase5_remediation.TestSEC09ObsoleteFilePruning.test_symlinked_obsolete_file_fails_closed_safety_error)
+If an obsolete file has been replaced by a symlink, ... ok
+test_keyboard_interrupt_rollback_error_chained (test_phase5_remediation.TestSEC10AKeyboardInterruptRollback.test_keyboard_interrupt_rollback_error_chained)
+If rollback encounters errors after a KeyboardInterrupt, both the ... ok
+test_keyboard_interrupt_triggers_reverse_rollback_and_reraises (test_phase5_remediation.TestSEC10AKeyboardInterruptRollback.test_keyboard_interrupt_triggers_reverse_rollback_and_reraises)
+When KeyboardInterrupt is raised during transaction step execution: ... ok
+test_clean_journal_committed_is_cleaned_up (test_phase5_remediation.TestSEC10BDurableWriteAheadCrashRecovery.test_clean_journal_committed_is_cleaned_up)
+If journal is in COMMITTED state, recovery cleans it up without mutation. ... ok
+test_crash_recovery_detects_state_drift_and_fails_closed (test_phase5_remediation.TestSEC10BDurableWriteAheadCrashRecovery.test_crash_recovery_detects_state_drift_and_fails_closed)
+If a file created before a crash has been modified out-of-band by user, ... ok
+test_crash_recovery_from_prepared_journal (test_phase5_remediation.TestSEC10BDurableWriteAheadCrashRecovery.test_crash_recovery_from_prepared_journal)
+Simulate an ungraceful crash mid-transaction (e.g. SIGKILL / power loss). ... ok
+test_crash_recovery_rejects_corrupted_journal (test_phase5_remediation.TestSEC10BDurableWriteAheadCrashRecovery.test_crash_recovery_rejects_corrupted_journal)
+A corrupted or malformed journal fails closed with TransactionError. ... ok
+test_subprocess_sigkill_mid_transaction_recovered_by_fresh_transaction (test_phase5_remediation.TestSEC10BDurableWriteAheadCrashRecovery.test_subprocess_sigkill_mid_transaction_recovered_by_fresh_transaction)
+Launch a separate subprocess that executes a transaction and SIGKILLs itself ... ok
+test_remove_dir_rollback_validates_path (test_phase5_remediation.TestSEC11RollbackPathConfinement.test_remove_dir_rollback_validates_path)
+Recreation of directories during REMOVE_DIR rollback validates ... ok
+test_rollback_rejects_path_outside_allowed_roots (test_phase5_remediation.TestSEC11RollbackPathConfinement.test_rollback_rejects_path_outside_allowed_roots)
+Rollback validates paths against allowed roots immediately before ... ok
+test_rollback_rejects_symlink_ancestor (test_phase5_remediation.TestSEC11RollbackPathConfinement.test_rollback_rejects_symlink_ancestor)
+Rollback rejects operations traversing an unauthorized symlinked ancestor. ... ok
+test_corrupted_json_journal_fails_closed (test_phase6_multi_skill.TestPhase6JournalEdgeCasesAndContention.test_corrupted_json_journal_fails_closed)
+Corrupted JSON fails closed with TransactionError. ... ok
+test_failed_recovery_never_silently_reports_success (test_phase6_multi_skill.TestPhase6JournalEdgeCasesAndContention.test_failed_recovery_never_silently_reports_success)
+If recovery rollback encounters errors (e.g. state drift or failure), ... ok
+test_lock_contention_and_timeout (test_phase6_multi_skill.TestPhase6JournalEdgeCasesAndContention.test_lock_contention_and_timeout)
+When process A holds lock on sandbox, process B attempting transaction ... ok
+test_missing_status_fails_closed (test_phase6_multi_skill.TestPhase6JournalEdgeCasesAndContention.test_missing_status_fails_closed)
+Journal missing status field fails closed. ... ok
+test_missing_target_dir_fails_closed (test_phase6_multi_skill.TestPhase6JournalEdgeCasesAndContention.test_missing_target_dir_fails_closed)
+Journal in PREPARED status missing target_dir field fails closed. ... ok
+test_symlinked_journal_fails_closed (test_phase6_multi_skill.TestPhase6JournalEdgeCasesAndContention.test_symlinked_journal_fails_closed)
+Symlinked .awb.journal.json fails closed with SafetyError. ... ok
+test_target_dir_mismatch_fails_closed (test_phase6_multi_skill.TestPhase6JournalEdgeCasesAndContention.test_target_dir_mismatch_fails_closed)
+Journal claiming different target directory fails closed with SafetyError. ... ok
+test_multi_skill_install_and_integrity_verification (test_phase6_multi_skill.TestPhase6MultiSkillLifecycle.test_multi_skill_install_and_integrity_verification)
+Sequentially install all 4 canonical skills into a shared sandbox: ... ok
+test_multi_skill_partial_removal_and_reinstall (test_phase6_multi_skill.TestPhase6MultiSkillLifecycle.test_multi_skill_partial_removal_and_reinstall)
+Removing one skill (task-router) leaves all other skills intact. ... ok
+test_multi_skill_repeat_install_idempotency (test_phase6_multi_skill.TestPhase6MultiSkillLifecycle.test_multi_skill_repeat_install_idempotency)
+Installing all 4 skills a second time (repeat install) is idempotent, ... ok
+test_multi_skill_update_with_sec09_obsolete_pruning_sibling_isolation (test_phase6_multi_skill.TestPhase6MultiSkillLifecycle.test_multi_skill_update_with_sec09_obsolete_pruning_sibling_isolation)
+When updating token-efficient-workflow to prune rules/efficient-workflow.md: ... ok
+test_modified_obsolete_file_in_multi_skill_sandbox_fails_closed (test_phase6_multi_skill.TestPhase6SEC09AdversarialPruning.test_modified_obsolete_file_in_multi_skill_sandbox_fails_closed)
+In a sandbox with multiple skills, modifying an obsolete file fails closed ... ok
+test_unowned_foreign_file_in_obsolete_dir_fails_closed (test_phase6_multi_skill.TestPhase6SEC09AdversarialPruning.test_unowned_foreign_file_in_obsolete_dir_fails_closed)
+If an unmanaged foreign file is present in an obsolete directory, ... ok
+test_keyboard_interrupt_after_write_before_record_applied (test_phase6_multi_skill.TestPhase6SEC10AMutationBoundaries.test_keyboard_interrupt_after_write_before_record_applied)
+Inject KeyboardInterrupt immediately after write completes, before record_step_applied. ... ok
+test_keyboard_interrupt_during_create_dir (test_phase6_multi_skill.TestPhase6SEC10AMutationBoundaries.test_keyboard_interrupt_during_create_dir)
+Inject KeyboardInterrupt during directory creation. ... ok
+test_keyboard_interrupt_during_rmdir (test_phase6_multi_skill.TestPhase6SEC10AMutationBoundaries.test_keyboard_interrupt_during_rmdir)
+Inject KeyboardInterrupt during safe_rmdir. ... ok
+test_keyboard_interrupt_during_unlink_file (test_phase6_multi_skill.TestPhase6SEC10AMutationBoundaries.test_keyboard_interrupt_during_unlink_file)
+Inject KeyboardInterrupt during safe_unlink_file. ... ok
+test_keyboard_interrupt_during_write_file (test_phase6_multi_skill.TestPhase6SEC10AMutationBoundaries.test_keyboard_interrupt_during_write_file)
+Inject KeyboardInterrupt during safe_atomic_write on step 1. ... ok
+test_sigkill_after_first_step_applied_during_second_step (test_phase6_multi_skill.TestPhase6SEC10BCrashRecoveryBoundaries.test_sigkill_after_first_step_applied_during_second_step)
+SIGKILL after step 1 applied, during step 2. ... ok
+test_sigkill_immediately_after_write_prepared (test_phase6_multi_skill.TestPhase6SEC10BCrashRecoveryBoundaries.test_sigkill_immediately_after_write_prepared)
+SIGKILL immediately after write_prepared (0 steps executed, journal PREPARED). ... ok
+test_create_dir_rollback_with_out_of_boundary_target (test_phase6_multi_skill.TestPhase6SEC11RollbackPathConfinement.test_create_dir_rollback_with_out_of_boundary_target)
+Rollback of CREATE_DIR targeting path outside allowed roots fails safely. ... ok
+test_step_execution_boundary_escape_fails_and_rolls_back (test_phase6_multi_skill.TestPhase6SEC11RollbackPathConfinement.test_step_execution_boundary_escape_fails_and_rolls_back)
+A plan containing an out-of-boundary step fails at execution time ... ok
+test_unlink_rollback_with_out_of_boundary_target (test_phase6_multi_skill.TestPhase6SEC11RollbackPathConfinement.test_unlink_rollback_with_out_of_boundary_target)
+Rollback of UNLINK_FILE targeting path outside allowed roots fails safely. ... ok
+test_config_env_precedence (test_providers.TestClaudeCodeSkillAdapter.test_config_env_precedence) ... ok
+test_conformance_writes_only_inside_sandbox (test_providers.TestClaudeCodeSkillAdapter.test_conformance_writes_only_inside_sandbox) ... ok
+test_detection_is_read_only_probe (test_providers.TestClaudeCodeSkillAdapter.test_detection_is_read_only_probe) ... ok
+test_identity (test_providers.TestClaudeCodeSkillAdapter.test_identity) ... ok
+test_lists_only_regular_skill_directories (test_providers.TestClaudeCodeSkillAdapter.test_lists_only_regular_skill_directories) ... ok
+test_missing_directory_lists_nothing (test_providers.TestClaudeCodeSkillAdapter.test_missing_directory_lists_nothing) ... ok
+test_registered_with_configured_path (test_providers.TestClaudeCodeSkillAdapter.test_registered_with_configured_path) ... ok
+test_registry_accepts_claude_code_agent (test_providers.TestClaudeCodeSkillAdapter.test_registry_accepts_claude_code_agent) ... ok
+test_rejects_symlinked_skill_md (test_providers.TestClaudeCodeSkillAdapter.test_rejects_symlinked_skill_md) ... ok
+test_cli_providers_json (test_providers.TestExecutionProviders.test_cli_providers_json) ... ok
+test_contracts_are_structurally_separate (test_providers.TestExecutionProviders.test_contracts_are_structurally_separate) ... ok
+test_detect_never_spawns_processes (test_providers.TestExecutionProviders.test_detect_never_spawns_processes) ... ok
+test_execute_is_not_enabled (test_providers.TestExecutionProviders.test_execute_is_not_enabled) ... ok
+test_handoff_text_never_contains_forbidden_flags (test_providers.TestExecutionProviders.test_handoff_text_never_contains_forbidden_flags) ... ok
+test_known_providers (test_providers.TestExecutionProviders.test_known_providers) ... ok
+test_new_packages_do_not_import_subprocess (test_providers.TestExecutionProviders.test_new_packages_do_not_import_subprocess) ... ok
+test_provider_skill_adapters_exist (test_providers.TestExecutionProviders.test_provider_skill_adapters_exist) ... ok
+test_specs_are_immutable_and_manual_only (test_providers.TestExecutionProviders.test_specs_are_immutable_and_manual_only) ... ok
+test_unknown_provider_fails_clearly (test_providers.TestExecutionProviders.test_unknown_provider_fails_clearly) ... ok
+test_claude_and_agents_dirs_are_in_global_block_list (test_providers.TestGlobalPathHardening.test_claude_and_agents_dirs_are_in_global_block_list) ... ok
+test_cli_install_into_claude_adapter_is_blocked (test_providers.TestGlobalPathHardening.test_cli_install_into_claude_adapter_is_blocked) ... ok
+test_mutation_targets_are_rejected (test_providers.TestGlobalPathHardening.test_mutation_targets_are_rejected) ... ok
+test_canonical_skills_toml_loads_successfully (test_registry.TestRegistry.test_canonical_skills_toml_loads_successfully)
+Verify that the project's canonical registry/skills.toml is completely valid. ... ok
+test_rejects_circular_dependency (test_registry.TestRegistry.test_rejects_circular_dependency)
+Reject direct and indirect circular dependencies. ... ok
+test_rejects_duplicate_skill_id (test_registry.TestRegistry.test_rejects_duplicate_skill_id)
+Reject TOML when duplicate skill IDs exist. ... ok
+test_rejects_empty_or_whitespace_registry (test_registry.TestRegistry.test_rejects_empty_or_whitespace_registry)
+Empty or whitespace-only registry content must fail closed. ... ok
+test_rejects_empty_or_whitespace_updated_at (test_registry.TestRegistry.test_rejects_empty_or_whitespace_updated_at)
+[registry] with empty or whitespace-only updated_at must fail validation. ... ok
+test_rejects_invalid_semver (test_registry.TestRegistry.test_rejects_invalid_semver)
+Reject skill with invalid SemVer version string. ... ok
+test_rejects_invalid_skill_id (test_registry.TestRegistry.test_rejects_invalid_skill_id)
+Reject skill with uppercase or underscore in id. ... ok
+test_rejects_missing_dependency (test_registry.TestRegistry.test_rejects_missing_dependency)
+Reject skill declaring dependency on nonexistent skill. ... ok
+test_rejects_missing_registry_section (test_registry.TestRegistry.test_rejects_missing_registry_section)
+Missing mandatory [registry] section must fail validation. ... ok
+test_rejects_missing_registry_version (test_registry.TestRegistry.test_rejects_missing_registry_version)
+[registry] missing version string must fail validation. ... ok
+test_rejects_missing_skills_array (test_registry.TestRegistry.test_rejects_missing_skills_array)
+Missing mandatory [[skills]] array must fail validation. ... ok
+test_rejects_missing_updated_at (test_registry.TestRegistry.test_rejects_missing_updated_at)
+[registry] missing updated_at string must fail validation. ... ok
+test_rejects_self_dependency (test_registry.TestRegistry.test_rejects_self_dependency)
+Reject skill that declares dependency on itself. ... ok
+test_topological_install_order_resolution (test_registry.TestRegistry.test_topological_install_order_resolution)
+Verify deterministic resolution of dependencies in topological order. ... ok
+test_gate1_positive_control_regular_ancestry (test_safety.TestSafetyPrimitives.test_gate1_positive_control_regular_ancestry)
+Positive control: valid deeply nested paths with regular ancestry succeed. ... ok
+test_gate1_rejects_symlinked_ancestor_directory (test_safety.TestSafetyPrimitives.test_gate1_rejects_symlinked_ancestor_directory)
+Reject paths when an ancestor directory along the chain is a symlink. ... ok
+test_gate1_rejects_symlinked_leaf_target (test_safety.TestSafetyPrimitives.test_gate1_rejects_symlinked_leaf_target)
+Reject paths when the target leaf itself is an unauthorized symlink. ... ok
+test_gate2_positive_control_nested_boundary (test_safety.TestSafetyPrimitives.test_gate2_positive_control_nested_boundary)
+Positive control: nested paths staying within boundary succeed. ... ok
+test_gate2_rejects_dot_dot_traversal_escape (test_safety.TestSafetyPrimitives.test_gate2_rejects_dot_dot_traversal_escape)
+Reject classical '..' traversal that escapes the permitted root. ... ok
+test_gate2_rejects_unauthorized_absolute_path (test_safety.TestSafetyPrimitives.test_gate2_rejects_unauthorized_absolute_path)
+Reject absolute paths outside declared permitted roots. ... ok
+test_gate3_positive_control_regular_read (test_safety.TestSafetyPrimitives.test_gate3_positive_control_regular_read)
+Positive control: normal regular files are read and hashed cleanly. ... ok
+test_gate3_safe_open_read_rejects_fifo_non_blocking (test_safety.TestSafetyPrimitives.test_gate3_safe_open_read_rejects_fifo_non_blocking)
+Never block on a substituted FIFO and fail closed immediately. ... ok
+test_gate3_safe_unlink_rejects_fifo_substitution (test_safety.TestSafetyPrimitives.test_gate3_safe_unlink_rejects_fifo_substitution)
+Reject unlinking when a target has been substituted with a FIFO. ... ok
+test_gate4_positive_control_verified_unlink (test_safety.TestSafetyPrimitives.test_gate4_positive_control_verified_unlink)
+Positive control: file unlinks cleanly when dev, inode, and hash match. ... ok
+test_gate4_rejects_concurrent_replacement_during_pre_unlink_window (test_safety.TestSafetyPrimitives.test_gate4_rejects_concurrent_replacement_during_pre_unlink_window)
+Explicit concurrent race condition test: ... ok
+test_gate4_rejects_content_hash_drift (test_safety.TestSafetyPrimitives.test_gate4_rejects_content_hash_drift)
+Detect when file content has been altered before unlinking. ... ok
+test_gate4_rejects_inode_substitution (test_safety.TestSafetyPrimitives.test_gate4_rejects_inode_substitution)
+Detect when file identity (inode) has changed before unlinking. ... ok
+test_gate5_atomic_write_leaves_no_staging_artifacts_on_clean_run (test_safety.TestSafetyPrimitives.test_gate5_atomic_write_leaves_no_staging_artifacts_on_clean_run)
+Atomic write cleans up temporary staging files completely. ... ok
+test_gate5_atomic_write_preserves_original_on_failure (test_safety.TestSafetyPrimitives.test_gate5_atomic_write_preserves_original_on_failure)
+Verify that an interrupted write leaves the original file uncorrupted. ... ok
+test_gate5_failure_injection_after_create (test_safety.TestSafetyPrimitives.test_gate5_failure_injection_after_create)
+Failure injection immediately after staging file creation. ... ok
+test_gate5_failure_injection_before_fsync (test_safety.TestSafetyPrimitives.test_gate5_failure_injection_before_fsync)
+Failure injection before file descriptor fsync. ... ok
+test_gate5_failure_injection_before_replace (test_safety.TestSafetyPrimitives.test_gate5_failure_injection_before_replace)
+Failure injection immediately before atomic replace. ... ok
+test_gate5_failure_injection_during_write (test_safety.TestSafetyPrimitives.test_gate5_failure_injection_during_write)
+Failure injection during staging payload write loop. ... ok
+test_gate5_positive_control_rmdir_descriptor_relative (test_safety.TestSafetyPrimitives.test_gate5_positive_control_rmdir_descriptor_relative)
+Positive control: descriptor-relative directory pruning. ... ok
+test_mandatory_locking_enforced_during_execution (test_transactions.TestTransactionEngine.test_mandatory_locking_enforced_during_execution)
+Verify that TransactionEngine holds exclusive ProcessLock during execution. ... ok
+test_post_acquire_revalidation_failure_aborts_without_mutation (test_transactions.TestTransactionEngine.test_post_acquire_revalidation_failure_aborts_without_mutation)
+If target state changed concurrently and revalidation fails, transaction aborts with zero mutations. ... ok
+test_rollback_on_step_failure (test_transactions.TestTransactionEngine.test_rollback_on_step_failure)
+When an intermediate step fails, previously applied steps roll back completely. ... ok
+test_successful_transaction_commit (test_transactions.TestTransactionEngine.test_successful_transaction_commit)
+Transaction executes all steps cleanly under lock. ... ok
+test_plan_blocked_exit_code (test_workflow_cli.TestWorkflowCLI.test_plan_blocked_exit_code) ... ok
+test_plan_multi_and_single (test_workflow_cli.TestWorkflowCLI.test_plan_multi_and_single) ... ok
+test_plan_rejects_malformed_route_and_unknown_provider (test_workflow_cli.TestWorkflowCLI.test_plan_rejects_malformed_route_and_unknown_provider) ... ok
+test_plan_route (test_workflow_cli.TestWorkflowCLI.test_plan_route) ... ok
+test_plan_uses_path_detection_by_default (test_workflow_cli.TestWorkflowCLI.test_plan_uses_path_detection_by_default) ... ok
+test_plan_writes_nothing (test_workflow_cli.TestWorkflowCLI.test_plan_writes_nothing) ... ok
+test_show_json_keeps_roles_provider_neutral (test_workflow_cli.TestWorkflowCLI.test_show_json_keeps_roles_provider_neutral) ... ok
+test_show_text (test_workflow_cli.TestWorkflowCLI.test_show_text) ... ok
+test_validate_example (test_workflow_cli.TestWorkflowCLI.test_validate_example) ... ok
+test_validate_invalid_reports_every_error (test_workflow_cli.TestWorkflowCLI.test_validate_invalid_reports_every_error) ... ok
+test_validate_json (test_workflow_cli.TestWorkflowCLI.test_validate_json) ... ok
+test_complete_submission_passes_and_records_evidence (test_workflow_engine.TestAcceptanceGates.test_complete_submission_passes_and_records_evidence) ... ok
+test_empty_and_symlinked_outputs_are_not_evidence (test_workflow_engine.TestAcceptanceGates.test_empty_and_symlinked_outputs_are_not_evidence) ... ok
+test_exhausted_attempts_block_and_escalate (test_workflow_engine.TestAcceptanceGates.test_exhausted_attempts_block_and_escalate) ... ok
+test_failed_stage_can_retry (test_workflow_engine.TestAcceptanceGates.test_failed_stage_can_retry) ... ok
+test_missing_outputs_fail_and_do_not_advance (test_workflow_engine.TestAcceptanceGates.test_missing_outputs_fail_and_do_not_advance) ... ok
+test_on_exhausted_block_does_not_escalate (test_workflow_engine.TestAcceptanceGates.test_on_exhausted_block_does_not_escalate) ... ok
+test_outputs_without_claimed_criteria_do_not_pass (test_workflow_engine.TestAcceptanceGates.test_outputs_without_claimed_criteria_do_not_pass) ... ok
+test_resubmitting_passed_stage_is_rejected (test_workflow_engine.TestAcceptanceGates.test_resubmitting_passed_stage_is_rejected) ... ok
+test_submit_to_pending_stage_is_rejected (test_workflow_engine.TestAcceptanceGates.test_submit_to_pending_stage_is_rejected) ... ok
+test_unknown_criterion_rejected_without_consuming_attempt (test_workflow_engine.TestAcceptanceGates.test_unknown_criterion_rejected_without_consuming_attempt) ... ok
+test_approval_gate_and_completion (test_workflow_engine.TestOptionalApprovalAndCompletion.test_approval_gate_and_completion) ... ok
+test_approve_rejects_drifted_evidence_and_wrong_state (test_workflow_engine.TestOptionalApprovalAndCompletion.test_approve_rejects_drifted_evidence_and_wrong_state) ... ok
+test_completion_requires_every_mandatory_stage (test_workflow_engine.TestOptionalApprovalAndCompletion.test_completion_requires_every_mandatory_stage) ... ok
+test_not_applicable_requires_optional_stage_and_justification (test_workflow_engine.TestOptionalApprovalAndCompletion.test_not_applicable_requires_optional_stage_and_justification) ... ok
+test_interrupted_submission_is_safely_resumable (test_workflow_engine.TestResumeAndIntegrity.test_interrupted_submission_is_safely_resumable) ... ok
+test_not_a_run_directory (test_workflow_engine.TestResumeAndIntegrity.test_not_a_run_directory) ... ok
+test_record_schema_is_strict (test_workflow_engine.TestResumeAndIntegrity.test_record_schema_is_strict) ... ok
+test_resume_never_reissues_passed_stages (test_workflow_engine.TestResumeAndIntegrity.test_resume_never_reissues_passed_stages) ... ok
+test_resume_preserves_edited_bundle (test_workflow_engine.TestResumeAndIntegrity.test_resume_preserves_edited_bundle) ... ok
+test_resume_reissues_missing_bundle_identically (test_workflow_engine.TestResumeAndIntegrity.test_resume_reissues_missing_bundle_identically) ... ok
+test_status_reports_evidence_drift_without_changing_state (test_workflow_engine.TestResumeAndIntegrity.test_status_reports_evidence_drift_without_changing_state) ... ok
+test_tampered_workflow_copy_is_detected (test_workflow_engine.TestResumeAndIntegrity.test_tampered_workflow_copy_is_detected) ... ok
+test_cli_reports_safety_errors_without_traceback (test_workflow_engine.TestReviewRegressions.test_cli_reports_safety_errors_without_traceback) ... ok
+test_drift_while_awaiting_approval_can_be_resubmitted (test_workflow_engine.TestReviewRegressions.test_drift_while_awaiting_approval_can_be_resubmitted) ... ok
+test_failed_start_leaves_a_resumable_or_no_run (test_workflow_engine.TestReviewRegressions.test_failed_start_leaves_a_resumable_or_no_run) ... ok
+test_gate_satisfied_after_failure_can_be_approved (test_workflow_engine.TestReviewRegressions.test_gate_satisfied_after_failure_can_be_approved) ... ok
+test_preserved_handoff_records_on_disk_hash (test_workflow_engine.TestReviewRegressions.test_preserved_handoff_records_on_disk_hash) ... ok
+test_run_id_with_trailing_newline_is_rejected (test_workflow_engine.TestReviewRegressions.test_run_id_with_trailing_newline_is_rejected) ... ok
+test_start_pins_exactly_the_bytes_it_validated (test_workflow_engine.TestReviewRegressions.test_start_pins_exactly_the_bytes_it_validated) ... ok
+test_end_to_end_manual_handoff (test_workflow_engine.TestRunCLI.test_end_to_end_manual_handoff) ... ok
+test_start_requires_run_root (test_workflow_engine.TestRunCLI.test_start_requires_run_root) ... ok
+test_default_run_id_uses_workflow_and_time (test_workflow_engine.TestRunLayout.test_default_run_id_uses_workflow_and_time) ... ok
+test_handoff_bundle_is_role_specific_and_safe (test_workflow_engine.TestRunLayout.test_handoff_bundle_is_role_specific_and_safe) ... ok
+test_handoff_bundles_are_deterministic (test_workflow_engine.TestRunLayout.test_handoff_bundles_are_deterministic) ... ok
+test_plan_blocked_stage_starts_blocked (test_workflow_engine.TestRunLayout.test_plan_blocked_stage_starts_blocked) ... ok
+test_run_root_inside_global_agent_dir_is_rejected (test_workflow_engine.TestRunLayout.test_run_root_inside_global_agent_dir_is_rejected) ... ok
+test_run_root_must_exist_and_run_id_is_safe (test_workflow_engine.TestRunLayout.test_run_root_must_exist_and_run_id_is_safe) ... ok
+test_single_provider_run_records_reduced_independence (test_workflow_engine.TestRunLayout.test_single_provider_run_records_reduced_independence) ... ok
+test_start_creates_versioned_record_and_first_handoff (test_workflow_engine.TestRunLayout.test_start_creates_versioned_record_and_first_handoff) ... ok
+test_ids_and_outputs_reject_trailing_newline (test_workflow_parser.TestParserReviewRegressions.test_ids_and_outputs_reject_trailing_newline) ... ok
+test_optional_stage_cannot_require_approval (test_workflow_parser.TestParserReviewRegressions.test_optional_stage_cannot_require_approval) ... ok
+test_collects_multiple_errors (test_workflow_parser.TestWorkflowParser.test_collects_multiple_errors) ... ok
+test_example_workflow_validates_against_repo_registry (test_workflow_parser.TestWorkflowParser.test_example_workflow_validates_against_repo_registry) ... ok
+test_minimal_defaults (test_workflow_parser.TestWorkflowParser.test_minimal_defaults) ... ok
+test_preferred_defaults_to_first_eligible (test_workflow_parser.TestWorkflowParser.test_preferred_defaults_to_first_eligible) ... ok
+test_registry_is_optional (test_workflow_parser.TestWorkflowParser.test_registry_is_optional) ... ok
+test_rejects_bad_assurance (test_workflow_parser.TestWorkflowParser.test_rejects_bad_assurance) ... ok
+test_rejects_bad_fallback_rules (test_workflow_parser.TestWorkflowParser.test_rejects_bad_fallback_rules) ... ok
+test_rejects_bad_ids_and_semver (test_workflow_parser.TestWorkflowParser.test_rejects_bad_ids_and_semver) ... ok
+test_rejects_bad_independence_reference (test_workflow_parser.TestWorkflowParser.test_rejects_bad_independence_reference) ... ok
+test_rejects_bad_retry_policy (test_workflow_parser.TestWorkflowParser.test_rejects_bad_retry_policy) ... ok
+test_rejects_cycle_with_path (test_workflow_parser.TestWorkflowParser.test_rejects_cycle_with_path) ... ok
+test_rejects_dangling_dependency (test_workflow_parser.TestWorkflowParser.test_rejects_dangling_dependency) ... ok
+test_rejects_dangling_role (test_workflow_parser.TestWorkflowParser.test_rejects_dangling_role) ... ok
+test_rejects_duplicate_stage_ids (test_workflow_parser.TestWorkflowParser.test_rejects_duplicate_stage_ids) ... ok
+test_rejects_empty_evidence (test_workflow_parser.TestWorkflowParser.test_rejects_empty_evidence) ... ok
+test_rejects_empty_or_duplicate_eligible (test_workflow_parser.TestWorkflowParser.test_rejects_empty_or_duplicate_eligible) ... ok
+test_rejects_evidence_not_in_outputs (test_workflow_parser.TestWorkflowParser.test_rejects_evidence_not_in_outputs) ... ok
+test_rejects_input_from_non_dependency (test_workflow_parser.TestWorkflowParser.test_rejects_input_from_non_dependency) ... ok
+test_rejects_invalid_toml (test_workflow_parser.TestWorkflowParser.test_rejects_invalid_toml) ... ok
+test_rejects_missing_role_routing (test_workflow_parser.TestWorkflowParser.test_rejects_missing_role_routing) ... ok
+test_rejects_model_key_in_role (test_workflow_parser.TestWorkflowParser.test_rejects_model_key_in_role) ... ok
+test_rejects_preferred_not_eligible (test_workflow_parser.TestWorkflowParser.test_rejects_preferred_not_eligible) ... ok
+test_rejects_provider_key_in_role (test_workflow_parser.TestWorkflowParser.test_rejects_provider_key_in_role) ... ok
+test_rejects_routing_for_undeclared_role (test_workflow_parser.TestWorkflowParser.test_rejects_routing_for_undeclared_role) ... ok
+test_rejects_stage_without_acceptance (test_workflow_parser.TestWorkflowParser.test_rejects_stage_without_acceptance) ... ok
+test_rejects_unknown_keys (test_workflow_parser.TestWorkflowParser.test_rejects_unknown_keys) ... ok
+test_rejects_unknown_provider (test_workflow_parser.TestWorkflowParser.test_rejects_unknown_provider) ... ok
+test_rejects_unknown_required_skill (test_workflow_parser.TestWorkflowParser.test_rejects_unknown_required_skill) ... ok
+test_rejects_unsafe_output_names (test_workflow_parser.TestWorkflowParser.test_rejects_unsafe_output_names) ... ok
+test_rejects_unsupported_schema_version (test_workflow_parser.TestWorkflowParser.test_rejects_unsupported_schema_version) ... ok
+test_rejects_wrong_types (test_workflow_parser.TestWorkflowParser.test_rejects_wrong_types) ... ok
+test_roles_carry_no_provider_information (test_workflow_parser.TestWorkflowParser.test_roles_carry_no_provider_information) ... ok
+test_stage_states_cover_lifecycle (test_workflow_parser.TestWorkflowParser.test_stage_states_cover_lifecycle) ... ok
+test_warns_on_unknown_recommended_skill (test_workflow_parser.TestWorkflowParser.test_warns_on_unknown_recommended_skill) ... ok
+test_declared_fallback_is_applied_and_recorded (test_workflow_routing.TestCapabilityAndFallback.test_declared_fallback_is_applied_and_recorded) ... ok
+test_fallback_disabled_under_override_and_route (test_workflow_routing.TestCapabilityAndFallback.test_fallback_disabled_under_override_and_route) ... ok
+test_fallback_skips_targets_with_the_same_problem (test_workflow_routing.TestCapabilityAndFallback.test_fallback_skips_targets_with_the_same_problem) ... ok
+test_incompatible_required_skill_blocks_with_report (test_workflow_routing.TestCapabilityAndFallback.test_incompatible_required_skill_blocks_with_report) ... ok
+test_independence_never_claims_more_than_provider_distinctness (test_workflow_routing.TestCapabilityAndFallback.test_independence_never_claims_more_than_provider_distinctness) ... ok
+test_multi_provider_review_is_distinct_unless_shared (test_workflow_routing.TestCapabilityAndFallback.test_multi_provider_review_is_distinct_unless_shared) ... ok
+test_unavailable_fallback_requires_detection_and_a_rule (test_workflow_routing.TestCapabilityAndFallback.test_unavailable_fallback_requires_detection_and_a_rule) ... ok
+test_unavailable_without_rule_is_warning_not_switch (test_workflow_routing.TestCapabilityAndFallback.test_unavailable_without_rule_is_warning_not_switch) ... ok
+test_each_stage_gets_its_preferred_provider (test_workflow_routing.TestMultiProviderRouting.test_each_stage_gets_its_preferred_provider) ... ok
+test_ineligible_route_fails_clearly (test_workflow_routing.TestMultiProviderRouting.test_ineligible_route_fails_clearly) ... ok
+test_order_is_topological_with_declaration_tiebreak (test_workflow_routing.TestMultiProviderRouting.test_order_is_topological_with_declaration_tiebreak) ... ok
+test_override_and_routes_are_mutually_exclusive (test_workflow_routing.TestMultiProviderRouting.test_override_and_routes_are_mutually_exclusive) ... ok
+test_overrides_rejected_when_workflow_forbids_them (test_workflow_routing.TestMultiProviderRouting.test_overrides_rejected_when_workflow_forbids_them) ... ok
+test_plan_exposes_handoff_and_output_paths (test_workflow_routing.TestMultiProviderRouting.test_plan_exposes_handoff_and_output_paths) ... ok
+test_plan_is_deterministic (test_workflow_routing.TestMultiProviderRouting.test_plan_is_deterministic) ... ok
+test_planning_performs_no_writes (test_workflow_routing.TestMultiProviderRouting.test_planning_performs_no_writes) ... ok
+test_route_overrides_one_stage_only (test_workflow_routing.TestMultiProviderRouting.test_route_overrides_one_stage_only) ... ok
+test_route_to_unknown_stage_fails (test_workflow_routing.TestMultiProviderRouting.test_route_to_unknown_stage_fails) ... ok
+test_unknown_provider_fails_clearly (test_workflow_routing.TestMultiProviderRouting.test_unknown_provider_fails_clearly) ... ok
+test_override_maps_every_eligible_stage (test_workflow_routing.TestSingleProviderOverride.test_override_maps_every_eligible_stage) ... ok
+test_override_preserves_roles_and_gates (test_workflow_routing.TestSingleProviderOverride.test_override_preserves_roles_and_gates) ... ok
+test_override_to_ineligible_role_blocks_instead_of_switching (test_workflow_routing.TestSingleProviderOverride.test_override_to_ineligible_role_blocks_instead_of_switching) ... ok
+test_single_provider_reports_reduced_independence (test_workflow_routing.TestSingleProviderOverride.test_single_provider_reports_reduced_independence) ... ok
+
+----------------------------------------------------------------------
+Ran 281 tests in 1.834s
+
+OK
+usage: aurora [-h] [--version]
+              {detect,list,validate,doctor,providers,workflow,install,update,remove} ...
+
+Aurora: Universal Centralized Manager for Coding-Agent Skills (compatibility
+alias: awb).
+
+positional arguments:
+  {detect,list,validate,doctor,providers,workflow,install,update,remove}
+                        Available subcommands
+    detect              Non-mutating probe of available agent environments
+    list                List canonical skills defined in registry
+    validate            Validate registry syntax, schema, and dependencies
+    doctor              Run system diagnostics and adapter readiness checks
+    providers           List execution providers (coding CLIs) and PATH
+                        detection
+    workflow            Validate, plan, and track role-based workflows (manual
+                        handoff)
+    install             Install a skill transactionally under ProcessLock
+    update              Update or re-install an AWB-managed skill
+                        transactionally under ProcessLock
+    remove              Remove an AWB-managed skill transactionally under
+                        ProcessLock
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+Aurora (aurora) 0.1.0
+Skill Installation Successful:
+  Skill:       principles (v1.0.0)
+  Destination: /tmp/awb_p5_rpaws670/skills/principles
+  Steps:       3 applied transactionally under ProcessLock
