@@ -165,3 +165,23 @@ fn run_commands_report_errors_without_tracebacks() {
     assert!(r.stderr.starts_with("Error:"), "{}", r.stderr);
     assert!(!root.join(".awb.lock").exists());
 }
+
+#[test]
+fn waive_via_cli_requires_reason_and_records_it() {
+    let (_t, bin, root) = setup();
+    let root_s = root.display().to_string();
+    aurora(&bin, &["workflow", "start", &example(), "--run-root", &root_s, "--run-id", "w", "--no-detect"]);
+    let run = root.join("w").display().to_string();
+    aurora(&bin, &["workflow", "submit", "--run", &run, "--stage", "plan"]);
+    let r = aurora(&bin, &["workflow", "waive", "--run", &run, "--stage", "plan", "--by", "lead"]);
+    assert_eq!(r.code, 2, "--reason is required");
+    let r = aurora(
+        &bin,
+        &["workflow", "waive", "--run", &run, "--stage", "plan", "--reason", "spike only", "--by", "lead"],
+    );
+    assert_eq!(r.code, 0, "{}{}", r.stdout, r.stderr);
+    let status = json(&aurora(&bin, &["workflow", "status", "--run", &run, "--json"]).stdout);
+    assert_eq!(status["waived"], serde_json::json!(["plan"]));
+    let text = aurora(&bin, &["workflow", "status", "--run", &run]).stdout;
+    assert!(text.contains("[waived] accepted by recorded waiver: plan"), "{text}");
+}

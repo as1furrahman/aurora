@@ -33,6 +33,7 @@ const STAGE_KEYS: &[&str] = &[
     "on_exhausted",
     "requires_approval",
     "independent_of",
+    "verdict",
     "acceptance",
 ];
 const CRITERION_KEYS: &[&str] = &["id", "description", "evidence"];
@@ -342,6 +343,21 @@ fn parse_stages(c: &mut Checker, raw: Option<&Value>, roles: &[Role]) -> Vec<Sta
         let optional = c.boolean(&loc, &body, "optional", false);
         let requires_approval = c.boolean(&loc, &body, "requires_approval", false);
         let independent_of = c.str_list(&loc, &body, "independent_of");
+        let verdict = match body.get("verdict") {
+            None => None,
+            Some(Value::String(v)) => {
+                if !outputs.contains(v) {
+                    c.error(&loc, format!("verdict '{v}' must be one of the stage outputs {}", py_list(&outputs)));
+                } else if !v.ends_with(".json") {
+                    c.error(&loc, format!("verdict '{v}' must be a .json file"));
+                }
+                Some(v.clone())
+            }
+            Some(_) => {
+                c.error(&loc, "'verdict' must be a non-empty string");
+                None
+            }
+        };
         stages.push(Stage {
             id: stage_id,
             role,
@@ -355,6 +371,7 @@ fn parse_stages(c: &mut Checker, raw: Option<&Value>, roles: &[Role]) -> Vec<Sta
             on_exhausted,
             requires_approval,
             independent_of,
+            verdict,
         });
     }
 

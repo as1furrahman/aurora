@@ -10,10 +10,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use aurora_core::registry::Registry;
 use aurora_core::util::{format_utc, py_list, sha256_hex};
-use aurora_core::workflow::handoff::render_handoff;
+use aurora_core::workflow::handoff::{UpstreamNote, render_handoff_with_notes};
 use aurora_core::workflow::model::NOT_APPLICABLE_FILE;
 use aurora_core::workflow::record::{
-    Approval, Handoff, RUN_KIND, RUN_SCHEMA_VERSION, RunRecord, StageRecord, WORKFLOW_FILE, WorkflowRef,
+    Approval, GateOutcome, Handoff, RUN_KIND, RUN_SCHEMA_VERSION, RunRecord, StageRecord, WORKFLOW_FILE, Waiver,
+    WorkflowRef, parse_verdict,
 };
 use aurora_core::workflow::{PlanOptions, StageState, WorkflowDefinition, build_plan, parse_workflow_bytes};
 use serde::Serialize;
@@ -74,6 +75,12 @@ pub struct StatusReport {
     pub awaiting_approval: Vec<String>,
     pub drift: Vec<Drift>,
     pub reduced_independence: Vec<String>,
+    /// Stages that passed with concerns (omitted when empty, keeping Python parity).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub concerns: Vec<String>,
+    /// Stages accepted by recorded waiver (omitted when empty).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub waived: Vec<String>,
     pub warnings: Vec<String>,
 }
 
@@ -182,6 +189,7 @@ impl Engine {
             },
             stages: plan.stages.iter().map(|s| (s.id.clone(), StageRecord::new(&s.provider))).collect(),
             events: Vec::new(),
+            gates: BTreeMap::new(),
             plan,
         };
         let created = json!({
@@ -284,7 +292,8 @@ impl Engine {
         now: &str,
     ) -> Result<Option<String>, RunError> {
         let Some(stage_plan) = record.plan.stage(sid).cloned() else { return Ok(None) };
-        let content = render_handoff(wf, &stage_plan, run_dir, &record.run_id);
+        let notes = upstream_notes(wf, record, sid);
+        let content = render_handoff_with_notes(wf, &stage_plan, run_dir, &record.run_id, &notes);
         let expected = sha256_hex(content.as_bytes());
         let rel = stage_plan.handoff_path.clone();
         self.store.ensure_dir(run_dir, "handoff")?;
@@ -443,6 +452,26 @@ impl Engine {
                 }
             }
 
+            // Structured verdict (Step 6): `fail` fails the gate; `pass`/`concerns` are recorded.
+            let mut gate: Option<GateOutcome> = None;
+            if let Some(name) = &stage.verdict {
+                let rel = format!("artifacts/{stage_id}/{name}");
+                if evidence.contains_key(&rel) {
+                    let parsed = self
+                        .store
+                        .read_file(&run_dir, &rel, EVIDENCE_MAX_BYTES)
+                        .map_err(|e| e.to_string())
+                        .and_then(|info| parse_verdict(&info.content));
+                    match parsed {
+                        Err(reason) => missing.push(format!("verdict invalid: {rel} ({reason})")),
+                        Ok((outcome, findings)) if outcome == "fail" => {
+                            missing.push(format!("verdict outcome is fail ({} finding(s)): {rel}", findings.len()));
+                        }
+                        Ok((outcome, findings)) => gate = Some(GateOutcome { outcome, findings, waiver: None }),
+                    }
+                }
+            }
+
             let Some(st) = record.stages.get_mut(stage_id) else { return Err(RunError::Run("stage vanished".into())) };
             // Resubmitting while awaiting approval re-evaluates the evidence (e.g. after drift).
             st.awaiting_approval = false;
@@ -470,6 +499,14 @@ impl Engine {
                 ("failed", json!({"attempt": attempt, "missing": missing}))
             };
             record.add_event(&now, Some(stage_id), event, detail);
+            match gate.filter(|_| missing.is_empty()) {
+                Some(gate) => {
+                    record.gates.insert(stage_id.to_string(), gate);
+                }
+                None => {
+                    record.gates.remove(stage_id);
+                }
+            }
         }
 
         let warnings = self.advance(&wf, &mut record, &run_dir, &now)?;
@@ -535,6 +572,49 @@ impl Engine {
             st.approval = Some(Approval { by: by.to_string(), at: now.clone() });
         }
         record.add_event(&now, Some(stage_id), "approved", json!({"by": by}));
+        let warnings = self.advance(&wf, &mut record, &run_dir, &now)?;
+        self.store.save_record(&run_dir, &record)?;
+        Ok(ApproveResult { stage: stage_id.to_string(), state: record.stages[stage_id].state, warnings })
+    }
+
+    /// Accept a FAILED or BLOCKED stage by recorded human decision (gate outcome `waived`).
+    /// The reason and approver are stored and shown to every downstream role.
+    pub fn waive(
+        &self,
+        run_dir: &Path,
+        stage_id: &str,
+        reason: &str,
+        by: &str,
+        now: Option<&str>,
+    ) -> Result<ApproveResult, RunError> {
+        let now = now_or(now);
+        if reason.trim().is_empty() {
+            return Err(RunError::Run("--reason must explain why the gate is waived".into()));
+        }
+        if by.trim().is_empty() {
+            return Err(RunError::Run("--by must name the person waiving the gate".into()));
+        }
+        let run_dir = self.require_run_dir(run_dir)?;
+        let _lock = self.store.lock(&run_dir)?;
+        let (run_dir, mut record, wf) = self.open(&run_dir)?;
+        let Some(st) = record.stages.get_mut(stage_id) else {
+            return Err(RunError::Run(format!("Unknown stage '{stage_id}'")));
+        };
+        if !matches!(st.state, StageState::Failed | StageState::Blocked) {
+            return Err(RunError::Run(format!(
+                "Stage '{stage_id}' is {}; only FAILED or BLOCKED stages can be waived",
+                st.state
+            )));
+        }
+        st.state = StageState::Passed;
+        st.escalated = false;
+        st.awaiting_approval = false;
+        let waiver = Waiver { by: by.to_string(), at: now.clone(), reason: reason.to_string() };
+        record.gates.insert(
+            stage_id.to_string(),
+            GateOutcome { outcome: "waived".into(), findings: Vec::new(), waiver: Some(waiver) },
+        );
+        record.add_event(&now, Some(stage_id), "waived", json!({"by": by, "reason": reason}));
         let warnings = self.advance(&wf, &mut record, &run_dir, &now)?;
         self.store.save_record(&run_dir, &record)?;
         Ok(ApproveResult { stage: stage_id.to_string(), state: record.stages[stage_id].state, warnings })
@@ -617,7 +697,44 @@ impl Engine {
             stages,
             drift,
             reduced_independence: reduced,
+            concerns: gate_stages(&record, "concerns"),
+            waived: gate_stages(&record, "waived"),
             warnings: record.plan.warnings.clone(),
         })
     }
+}
+
+/// Stage ids (in plan order) whose recorded gate outcome is `outcome`.
+fn gate_stages(record: &RunRecord, outcome: &str) -> Vec<String> {
+    record.plan.order.iter().filter(|id| record.gates.get(*id).is_some_and(|g| g.outcome == outcome)).cloned().collect()
+}
+
+/// Concerns and waivers from every transitive dependency of `sid`, in plan order.
+fn upstream_notes(wf: &WorkflowDefinition, record: &RunRecord, sid: &str) -> Vec<UpstreamNote> {
+    let mut ancestors = std::collections::HashSet::new();
+    let mut stack: Vec<&str> =
+        wf.stage(sid).map(|s| s.depends_on.iter().map(String::as_str).collect()).unwrap_or_default();
+    while let Some(dep) = stack.pop() {
+        if ancestors.insert(dep.to_string())
+            && let Some(stage) = wf.stage(dep)
+        {
+            stack.extend(stage.depends_on.iter().map(String::as_str));
+        }
+    }
+    let mut notes = Vec::new();
+    for id in record.plan.order.iter().filter(|id| ancestors.contains(*id)) {
+        let Some(gate) = record.gates.get(id) else { continue };
+        match (&gate.waiver, gate.outcome.as_str()) {
+            (Some(w), _) => {
+                notes.push(UpstreamNote::Waived { stage: id.clone(), by: w.by.clone(), reason: w.reason.clone() })
+            }
+            (None, "concerns") => notes.extend(gate.findings.iter().map(|f| UpstreamNote::Concern {
+                stage: id.clone(),
+                severity: f.severity.clone(),
+                summary: f.summary.clone(),
+            })),
+            _ => {}
+        }
+    }
+    notes
 }

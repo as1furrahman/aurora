@@ -95,6 +95,8 @@ pub struct Stage {
     pub on_exhausted: String,
     pub requires_approval: bool,
     pub independent_of: Vec<String>,
+    /// Optional structured verdict output (`<name>.json`): pass | concerns | fail + findings.
+    pub verdict: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

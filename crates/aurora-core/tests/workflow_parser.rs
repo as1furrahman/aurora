@@ -317,3 +317,24 @@ fn rejects_non_utf8_bytes() {
     let err = parse_workflow_bytes(&[0xff, 0xfe, 0x00], None, "bin").expect_err("invalid");
     assert!(err.to_string().contains("UTF-8"));
 }
+
+// --- Step 6: structured verdicts (additive to schema v1) ----------------------
+
+#[test]
+fn verdict_must_be_a_json_output() {
+    let base = MINIMAL.replace("outputs = [\"check.md\"]", "outputs = [\"check.md\", \"check.json\"]");
+    let ok = parse(
+        &base.replace("independent_of = [\"build\"]\n", "independent_of = [\"build\"]\nverdict = \"check.json\"\n"),
+    )
+    .expect("valid verdict");
+    assert_eq!(ok.stage("check").expect("check").verdict.as_deref(), Some("check.json"));
+    invalid(
+        &base.replace("independent_of = [\"build\"]\n", "independent_of = [\"build\"]\nverdict = \"other.json\"\n"),
+        &["verdict", "outputs"],
+    );
+    invalid(
+        &base.replace("independent_of = [\"build\"]\n", "independent_of = [\"build\"]\nverdict = \"check.md\"\n"),
+        &["verdict", ".json"],
+    );
+    assert!(parse(MINIMAL).expect("valid").stage("check").expect("check").verdict.is_none());
+}

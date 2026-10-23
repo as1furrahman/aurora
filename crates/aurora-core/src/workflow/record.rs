@@ -46,6 +46,10 @@ pub struct RunRecord {
     pub plan: Plan,
     pub stages: IndexMap<String, StageRecord>,
     pub events: Vec<Event>,
+    /// Gate outcomes beyond plain pass (structured verdicts, waivers). A top-level map keeps
+    /// stage records at exactly the v1 keys, so the Python implementation still loads the run.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub gates: BTreeMap<String, GateOutcome>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -100,6 +104,49 @@ pub struct Handoff {
     pub preserved_existing: bool,
     #[serde(default)]
     pub on_disk_sha256: Option<String>,
+}
+
+/// Outcome of a stage gate: `pass` or `concerns` (from a structured verdict) or `waived`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GateOutcome {
+    pub outcome: String,
+    #[serde(default)]
+    pub findings: Vec<Finding>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub waiver: Option<Waiver>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Finding {
+    pub severity: String,
+    pub summary: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Waiver {
+    pub by: String,
+    pub at: String,
+    pub reason: String,
+}
+
+/// Parse a structured verdict: `{"outcome": "pass"|"concerns"|"fail", "findings": [{"severity", "summary"}]}`.
+pub fn parse_verdict(bytes: &[u8]) -> Result<(String, Vec<Finding>), String> {
+    let value: Value = serde_json::from_slice(bytes).map_err(|e| format!("not valid JSON: {e}"))?;
+    let outcome = value.get("outcome").and_then(Value::as_str).unwrap_or_default();
+    if !["pass", "concerns", "fail"].contains(&outcome) {
+        return Err("'outcome' must be one of 'pass', 'concerns', 'fail'".into());
+    }
+    let findings = value
+        .get("findings")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "'findings' must be an array".to_string())?
+        .iter()
+        .map(|f| match (f.get("severity").and_then(Value::as_str), f.get("summary").and_then(Value::as_str)) {
+            (Some(severity), Some(summary)) => Ok(Finding { severity: severity.into(), summary: summary.into() }),
+            _ => Err("each finding needs string 'severity' and 'summary'".to_string()),
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok((outcome.to_string(), findings))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -196,3 +196,53 @@ absolute run path, so moving a run directory makes unedited bundles look edited.
 The loader rejects unknown `schema_version` or `kind`, invalid states, and a stage set that does not
 match the pinned workflow. Future versions must add a migration rather than reinterpret v1
 (ADR-0003).
+
+## 7. Additive extensions to schema v1 (Rust implementation)
+
+These fields were added after the Python reference was frozen (ADR-0006, R1 Step 6). They are
+**additive**. A definition that does not use them is valid in both implementations and produces
+identical plans and runs. The Python implementation rejects a definition that does use them,
+because of its strict unknown-key rule. It does still load and continue *runs* that carry the
+new data: gate data lives in a top-level `gates` map, which Python tolerates, while stage
+records keep exactly the v1 keys.
+
+### 7.1 Structured verdicts and gate outcomes
+
+```toml
+[[stages]]
+id = "review"
+outputs = ["review.md", "review.json"]
+verdict = "review.json"        # must be one of the outputs and end in .json
+```
+
+`review.json` takes this form:
+`{"outcome": "pass" | "concerns" | "fail", "findings": [{"severity": "...", "summary": "..."}]}`.
+
+On `submit`, after the usual output and criterion checks:
+
+| Verdict | Effect |
+|---|---|
+| `pass` | The gate passes. Recorded in `gates.<stage>`. |
+| `concerns` | The gate passes. Findings are recorded and listed under **"Open concerns from upstream stages"** in every downstream handoff (transitive dependents). `status` lists the stage under `concerns`. |
+| `fail` | Counts as missing evidence (`verdict outcome is fail (n finding(s))`). The stage becomes FAILED, or BLOCKED once attempts run out. |
+| malformed | Counts as missing evidence (`verdict invalid: … (reason)`). |
+
+### 7.2 Waivers
+
+`aurora workflow waive --run R --stage S --reason TEXT --by NAME` accepts a **FAILED or BLOCKED**
+stage by recorded human decision (BMAD's WAIVED, Stage-Gate's "go with conditions"). Rules:
+
+- `--reason` and `--by` are required.
+- The stage becomes `PASSED` and its escalation is cleared.
+- `gates.<stage> = {outcome: "waived", waiver: {by, at, reason}}`, and a `waived` event is
+  recorded.
+- Every downstream handoff shows `WAIVED by <name>: <reason>`.
+- `status` lists the stage under `waived`.
+
+PENDING, RUNNING and PASSED stages cannot be waived.
+
+### 7.3 Run-record and status additions
+
+- `run.json` may contain `gates: {<stage>: {outcome, findings, waiver?}}`. It is omitted when empty.
+- `status --json` may contain `concerns: [...]` and `waived: [...]`. Both are omitted when empty,
+  so status output for runs without gates matches Python exactly.

@@ -79,6 +79,10 @@ pub struct PlannedStage {
     pub requires_approval: bool,
     pub max_attempts: u32,
     pub on_exhausted: String,
+    /// Run-relative path of the structured verdict, when the stage declares one (omitted
+    /// otherwise, so plans without verdicts stay identical to the Python plan).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verdict: Option<String>,
 }
 
 impl PlannedStage {
@@ -411,5 +415,6 @@ fn plan_stage(
         requires_approval: stage.requires_approval,
         max_attempts: stage.max_attempts,
         on_exhausted: stage.on_exhausted.clone(),
+        verdict: stage.verdict.as_ref().map(|v| artifact(&stage.id, v)),
     }
 }

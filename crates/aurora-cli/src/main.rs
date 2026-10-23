@@ -80,6 +80,20 @@ enum WorkflowCommand {
         #[arg(long)]
         not_applicable: bool,
     },
+    /// Accept a FAILED or BLOCKED stage by recorded decision (reason and approver are kept)
+    Waive {
+        #[command(flatten)]
+        run: runs::RunArgs,
+        /// Stage id
+        #[arg(long)]
+        stage: String,
+        /// Why the gate is waived (shown to every downstream role)
+        #[arg(long)]
+        reason: String,
+        /// Name of the person waiving the gate
+        #[arg(long)]
+        by: String,
+    },
     /// Record human approval for a stage awaiting approval
     Approve {
         #[command(flatten)]
@@ -141,6 +155,7 @@ fn main() -> ExitCode {
                 runs::submit(&run, &stage, &met, not_applicable)
             }
             WorkflowCommand::Approve { run, stage, by } => runs::approve(&run, &stage, &by),
+            WorkflowCommand::Waive { run, stage, reason, by } => runs::waive(&run, &stage, &reason, &by),
         },
     };
     ExitCode::from(code)

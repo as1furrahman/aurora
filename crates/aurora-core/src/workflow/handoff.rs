@@ -14,7 +14,26 @@ fn or_none(items: &[String]) -> String {
 
 /// Render the bundle for one planned stage. Returns an empty string only if the plan names a
 /// stage or provider the definition does not know (impossible for parser-validated input).
+/// A gate outcome from an upstream stage that the next role must see.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UpstreamNote {
+    Concern { stage: String, severity: String, summary: String },
+    Waived { stage: String, by: String, reason: String },
+}
+
 pub fn render_handoff(wf: &WorkflowDefinition, stage_plan: &PlannedStage, run_dir: &Path, run_id: &str) -> String {
+    render_handoff_with_notes(wf, stage_plan, run_dir, run_id, &[])
+}
+
+/// As [`render_handoff`], plus an "Open concerns" section when upstream gates passed with
+/// concerns or were waived. With no notes the output is byte-identical to the Python bundle.
+pub fn render_handoff_with_notes(
+    wf: &WorkflowDefinition,
+    stage_plan: &PlannedStage,
+    run_dir: &Path,
+    run_id: &str,
+    upstream: &[UpstreamNote],
+) -> String {
     let (Some(stage), Ok(provider)) = (wf.stage(&stage_plan.id), get_provider(&stage_plan.provider)) else {
         return String::new();
     };
@@ -65,6 +84,25 @@ pub fn render_handoff(wf: &WorkflowDefinition, stage_plan: &PlannedStage, run_di
         lines.push("- none".to_string());
     }
     lines.extend(stage_plan.inputs.iter().map(|p| format!("- `{}`", run_dir.join(p).display())));
+
+    if !upstream.is_empty() {
+        lines.extend(
+            [
+                "",
+                "## Open concerns from upstream stages",
+                "",
+                "These were accepted with concerns or waived. Address or explicitly acknowledge each one.",
+                "",
+            ]
+            .map(String::from),
+        );
+        for note in upstream {
+            lines.push(match note {
+                UpstreamNote::Concern { stage, severity, summary } => format!("- `{stage}` ({severity}): {summary}"),
+                UpstreamNote::Waived { stage, by, reason } => format!("- `{stage}` WAIVED by {by}: {reason}"),
+            });
+        }
+    }
 
     lines.extend(
         ["", "## Required outputs", "", "Write each file below. Only these files count as evidence:", ""]

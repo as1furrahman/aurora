@@ -83,4 +83,13 @@ waited=$(python3 -I -c "print(round($(date +%s.%N) - $start, 2))")
 wait $holder
 python3 -I -c "import sys; sys.exit(0 if $waited >= 1.5 else 1)" && ok "rust waited ${waited}s for the python lock" || bad "rust did not wait for the python lock (${waited}s)"
 
+# --- E: Python still loads runs that carry Rust-only gate data (waiver) --------------------
+"$RUST" workflow start "$EX" --run-root "$R" --run-id e --no-detect >/dev/null
+E="$R/e"
+"$RUST" workflow submit --run "$E" --stage plan >/dev/null || true
+expect_code 0 "$RUST" workflow waive --run "$E" --stage plan --reason "parity check" --by parity
+py workflow status --run "$E" --json >"$R/py-e.json" && ok "python loads a run with a recorded waiver" || bad "python cannot load a waived run"
+state=$(python3 -I -c 'import json,sys; r=json.load(open(sys.argv[1])); print({s["id"]: s["state"] for s in r["stages"]}["plan"], {s["id"]: s["state"] for s in r["stages"]}["implement"])' "$R/py-e.json")
+[[ $state == "PASSED RUNNING" ]] && ok "python sees the waived stage as passed and continues" || bad "python state after waiver: $state"
+
 exit $fail

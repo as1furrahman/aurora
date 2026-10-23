@@ -116,6 +116,12 @@ pub fn print_status(report: &StatusReport) {
     for d in &report.drift {
         println!("  {} {}: {} ({})", paint(BAD, "[DRIFT]"), d.stage, d.path, d.problem);
     }
+    if !report.concerns.is_empty() {
+        println!("  {} passed with concerns: {}", paint(WARN, "[concerns]"), report.concerns.join(", "));
+    }
+    if !report.waived.is_empty() {
+        println!("  {} accepted by recorded waiver: {}", paint(WARN, "[waived]"), report.waived.join(", "));
+    }
     if !report.reduced_independence.is_empty() {
         println!("  [independence] reduced (same provider): {}", report.reduced_independence.join(", "));
     }
@@ -187,6 +193,20 @@ pub fn approve(args: &RunArgs, stage: &str, by: &str) -> u8 {
                 print_json(&result);
             } else {
                 println!("Stage {}: {} (approved by {by})", result.stage, paint(OK, result.state));
+            }
+            0
+        }
+    }
+}
+
+pub fn waive(args: &RunArgs, stage: &str, reason: &str, by: &str) -> u8 {
+    match Engine::host().waive(&args.run, stage, reason, by, None) {
+        Err(e) => error(e),
+        Ok(result) => {
+            if args.json {
+                print_json(&result);
+            } else {
+                println!("Stage {}: {} (gate waived by {by}: {reason})", result.stage, paint(WARN, result.state));
             }
             0
         }
