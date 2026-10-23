@@ -2,4 +2,5 @@
 
 pub mod install;
 pub mod roles;
+pub mod runs;
 pub mod skills;

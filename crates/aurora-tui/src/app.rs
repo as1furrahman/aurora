@@ -8,10 +8,12 @@ use std::collections::VecDeque;
 use std::path::PathBuf;
 
 use aurora_app::install::{InstallRequest, Planned, WorkflowSource, load_workflow};
+use aurora_app::runs::RunSummary;
 use aurora_core::catalog::{Catalog, Tier};
 use aurora_core::presets::PRESETS;
 use aurora_core::providers::PROVIDER_IDS;
 use aurora_core::workflow::WorkflowDefinition;
+use aurora_fs::engine::{ApproveResult, StatusReport, SubmitResult};
 use aurora_skills::apply::UndoReport;
 use aurora_skills::plan::ActionKind;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -61,6 +63,25 @@ pub enum Action {
     StartUndo,
     /// Confirm the open dialog.
     ConfirmYes,
+    /// Runs: open the selected run's pipeline, or the selected stage's handoff.
+    OpenRun,
+    /// Runs: reload the run list.
+    ReloadRuns,
+    /// Runs: open the submit form for the selected stage.
+    StartSubmit,
+    /// Submit form: check or uncheck the selected criterion.
+    ToggleCheck,
+    /// Submit form: submit the checked criteria.
+    SubmitForm,
+    /// Runs: ask who approves the selected stage.
+    StartApprove,
+    /// Runs: verify the run and re-issue missing handoffs.
+    Resume,
+    /// Runs: copy the selected stage's handoff path to the clipboard (OSC 52).
+    CopyPath,
+    InputChar(char),
+    InputBackspace,
+    InputAccept,
 }
 
 /// Work for the event loop to run off the UI thread.
@@ -78,6 +99,35 @@ pub enum Command {
     Undo {
         project: PathBuf,
     },
+    LoadRuns {
+        root: PathBuf,
+    },
+    ReadText {
+        title: String,
+        run_dir: PathBuf,
+        rel: String,
+    },
+    LoadCriteria {
+        run_dir: PathBuf,
+        stage: String,
+    },
+    Submit {
+        run_dir: PathBuf,
+        stage: String,
+        met: Vec<String>,
+    },
+    Approve {
+        run_dir: PathBuf,
+        stage: String,
+        by: String,
+    },
+    Resume {
+        run_dir: PathBuf,
+    },
+    /// Put text on the terminal clipboard (handled by the event loop).
+    Copy {
+        text: String,
+    },
 }
 
 /// Results coming back from the event loop.
@@ -91,6 +141,27 @@ pub enum Msg {
     /// A one-line outcome, or why nothing was applied.
     Applied(Result<String, String>),
     Undone(Result<UndoReport, String>),
+    Runs(Result<Vec<RunSummary>, String>),
+    Text {
+        title: String,
+        result: Result<String, String>,
+    },
+    Criteria {
+        run_dir: PathBuf,
+        stage: String,
+        result: Result<Vec<(String, String)>, String>,
+    },
+    Submitted {
+        stage: String,
+        result: Result<SubmitResult, String>,
+    },
+    Approved {
+        stage: String,
+        result: Result<ApproveResult, String>,
+    },
+    /// Boxed: a status report is large.
+    Resumed(Box<Result<StatusReport, String>>),
+    Notice(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -157,6 +228,20 @@ pub enum Popup {
         text: String,
         scroll: u16,
     },
+    /// Acceptance criteria as checkboxes: (id, description, checked).
+    Submit {
+        run_dir: PathBuf,
+        stage: String,
+        items: Vec<(String, String, bool)>,
+        cursor: usize,
+    },
+    /// A one-line text prompt (the approver's name).
+    Input {
+        prompt: String,
+        text: String,
+        run_dir: PathBuf,
+        stage: String,
+    },
 }
 
 /// Event-loop ticks a toast stays visible (100 ms each).
@@ -221,6 +306,13 @@ pub struct App {
     pub busy: Option<&'static str>,
     /// The outcome of the last apply or undo, kept after its toast fades.
     pub last_result: Option<String>,
+    /// Runs under the run root.
+    pub runs: Vec<RunSummary>,
+    pub runs_error: Option<String>,
+    /// The run whose pipeline is open.
+    pub run_open: Option<usize>,
+    /// Cursor in the open pipeline.
+    pub stage_cursor: usize,
     toast: Option<(String, u64)>,
     generation: u64,
     commands: VecDeque<Command>,
@@ -249,6 +341,10 @@ impl App {
             reviewed: Vec::new(),
             busy: None,
             last_result: None,
+            runs: Vec::new(),
+            runs_error: None,
+            run_open: None,
+            stage_cursor: 0,
             toast: None,
             generation: 0,
             commands: VecDeque::new(),
@@ -257,7 +353,14 @@ impl App {
             filter_edit: None,
         };
         app.request_plan();
+        app.load_runs();
         app
+    }
+
+    fn load_runs(&mut self) {
+        if let Some(root) = &self.opts.run_root {
+            self.commands.push_back(Command::LoadRuns { root: root.clone() });
+        }
     }
 
     /// The `aurora skills plan` request for the current settings.
@@ -331,7 +434,66 @@ impl App {
                 }
                 self.request_plan();
             }
+            other => self.receive_runs(other),
         }
+    }
+
+    fn receive_runs(&mut self, msg: Msg) {
+        match msg {
+            Msg::Runs(Ok(list)) => {
+                self.runs = list;
+                self.runs_error = None;
+            }
+            Msg::Runs(Err(e)) => self.runs_error = Some(e),
+            Msg::Text { title, result } => match result {
+                Ok(text) => self.popups.push(Popup::Viewer { title, text, scroll: 0 }),
+                Err(e) => self.notify(e),
+            },
+            Msg::Criteria { run_dir, stage, result } => match result {
+                Ok(c) if c.is_empty() => self.notify(format!("{stage} has no acceptance criteria")),
+                Ok(c) => {
+                    let items = c.into_iter().map(|(id, d)| (id, d, false)).collect();
+                    self.popups.push(Popup::Submit { run_dir, stage, items, cursor: 0 });
+                }
+                Err(e) => self.notify(e),
+            },
+            Msg::Submitted { stage, result } => {
+                match result {
+                    Ok(r) => {
+                        let mut msg = format!("{stage}: {}", r.state);
+                        if r.awaiting_approval {
+                            msg.push_str(" · awaiting approval (A approves)");
+                        }
+                        if r.escalated {
+                            msg.push_str(" · escalated");
+                        }
+                        if !r.missing.is_empty() {
+                            msg.push_str(&format!(" · missing {}", r.missing.join(", ")));
+                        }
+                        self.notify(msg);
+                    }
+                    Err(e) => self.notify(format!("{stage}: {e}")),
+                }
+                self.load_runs();
+            }
+            Msg::Approved { stage, result } => {
+                match result {
+                    Ok(r) => self.notify(format!("{stage} approved: {}", r.state)),
+                    Err(e) => self.notify(format!("{stage}: {e}")),
+                }
+                self.load_runs();
+            }
+            Msg::Resumed(result) => {
+                match *result {
+                    Ok(r) => self.notify(format!("resumed {}: {} warnings", r.run_id, r.warnings.len())),
+                    Err(e) => self.notify(e),
+                }
+                self.load_runs();
+            }
+            Msg::Notice(m) => self.notify(m),
+            _ => {}
+        }
+        self.clamp();
     }
 
     fn record(&mut self, msg: String) {
@@ -363,11 +525,17 @@ impl App {
             (Tab::Skills, crate::screens::skills::rows(self).len()),
             (Tab::Roles, crate::screens::roles::rows(self).len()),
             (Tab::Install, crate::screens::install::rows(self).len()),
+            (Tab::Runs, self.runs.len()),
         ];
         for (tab, len) in lens {
             let c = &mut self.cursor[tab.index()];
             *c = (*c).min(len.saturating_sub(1));
         }
+        if self.run_open.is_some_and(|i| i >= self.runs.len()) {
+            self.run_open = None;
+        }
+        let stages = crate::screens::runs::open_run(self).map_or(0, |r| r.stages.len());
+        self.stage_cursor = self.stage_cursor.min(stages.saturating_sub(1));
     }
 
     pub fn help_open(&self) -> bool {
@@ -399,6 +567,8 @@ impl App {
                 Some(Popup::Help { .. }) => Ctx::Help,
                 Some(Popup::Confirm { .. }) => Ctx::Confirm,
                 Some(Popup::Viewer { .. }) => Ctx::Viewer,
+                Some(Popup::Submit { .. }) => Ctx::Form,
+                Some(Popup::Input { .. }) => Ctx::Input,
                 None => Ctx::Normal,
             }
         }
@@ -411,6 +581,10 @@ impl App {
         let action = match key.code {
             KeyCode::Char(c) if typed(c) => Some(Action::FilterChar(c)),
             KeyCode::Backspace if ctx == Ctx::Filter => Some(Action::FilterBackspace),
+            KeyCode::Char(c) if ctx == Ctx::Input && !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                Some(Action::InputChar(c))
+            }
+            KeyCode::Backspace if ctx == Ctx::Input => Some(Action::InputBackspace),
             _ if ctx == Ctx::Normal => resolve(&[self.tab.ctx(), Ctx::Normal, Ctx::Global], key),
             _ => resolve(&[ctx, Ctx::Global], key),
         };
@@ -457,7 +631,9 @@ impl App {
                 self.popups.pop();
             }
             Action::Back => {
-                if !self.filter.is_empty() {
+                if self.tab == Tab::Runs && self.run_open.is_some() && self.filter.is_empty() {
+                    self.run_open = None;
+                } else if !self.filter.is_empty() {
                     self.filter.clear();
                 } else if self.focus == Focus::Detail {
                     self.focus = Focus::List;
@@ -473,8 +649,91 @@ impl App {
             Action::StartApply => self.start_apply(),
             Action::StartUndo => self.start_undo(),
             Action::ConfirmYes => self.confirm_yes(),
+            Action::OpenRun => self.open_run(),
+            Action::ReloadRuns => self.load_runs(),
+            Action::StartSubmit => {
+                if let Some((dir, stage)) = self.selected_run_stage() {
+                    self.commands.push_back(Command::LoadCriteria { run_dir: dir, stage });
+                }
+            }
+            Action::ToggleCheck => {
+                if let Some(Popup::Submit { items, cursor, .. }) = self.popups.last_mut()
+                    && let Some(item) = items.get_mut(*cursor)
+                {
+                    item.2 = !item.2;
+                }
+            }
+            Action::SubmitForm => {
+                if let Some(Popup::Submit { run_dir, stage, items, .. }) = self.popups.pop() {
+                    let met = items.into_iter().filter(|i| i.2).map(|i| i.0).collect();
+                    self.commands.push_back(Command::Submit { run_dir, stage, met });
+                }
+            }
+            Action::StartApprove => {
+                if let Some((run_dir, stage)) = self.selected_run_stage() {
+                    let prompt = format!("Approve {stage} as (your name), then Enter:");
+                    self.popups.push(Popup::Input { prompt, text: String::new(), run_dir, stage });
+                }
+            }
+            Action::InputChar(c) => {
+                if let Some(Popup::Input { text, .. }) = self.popups.last_mut() {
+                    text.push(c);
+                }
+            }
+            Action::InputBackspace => {
+                if let Some(Popup::Input { text, .. }) = self.popups.last_mut() {
+                    text.pop();
+                }
+            }
+            Action::InputAccept => {
+                let empty = matches!(self.popups.last(), Some(Popup::Input { text, .. }) if text.trim().is_empty());
+                if empty {
+                    self.notify("a name is required to approve");
+                } else if let Some(Popup::Input { text, run_dir, stage, .. }) = self.popups.pop() {
+                    self.commands.push_back(Command::Approve { run_dir, stage, by: text.trim().to_string() });
+                }
+            }
+            Action::Resume => {
+                if let Some(run) = self.run_open.and_then(|i| self.runs.get(i)) {
+                    self.commands.push_back(Command::Resume { run_dir: run.dir.clone() });
+                }
+            }
+            Action::CopyPath => {
+                let path = crate::screens::runs::selected_stage(self)
+                    .zip(crate::screens::runs::open_run(self))
+                    .and_then(|(s, r)| s.handoff.as_ref().map(|h| format!("{}/{h}", r.run_dir)));
+                match path {
+                    Some(text) => self.commands.push_back(Command::Copy { text }),
+                    None => self.notify("no handoff for this stage yet"),
+                }
+            }
         }
         self.clamp();
+    }
+
+    /// The open run's directory and the selected stage id.
+    fn selected_run_stage(&self) -> Option<(PathBuf, String)> {
+        let run = self.run_open.and_then(|i| self.runs.get(i))?;
+        let stage = crate::screens::runs::selected_stage(self)?;
+        Some((run.dir.clone(), stage.id.clone()))
+    }
+
+    fn open_run(&mut self) {
+        if self.run_open.is_none() {
+            if self.runs.get(self.cursor[Tab::Runs.index()]).is_some_and(|r| r.status.is_ok()) {
+                self.run_open = Some(self.cursor[Tab::Runs.index()]);
+                self.stage_cursor = 0;
+            }
+            return;
+        }
+        let Some((run_dir, stage)) = self.selected_run_stage() else { return };
+        match crate::screens::runs::selected_stage(self).and_then(|s| s.handoff.clone()) {
+            Some(rel) => {
+                let title = format!(" {stage} handoff — paste it into the assigned CLI (Esc closes) ");
+                self.commands.push_back(Command::ReadText { title, run_dir, rel });
+            }
+            None => self.notify(format!("{stage} has no handoff yet (it waits for earlier stages)")),
+        }
     }
 
     fn selected_action(&self) -> Option<aurora_skills::plan::Action> {
@@ -649,7 +908,22 @@ impl App {
             };
             return;
         }
-        let c = &mut self.cursor[self.tab.index()];
+        if let Some(Popup::Submit { cursor, .. }) = self.popups.last_mut() {
+            *cursor = match action {
+                Action::Down => cursor.saturating_add(1),
+                Action::Up => cursor.saturating_sub(1),
+                _ => *cursor,
+            };
+            if let Some(Popup::Submit { items, cursor, .. }) = self.popups.last_mut() {
+                *cursor = (*cursor).min(items.len().saturating_sub(1));
+            }
+            return;
+        }
+        let c = if self.tab == Tab::Runs && self.run_open.is_some() {
+            &mut self.stage_cursor
+        } else {
+            &mut self.cursor[self.tab.index()]
+        };
         *c = match action {
             Action::Down => c.saturating_add(1),
             Action::Up => c.saturating_sub(1),

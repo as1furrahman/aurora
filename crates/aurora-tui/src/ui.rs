@@ -86,8 +86,57 @@ pub fn render(f: &mut Frame, app: &App) {
         Some(Popup::Help { .. }) => render_help(f, app, area, theme),
         Some(Popup::Confirm { title, lines, .. }) => render_confirm(f, area, title, lines, theme),
         Some(Popup::Viewer { title, text, scroll }) => render_viewer(f, area, title, text, *scroll, theme),
+        Some(Popup::Submit { stage, items, cursor, .. }) => render_submit(f, area, stage, items, *cursor, theme),
+        Some(Popup::Input { prompt, text, .. }) => render_input(f, area, prompt, text, theme),
         None => {}
     }
+}
+
+fn render_submit(
+    f: &mut Frame,
+    area: Rect,
+    stage: &str,
+    items: &[(String, String, bool)],
+    cursor: usize,
+    theme: Theme,
+) {
+    let mut lines = vec![
+        Line::raw("Check each criterion whose evidence you saved. The gate decides: outputs must exist"),
+        Line::raw("and be non-empty, and only checked criteria count."),
+        Line::raw(""),
+    ];
+    for (i, (id, desc, checked)) in items.iter().enumerate() {
+        let mark = if *checked { "[x]" } else { "[ ]" };
+        let pointer = if i == cursor { "▶ " } else { "  " };
+        let style = if i == cursor { theme.focused().add_modifier(Modifier::REVERSED) } else { Style::default() };
+        lines.push(Line::from(Span::styled(format!("{pointer}{mark} {id}"), style)));
+        lines.push(Line::raw(format!("        {desc}")));
+    }
+    lines.push(Line::raw(""));
+    lines.push(Line::from(Span::styled("Space check · j/k move · Enter submit · Esc cancel", theme.dim())));
+    let h = (lines.len() as u16 + 2).min(area.height.saturating_sub(2));
+    let rect = centered(area, area.width.saturating_sub(8).min(100), h);
+    f.render_widget(Clear, rect);
+    f.render_widget(
+        Paragraph::new(lines).wrap(Wrap { trim: false }).block(
+            Block::default().borders(Borders::ALL).title(format!(" Submit {stage} ")).border_style(theme.focused()),
+        ),
+        rect,
+    );
+}
+
+fn render_input(f: &mut Frame, area: Rect, prompt: &str, text: &str, theme: Theme) {
+    let lines = vec![
+        Line::raw(prompt.to_string()),
+        Line::from(Span::styled(format!("> {text}▏"), theme.accent())),
+        Line::from(Span::styled("Enter ok · Esc cancel", theme.dim())),
+    ];
+    let rect = centered(area, area.width.saturating_sub(8).min(80), 5);
+    f.render_widget(Clear, rect);
+    f.render_widget(
+        Paragraph::new(lines).block(Block::default().borders(Borders::ALL).border_style(theme.focused())),
+        rect,
+    );
 }
 
 fn render_confirm(f: &mut Frame, area: Rect, title: &str, lines: &[String], theme: Theme) {
@@ -161,7 +210,7 @@ fn render_body(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
 }
 
 fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
-    if let Some(e) = &app.plan_error {
+    if let Some(e) = app.plan_error.as_ref().filter(|_| app.tab != Tab::Runs) {
         let text = format!("The install plan failed:\n\n{e}\n\nPress r to retry.");
         f.render_widget(Paragraph::new(text).wrap(Wrap { trim: false }), area);
         return;
@@ -170,10 +219,10 @@ fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
         Tab::Skills if app.planned.is_some() => crate::screens::skills::render_list(f, app, area, theme),
         Tab::Roles if app.planned.is_some() => crate::screens::roles::render_list(f, app, area, theme),
         Tab::Install if app.planned.is_some() => crate::screens::install::render_list(f, app, area, theme),
+        Tab::Runs => crate::screens::runs::render_list(f, app, area, theme),
         Tab::Skills | Tab::Roles | Tab::Install => {
             f.render_widget(Paragraph::new(Span::styled("Planning the install…", theme.dim())), area)
         }
-        _ => f.render_widget(Paragraph::new(Span::styled("Nothing loaded yet.", theme.dim())), area),
     }
 }
 
@@ -182,7 +231,7 @@ fn render_detail(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
         Tab::Skills => crate::screens::skills::render_detail(f, app, area, theme),
         Tab::Roles => crate::screens::roles::render_detail(f, app, area, theme),
         Tab::Install => crate::screens::install::render_detail(f, app, area, theme),
-        _ => f.render_widget(Paragraph::new(Span::styled("Nothing loaded yet.", theme.dim())), area),
+        Tab::Runs => crate::screens::runs::render_detail(f, app, area, theme),
     }
 }
 
@@ -231,7 +280,17 @@ pub fn centered(area: Rect, w: u16, h: u16) -> Rect {
 
 /// The help overlay's lines: every binding, the current tab's first, grouped by context.
 pub fn help_lines(app: &App) -> Vec<(Option<&'static str>, String)> {
-    let mut order = vec![app.tab.ctx(), Ctx::Normal, Ctx::Filter, Ctx::Help, Ctx::Confirm, Ctx::Viewer, Ctx::Global];
+    let mut order = vec![
+        app.tab.ctx(),
+        Ctx::Normal,
+        Ctx::Filter,
+        Ctx::Help,
+        Ctx::Confirm,
+        Ctx::Viewer,
+        Ctx::Form,
+        Ctx::Input,
+        Ctx::Global,
+    ];
     for tab in Tab::ALL {
         if !order.contains(&tab.ctx()) {
             order.push(tab.ctx());

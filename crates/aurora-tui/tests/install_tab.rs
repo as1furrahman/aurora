@@ -17,6 +17,7 @@ fn drain(app: &mut App) -> Vec<&'static str> {
             Command::Plan { .. } => "plan",
             Command::Apply { .. } => "apply",
             Command::Undo { .. } => "undo",
+            _ => "other",
         });
         app.receive(execute(cmd));
     }
