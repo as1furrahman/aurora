@@ -8,6 +8,13 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+semver = "1"
+sha2 = "0.11"
+thiserror = "2"
+toml = { version = "1", features = ["preserve_order"] }
+
+[dev-dependencies]
+sha2 = "0.11"
 
 [lints]
 workspace = true
