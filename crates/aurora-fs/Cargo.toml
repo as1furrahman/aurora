@@ -8,6 +8,17 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+aurora-core.workspace = true
+rustix = { version = "1", features = ["fs", "process", "system"] }
+serde_json = "1"
+sha2 = "0.11"
+tempfile = "3"
+thiserror = "2"
+
+[dev-dependencies]
+rustix = { version = "1", features = ["fs"] }
+serde_json = "1"
+tempfile = "3"
 
 [lints]
 workspace = true

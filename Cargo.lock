@@ -109,6 +109,14 @@ dependencies = [
 [[package]]
 name = "aurora-fs"
 version = "0.2.0"
+dependencies = [
+ "aurora-core",
+ "rustix",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+]
 
 [[package]]
 name = "autocfg"

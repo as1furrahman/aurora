@@ -4,6 +4,7 @@ pub mod describe;
 pub mod model;
 pub mod parser;
 pub mod planner;
+pub mod record;
 
 pub use describe::{Description, describe};
 pub use model::{
