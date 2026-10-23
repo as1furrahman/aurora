@@ -194,3 +194,56 @@ macro_rules! snapshot {
         });
     };
 }
+
+/// R3.1: engine words may appear only under "More details" (see tests/plain_words.rs).
+pub const JARGON: &[&str] = &[
+    "CLI",
+    "provider",
+    "stage",
+    "handoff",
+    "overlay",
+    "sha256",
+    "acceptance criteria",
+    "listing",
+    "budget",
+    "journal",
+];
+
+/// The visible text, leaving out everything a details pane shows below "More details".
+pub fn plain_part(s: &str) -> String {
+    let mut out = String::new();
+    let mut in_details = false;
+    for line in s.lines() {
+        let split = ["││", "┐┌", "┘└"].iter().filter_map(|sep| line.find(sep)).min();
+        let (left, right) = match split {
+            Some(i) => line.split_at(i),
+            None => (line, ""),
+        };
+        out.push_str(left);
+        if right.contains("More details") {
+            in_details = true;
+        }
+        if !in_details {
+            out.push_str(right);
+        }
+        out.push('\n');
+    }
+    out
+}
+
+pub fn assert_plain(s: &str, where_: &str) {
+    // Product names are fine: "Gemini CLI" is what that app is called.
+    let plain = plain_part(s).replace("Gemini CLI", "Gemini");
+    for word in JARGON {
+        let found = plain.split(|c: char| !c.is_alphanumeric()).any(|w| {
+            if word.contains(' ') {
+                false
+            } else if *word == "CLI" {
+                w == "CLI" || w == "CLIs"
+            } else {
+                w.eq_ignore_ascii_case(word)
+            }
+        }) || (word.contains(' ') && plain.to_lowercase().contains(word));
+        assert!(!found, "{word:?} on the {where_}:\n{s}");
+    }
+}

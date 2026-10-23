@@ -22,7 +22,7 @@ fn startup_queues_a_plan_and_shows_progress() {
     let mut app = App::new(f.options());
     assert!(matches!(app.take_command(), Some(Command::Plan { .. })));
     assert!(app.take_command().is_none(), "one plan at a time");
-    assert!(screen(&app, 110, 24).contains("planning"), "a spinner line while the plan runs");
+    assert!(screen(&app, 110, 24).contains("working out"), "a spinner line while the plan runs");
 }
 
 #[test]
@@ -42,7 +42,7 @@ fn the_matrix_shows_each_skill_per_cli() {
     );
     assert_eq!((cell("extra", 0), cell("extra", 1)), (Cell::NotWanted, Cell::NotWanted), "opt-in is off by default");
     let s = screen(&app, 110, 24);
-    for needle in ["claude", "codex", "demo", "checker", "budget"] {
+    for needle in ["Claude Code", "Codex", "demo", "checker", "Room left"] {
         assert!(s.contains(needle), "missing {needle}:\n{s}");
     }
     snapshot!("matrix", s);
@@ -57,10 +57,11 @@ fn the_detail_pane_explains_the_selected_skill() {
     let s = screen(&app, 130, 30);
     for needle in [
         "checker",
-        "skill · stage · curated",
+        "kind skill · tier stage · trust curated",
         "Why checker.",
+        "Aurora switches off its permission",
         "allowed-tools removed",
-        "codex",
+        "Codex",
         ".agents/skills/checker",
         "aurora catalog show checker",
     ] {
@@ -127,7 +128,7 @@ fn a_plan_error_is_shown_with_a_retry_key() {
         result: Box::new(Err("cannot fetch https://github.com/x: offline".into())),
     });
     let s = screen(&app, 110, 24);
-    assert!(s.contains("cannot fetch") && s.contains("r retry"), "{s}");
+    assert!(s.contains("cannot fetch") && s.contains("r to try again"), "{s}");
     press(&mut app, &[KeyCode::Char('r')]);
     assert!(matches!(app.take_command(), Some(Command::Plan { .. })));
 }

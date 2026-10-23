@@ -57,21 +57,20 @@ pub fn render(f: &mut Frame, app: &App) {
         Layout::vertical([Constraint::Length(1), Constraint::Length(1), Constraint::Min(3), Constraint::Length(1)])
             .areas(area);
 
-    let title = format!(
-        "Aurora · {} · {} · {}",
-        app.opts.project.display(),
-        app.opts.preset,
-        crate::screens::roles::profile_summary(app).unwrap_or_else(|| app
-            .opts
-            .profile
-            .clone()
-            .unwrap_or_else(|| "pair".into()))
-    );
+    let folder = app
+        .opts
+        .project
+        .file_name()
+        .map_or_else(|| app.opts.project.display().to_string(), |n| n.to_string_lossy().into_owned());
+    let mut title = format!("Aurora · {folder} · {}", crate::words::task_type(&app.opts.preset));
+    if let Some(tools) = crate::screens::roles::profile_summary(app) {
+        title.push_str(&format!(" · Using {tools}"));
+    }
     let status = if app.loading {
         const SPIN: [&str; 4] = ["⠋", "⠙", "⠸", "⠴"];
-        format!("   {} planning…", SPIN[(app.ticks % 4) as usize])
+        format!("   {} working out what to add…", SPIN[(app.ticks % 4) as usize])
     } else if app.plan_error.is_some() {
-        "   ✗ plan failed (r retry)".to_string()
+        "   ✗ something went wrong (r to try again)".to_string()
     } else {
         String::new()
     };
@@ -107,25 +106,28 @@ fn render_submit(
     theme: Theme,
 ) {
     let mut lines = vec![
-        Line::raw("Check each criterion whose evidence you saved. The gate decides: outputs must exist"),
-        Line::raw("and be non-empty, and only checked criteria count."),
+        Line::raw("Tick each item the AI tool has really done. Aurora then checks that the files"),
+        Line::raw("the step asked for exist and aren't empty before it marks the step done."),
         Line::raw(""),
     ];
     for (i, (id, desc, checked)) in items.iter().enumerate() {
         let mark = if *checked { "[x]" } else { "[ ]" };
         let pointer = if i == cursor { "▶ " } else { "  " };
         let style = if i == cursor { theme.focused().add_modifier(Modifier::REVERSED) } else { Style::default() };
-        lines.push(Line::from(Span::styled(format!("{pointer}{mark} {id}"), style)));
-        lines.push(Line::raw(format!("        {desc}")));
+        lines.push(Line::from(Span::styled(format!("{pointer}{mark} {desc}"), style)));
+        lines.push(Line::from(Span::styled(format!("        ({id})"), theme.dim())));
     }
     lines.push(Line::raw(""));
-    lines.push(Line::from(Span::styled("Space check · j/k move · Enter submit · Esc cancel", theme.dim())));
+    lines.push(Line::from(Span::styled("Space tick · ↑↓ move · Enter done · Esc cancel", theme.dim())));
     let h = (lines.len() as u16 + 2).min(area.height.saturating_sub(2));
     let rect = centered(area, area.width.saturating_sub(8).min(100), h);
     f.render_widget(Clear, rect);
     f.render_widget(
         Paragraph::new(lines).wrap(Wrap { trim: false }).block(
-            Block::default().borders(Borders::ALL).title(format!(" Submit {stage} ")).border_style(theme.focused()),
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!(" Checklist for {} ", crate::words::step(stage)))
+                .border_style(theme.focused()),
         ),
         rect,
     );
@@ -135,7 +137,7 @@ fn render_input(f: &mut Frame, area: Rect, prompt: &str, text: &str, theme: Them
     let lines = vec![
         Line::raw(prompt.to_string()),
         Line::from(Span::styled(format!("> {text}▏"), theme.accent())),
-        Line::from(Span::styled("Enter ok · Esc cancel", theme.dim())),
+        Line::from(Span::styled("Enter OK · Esc cancel", theme.dim())),
     ];
     let rect = centered(area, area.width.saturating_sub(8).min(80), 5);
     f.render_widget(Clear, rect);
@@ -150,9 +152,9 @@ fn render_confirm(f: &mut Frame, area: Rect, title: &str, lines: &[String], them
     text.push(Line::raw(""));
     text.push(Line::from(vec![
         Span::styled("y", theme.accent()),
-        Span::raw(" apply    "),
+        Span::raw(" yes, go ahead    "),
         Span::styled("n", theme.accent()),
-        Span::raw(" / Esc / Enter cancel (the default is No)"),
+        Span::raw(" no (Esc and Enter also mean no)"),
     ]));
     let h = (text.len() as u16 + 2).min(area.height.saturating_sub(2));
     let rect = centered(area, area.width.saturating_sub(8).min(96), h);
@@ -187,10 +189,10 @@ fn pane(title: &str, focused: bool, theme: Theme) -> Block<'static> {
 
 fn render_body(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
     let (list_title, detail_title) = match app.tab {
-        Tab::Skills => ("Skills × CLIs", "Skill"),
-        Tab::Roles => ("Stages and roles", "Stage"),
-        Tab::Install => ("Install plan", "Action"),
-        Tab::Runs => ("Runs", "Run"),
+        Tab::Skills => ("Skills for each AI tool", "About this skill"),
+        Tab::Roles => ("Steps and who does them", "About this step"),
+        Tab::Install => ("What will change", "About this change"),
+        Tab::Runs => ("Your tasks", "About this task"),
     };
     let (left, right) = if area.width < SPLIT_WIDTH {
         match app.focus {
@@ -217,7 +219,7 @@ fn render_body(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
 
 fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
     if let Some(e) = app.plan_error.as_ref().filter(|_| app.tab != Tab::Runs) {
-        let text = format!("The install plan failed:\n\n{e}\n\nPress r to retry.");
+        let text = format!("{}\n\nWhat went wrong:\n{e}\n\nPress r to try again.", trouble_hint(e));
         f.render_widget(Paragraph::new(text).wrap(Wrap { trim: false }), area);
         return;
     }
@@ -226,9 +228,10 @@ fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
         Tab::Roles if app.planned.is_some() => crate::screens::roles::render_list(f, app, area, theme),
         Tab::Install if app.planned.is_some() => crate::screens::install::render_list(f, app, area, theme),
         Tab::Runs => crate::screens::runs::render_list(f, app, area, theme),
-        Tab::Skills | Tab::Roles | Tab::Install => {
-            f.render_widget(Paragraph::new(Span::styled("Planning the install…", theme.dim())), area)
-        }
+        Tab::Skills | Tab::Roles | Tab::Install => f.render_widget(
+            Paragraph::new(Span::styled("Working out which skills your project needs…", theme.dim())),
+            area,
+        ),
     }
 }
 
@@ -323,21 +326,55 @@ pub fn help_lines(app: &App) -> Vec<(Option<&'static str>, String)> {
     out
 }
 
+/// The start of the help: how Aurora works, then the words it uses.
+pub const HELP_INTRO: &[(&str, &[&str])] = &[
+    (
+        "How Aurora works in 30 seconds",
+        &[
+            "AI coding tools (Claude Code, Codex, ...) work better with skills: ready-made instructions",
+            "that teach them one kind of work, like finding the cause of a bug or writing tests.",
+            "1. Skills: see which skills fit your task. 2. Who does what: choose which AI tool does",
+            "each job. 3. Add to project: Aurora copies the skills into your project, after you say yes",
+            "(u undoes it). 4. Tasks: follow your work step by step, pasting each step's instructions",
+            "into its AI tool and ticking its checklist when it's done.",
+        ],
+    ),
+    (
+        "Words Aurora uses",
+        &[
+            "Skill         A ready-made set of instructions for an AI tool, saved in your project.",
+            "AI tool       A coding assistant you run in the terminal: Claude Code, Codex, Antigravity, Hermes.",
+            "Task          Your piece of work (fix a bug, build a feature), split into steps.",
+            "Step          One part of a task, done by one AI tool doing one job.",
+            "Job           What a step needs: planner, builder, checker, reviewer, writer, ...",
+            "Checklist     What a step must have produced before Aurora counts it as done.",
+            "Check first   A skill shared by the community: have a quick read before adding it.",
+            "Undo          Puts your project back the way it was before Aurora's last change.",
+        ],
+    ),
+];
+
 fn render_help(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
-    let lines: Vec<Line> = help_lines(app)
-        .into_iter()
-        .map(|(title, text)| match title {
-            Some(t) => Line::from(Span::styled(t, theme.accent())),
-            None => Line::raw(text),
-        })
-        .collect();
+    let mut lines: Vec<Line> = Vec::new();
+    for (title, body) in HELP_INTRO {
+        lines.push(Line::from(Span::styled(*title, theme.accent())));
+        lines.extend(body.iter().map(|l| Line::raw(format!("  {l}"))));
+        lines.push(Line::raw(""));
+    }
+    lines.push(Line::from(Span::styled("Keys", theme.accent())));
+    lines.extend(help_lines(app).into_iter().map(|(title, text)| match title {
+        Some(t) => Line::from(Span::styled(format!("  {t}"), theme.accent())),
+        None => Line::raw(text),
+    }));
     let rect = centered(area, area.width.saturating_sub(4).min(100), area.height.saturating_sub(2));
     f.render_widget(Clear, rect);
     f.render_widget(
-        Paragraph::new(lines)
-            .wrap(Wrap { trim: false })
-            .scroll((app.help_scroll(), 0))
-            .block(Block::default().borders(Borders::ALL).title(" Keys (Esc closes) ").border_style(theme.focused())),
+        Paragraph::new(lines).wrap(Wrap { trim: false }).scroll((app.help_scroll(), 0)).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Help (↑↓ scroll · Esc closes) ")
+                .border_style(theme.focused()),
+        ),
         rect,
     );
 }
@@ -359,4 +396,120 @@ fn key_name(code: ratatui::crossterm::event::KeyCode, mods: ratatui::crossterm::
         other => format!("{other:?}"),
     };
     if mods.contains(KeyModifiers::CONTROL) { format!("^{}", base.to_uppercase()) } else { base }
+}
+
+/// A plain first line for a planning error, guessing the usual causes.
+pub fn trouble_hint(e: &str) -> &'static str {
+    let l = e.to_lowercase();
+    if l.contains("network")
+        || l.contains("resolve")
+        || l.contains("could not read from remote")
+        || l.contains("unable to access")
+    {
+        "Aurora couldn't download the skills. It needs the internet the first time (after that they're kept on this computer)."
+    } else if l.contains("not a directory") || l.contains("no such file") {
+        "Aurora couldn't find a file or folder it needs. Check you started it inside your project folder."
+    } else if l.contains("permission denied") {
+        "Aurora isn't allowed to read or write a file here."
+    } else {
+        "Aurora couldn't work out what to add to this project."
+    }
+}
+
+/// Word-wrap `lines` to `width` so wrapped text lines up under where it started: under the
+/// value of a "Label   value" line (a styled first span followed by more spans), and under the
+/// text of an indented, `• ` or `! ` line. Styles are kept; a word longer than the line is split.
+pub fn hang<'a>(lines: Vec<Line<'a>>, width: u16) -> Vec<Line<'a>> {
+    let width = width as usize;
+    let mut out = Vec::new();
+    for line in lines {
+        if width < 20 || line.width() <= width {
+            out.push(line);
+            continue;
+        }
+        let indent = hang_indent(&line).min(width / 2);
+        let mut cur: Vec<Span<'a>> = Vec::new();
+        let mut cur_w = 0;
+        for span in line.spans {
+            let style = span.style;
+            for piece in span.content.split_inclusive(' ') {
+                let mut word = piece.to_string();
+                loop {
+                    if cur_w + Span::raw(word.trim_end()).width() <= width {
+                        cur_w += Span::raw(word.as_str()).width();
+                        cur.push(Span::styled(word, style));
+                        break;
+                    }
+                    if cur_w > indent {
+                        out.push(Line::from(std::mem::take(&mut cur)));
+                        cur.push(Span::raw(" ".repeat(indent)));
+                        cur_w = indent;
+                        continue;
+                    }
+                    let room = width - cur_w;
+                    let head: String = word.chars().take(room).collect();
+                    word = word.chars().skip(room).collect();
+                    cur.push(Span::styled(head, style));
+                    out.push(Line::from(std::mem::take(&mut cur)));
+                    cur.push(Span::raw(" ".repeat(indent)));
+                    cur_w = indent;
+                    if word.is_empty() {
+                        break;
+                    }
+                }
+            }
+        }
+        if cur.len() > 1 || cur_w > indent {
+            out.push(Line::from(cur));
+        }
+    }
+    out
+}
+
+fn hang_indent(line: &Line) -> usize {
+    if line.spans.len() > 1 && line.spans[0].style != Style::default() {
+        return line.spans[0].width();
+    }
+    let text: String = line.spans.iter().map(|s| s.content.as_ref()).collect();
+    let lead = text.len() - text.trim_start().len();
+    let rest = &text[lead..];
+    if rest.starts_with("• ") || rest.starts_with("! ") { lead + 2 } else { lead }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn text(lines: &[Line]) -> Vec<String> {
+        lines.iter().map(|l| l.spans.iter().map(|s| s.content.as_ref()).collect()).collect()
+    }
+
+    #[test]
+    fn wrapped_values_line_up_under_their_label() {
+        let bold = Style::default().add_modifier(Modifier::BOLD);
+        let line = Line::from(vec![Span::styled("Safety    ", bold), Span::raw("one two three four five six")]);
+        let out = hang(vec![line], 24);
+        assert_eq!(text(&out), ["Safety    one two three ", "          four five six"]);
+        assert_eq!(out[0].spans[0].style, bold, "the label keeps its style");
+    }
+
+    #[test]
+    fn bullets_and_indented_lines_keep_their_indent() {
+        let out = hang(
+            vec![Line::raw("• alpha beta gamma delta epsilon"), Line::raw("  aurora skills apply --preset bugfix")],
+            22,
+        );
+        assert_eq!(
+            text(&out),
+            ["• alpha beta gamma ", "  delta epsilon", "  aurora skills apply ", "  --preset bugfix"]
+        );
+    }
+
+    #[test]
+    fn short_lines_are_untouched_and_long_words_are_split() {
+        assert_eq!(text(&hang(vec![Line::raw("fits")], 30)), ["fits"]);
+        let out = hang(vec![Line::raw("  https://github.com/demo-org/team-skills/tree/abc")], 24);
+        assert!(out.iter().all(|l| l.width() <= 24), "{:?}", text(&out));
+        assert_eq!(text(&out).concat().replace(' ', ""), "https://github.com/demo-org/team-skills/tree/abc");
+    }
 }

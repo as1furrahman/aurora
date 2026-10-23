@@ -10,6 +10,7 @@ pub mod app;
 pub mod keymap;
 pub mod screens;
 pub mod ui;
+pub mod words;
 
 use std::sync::mpsc::{Sender, channel};
 use std::time::Duration;
@@ -28,11 +29,11 @@ pub fn execute(cmd: Command) -> Msg {
             check_project(&planned.project)?;
             let unreviewed = planned.unreviewed(&reviewed);
             if !unreviewed.is_empty() {
-                return Err(format!("{} still need review", unreviewed.join(", ")));
+                return Err(format!("please check {} first", unreviewed.join(", ")));
             }
             let id = new_op_id();
             apply_planned(&planned, &id).map_err(|e| e.to_string())?;
-            Ok(format!("Applied {} changes (operation {id}). u undoes.", planned.change_count()))
+            Ok(format!("Added {} things to your project. Press u to undo.", planned.change_count()))
         })()),
         Command::Undo { project } => Msg::Undone(undo_project(&project, None)),
         Command::LoadRuns { root } => Msg::Runs(aurora_app::runs::list_runs(&root)),
@@ -53,7 +54,7 @@ pub fn execute(cmd: Command) -> Msg {
         }
         Command::Resume { run_dir } => Msg::Resumed(Box::new(aurora_app::runs::resume(&run_dir))),
         // The event loop writes the clipboard sequence itself; here there is no terminal.
-        Command::Copy { text } => Msg::Notice(format!("copied {text}")),
+        Command::Copy { text } => Msg::Notice(format!("Copied: {text}")),
     }
 }
 

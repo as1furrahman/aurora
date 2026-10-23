@@ -10,7 +10,7 @@ use aurora_core::workflow::PlanOptions;
 use aurora_fs::engine::Engine;
 use aurora_tui::app::{App, Command, Tab};
 use aurora_tui::execute;
-use common::{fixture, press, screen};
+use common::{assert_plain, fixture, press, screen};
 use ratatui::crossterm::event::KeyCode;
 
 const MINI: &str = r#"schema_version = 1
@@ -92,18 +92,18 @@ fn runs_are_listed_and_open_into_a_stage_pipeline() {
     start(&root, &bugfix_toml(), "r1");
     let mut app = runs_app(&f, &root);
     let s = screen(&app, 130, 28);
-    assert!(s.contains("r1") && s.contains("bugfix") && s.contains("0/5"), "{s}");
+    assert!(s.contains("r1") && s.contains("Fix a bug") && s.contains("0 of 5 done"), "{s}");
     press(&mut app, &[KeyCode::Enter]);
     // The engine marks a stage RUNNING once its handoff is issued.
     let s = screen(&app, 130, 28);
-    for needle in ["reproduce", "root-cause", "review", "accept", "running", "pending"] {
+    for needle in ["Reproduce", "Root cause", "Review", "Accept", "in progress", "waiting"] {
         assert!(s.contains(needle), "missing {needle}:\n{s}");
     }
     press(&mut app, &[KeyCode::Enter]);
     drain(&mut app);
     assert!(screen(&app, 130, 28).contains("Aurora handoff"), "Enter on a stage opens its handoff");
     press(&mut app, &[KeyCode::Esc, KeyCode::Esc]);
-    assert!(screen(&app, 130, 28).contains("0/5"), "Esc returns to the run list");
+    assert!(screen(&app, 130, 28).contains("0 of 5 done"), "Esc returns to the task list");
 }
 
 fn open_submit(app: &mut App) {
@@ -120,14 +120,14 @@ fn the_submit_form_is_a_checkbox_list_and_the_gate_decides() {
     press(&mut app, &[KeyCode::Enter]);
     open_submit(&mut app);
     let s = screen(&app, 130, 28);
-    assert!(s.contains("[ ] behaviour-recorded") && s.contains("[ ] reproduced"), "{s}");
+    assert!(s.contains("[ ] ") && s.contains("(behaviour-recorded)") && s.contains("(reproduced)"), "{s}");
     press(&mut app, &[KeyCode::Char(' '), KeyCode::Enter]);
     let Some(Command::Submit { met, .. }) = app.take_command() else { panic!("submit queued") };
     assert_eq!(met, ["behaviour-recorded"]);
     // The outputs do not exist yet: the gate fails, whatever was claimed.
     app.receive(execute(Command::Submit { run_dir: run.clone(), stage: "reproduce".into(), met }));
     drain(&mut app);
-    assert!(screen(&app, 130, 28).contains("FAILED"), "{}", screen(&app, 130, 28));
+    assert!(screen(&app, 130, 28).contains("not done yet"), "{}", screen(&app, 130, 28));
 
     let out = run.join("artifacts/reproduce");
     fs::create_dir_all(&out).expect("mkdir");
@@ -137,8 +137,8 @@ fn the_submit_form_is_a_checkbox_list_and_the_gate_decides() {
     press(&mut app, &[KeyCode::Char(' '), KeyCode::Char('j'), KeyCode::Char(' '), KeyCode::Enter]);
     drain(&mut app);
     let s = screen(&app, 130, 28);
-    assert!(s.contains("PASSED"), "{s}");
-    assert!(s.contains("1/5"), "the pipeline reloads: {s}");
+    assert!(s.contains("✓ done"), "{s}");
+    assert!(s.contains("1 of 5 done"), "the steps reload: {s}");
 }
 
 #[test]
@@ -165,10 +165,10 @@ fn approval_asks_for_a_name_and_completes_the_run() {
     open_submit(&mut app);
     press(&mut app, &[KeyCode::Char(' '), KeyCode::Enter]);
     drain(&mut app);
-    assert!(screen(&app, 130, 28).contains("awaiting approval"), "{}", screen(&app, 130, 28));
+    assert!(screen(&app, 130, 28).contains("waiting for your OK"), "{}", screen(&app, 130, 28));
 
     press(&mut app, &[KeyCode::Char('A')]);
-    assert!(screen(&app, 130, 28).contains("Approve check as"), "{}", screen(&app, 130, 28));
+    assert!(screen(&app, 130, 28).contains("Give your OK for Check"), "{}", screen(&app, 130, 28));
     for c in "maintainer".chars() {
         press(&mut app, &[KeyCode::Char(c)]);
     }
@@ -178,7 +178,7 @@ fn approval_asks_for_a_name_and_completes_the_run() {
     app.receive(execute(Command::Approve { run_dir: run.clone(), stage, by }));
     drain(&mut app);
     let s = screen(&app, 130, 28);
-    assert!(s.contains("complete") && s.contains("1/1"), "{s}");
+    assert!(s.contains("finished ✓") && s.contains("1 of 1 done"), "{s}");
 }
 
 #[test]
@@ -189,4 +189,20 @@ fn an_empty_name_does_not_approve() {
     let mut app = runs_app(&f, &root);
     press(&mut app, &[KeyCode::Enter, KeyCode::Char('A'), KeyCode::Enter]);
     assert!(app.take_command().is_none(), "Enter with an empty name");
+}
+
+#[test]
+fn tasks_and_steps_speak_plainly() {
+    let f = fixture();
+    let (_tmp, root) = runs_root();
+    start(&root, &bugfix_toml(), "r1");
+    let mut app = runs_app(&f, &root);
+    assert_plain(&screen(&app, 130, 30), "task list");
+    press(&mut app, &[KeyCode::Enter]);
+    for step in 0..5 {
+        assert_plain(&screen(&app, 130, 30), &format!("step {step}"));
+        press(&mut app, &[KeyCode::Char('j')]);
+    }
+    press(&mut app, &[KeyCode::Char('g'), KeyCode::Char('s')]);
+    assert_plain(&screen(&app, 130, 30), "checklist");
 }

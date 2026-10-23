@@ -33,7 +33,7 @@ fn starts_on_skills_with_header_tabs_and_footer() {
     let a = app();
     assert_eq!(a.tab, Tab::Skills);
     let s = screen(&a, 100, 24);
-    for needle in ["Aurora", "/work/demo", "1 Skills", "2 Roles", "3 Install", "4 Runs", "? help", "q quit"] {
+    for needle in ["Aurora · demo", "1 Skills", "2 Who does what", "3 Add to project", "4 Tasks", "? help", "q quit"] {
         assert!(s.contains(needle), "missing {needle:?}:\n{s}");
     }
     insta::assert_snapshot!("initial", s);
@@ -73,7 +73,7 @@ fn help_overlay_lists_every_binding_and_esc_closes_it() {
         assert!(text.contains(b.help), "help is missing {:?}:\n{text}", b.help);
     }
     let s = screen(&a, 100, 40);
-    assert!(s.contains("Skills tab"), "the current tab's keys come first:\n{s}");
+    assert!(s.contains("On the Skills page"), "the current tab's keys come first:\n{s}");
     insta::assert_snapshot!("help", s);
     press(&mut a, &[KeyCode::Char('q')]);
     assert!(!a.help_open() && !a.quit, "q closes a popup instead of quitting");
@@ -118,6 +118,6 @@ fn a_small_terminal_shows_a_notice_instead_of_a_broken_layout() {
 #[test]
 fn the_footer_is_generated_from_the_keymap() {
     let keys: Vec<&str> = footer(Ctx::Normal).iter().map(|b| b.label).collect();
-    assert!(keys.contains(&"? help") && keys.contains(&"q quit") && keys.contains(&"/ filter"), "{keys:?}");
+    assert!(keys.contains(&"? help") && keys.contains(&"q quit") && keys.contains(&"/ search"), "{keys:?}");
     assert!(footer(Ctx::Help).iter().any(|b| b.label == "Esc close"));
 }

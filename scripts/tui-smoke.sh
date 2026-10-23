@@ -43,14 +43,14 @@ tmux new-session -d -s "$S" -x 140 -y 34 \
   "cd '$WORK/project' && '$AURORA' tui --run-root '$WORK/runs'; echo AURORA_EXIT=\$?; sleep 120"
 
 step "1. Launch: header, tabs, the plan loads"
-check "header and tabs" 'wait_for "Aurora · $WORK/project" && shows "1 Skills" && shows "4 Runs"'
-check "the skills matrix appears" 'wait_for "verification-before-completion" && shows "listing budget"'
+check "header and tabs" 'wait_for "Aurora · project · Fix a bug" && shows "1 Skills" && shows "4 Tasks"'
+check "the skills matrix appears" 'wait_for "verification-before-completion" && shows "Room left in each tool"'
 
 step "2. Help and filter"
 key "?"
-check "? opens the help, generated from the key table" 'shows "Keys (Esc closes)" && shows "Skills tab"'
+check "? opens the help, generated from the key table" 'shows "How Aurora works in 30 seconds" && shows "On the Skills page"'
 key Escape
-check "Esc closes it" 'gone "Keys (Esc closes)"'
+check "Esc closes it" 'gone "How Aurora works"'
 key /; type_text review; key Enter
 check "a kept filter narrows the matrix" 'shows "/review" && shows "code-review" && ! shows "test-driven-development"'
 key Escape
@@ -59,45 +59,45 @@ check "Esc clears it" 'shows "test-driven-development"'
 step "3. Roles: give review to another CLI in one key"
 key 2; key j; key j; key j
 key p
-check "review moves to hermes" 'wait_for "pair (claude + hermes)"'
+check "review moves to hermes" 'wait_for "Using Claude Code + Hermes"'
 key P; key P; key P
-check "profiles cycle back to pair (claude + codex)" 'wait_for "pair (claude + codex)"'
+check "the number of tools cycles back to Claude Code + Codex" 'wait_for "Using Claude Code + Codex"'
 
 step "4. Install: review, apply, undo"
 key 3
-check "the plan lists the changes" 'wait_for "+ create" && shows "needs your review first: ponytail, ponytail-review"'
+check "the plan lists the changes" 'wait_for "+ will add" && shows "please check: ponytail, ponytail-review"'
 key a
-check "apply refuses before review" 'shows "review ponytail, ponytail-review first"'
+check "apply refuses before review" 'shows "Please check ponytail, ponytail-review first"'
 key /; type_text ponytail; key Enter
 key Enter
-check "Enter shows the verified file" 'wait_for "verified copy" && shows "name: ponytail"'
+check "Enter shows the verified file" 'wait_for "Reading ponytail" && shows "name: ponytail"'
 key Escape
 key r; key j; key r
 key Escape
 key a
-check "the confirm dialog lists exact changes and defaults to No" 'wait_for "Apply 16 changes to" && shows "the default is No"'
+check "the confirm dialog lists exact changes and defaults to No" 'wait_for "Add these 16 things" && shows "Esc and Enter also mean no"'
 key Enter
-check "Enter means No" 'gone "Apply 16 changes to" && [[ ! -e "$WORK/project/CLAUDE.md" ]]'
+check "Enter means No" 'gone "Add these 16 things" && [[ ! -e "$WORK/project/CLAUDE.md" ]]'
 key a; key y
-check "y applies: files on disk" 'wait_for "last: Applied 16 changes" && [[ -f "$WORK/project/.claude/skills/ponytail/SKILL.md" && -f "$WORK/project/CLAUDE.md" ]]'
+check "y applies: files on disk" 'wait_for "Last change: Added 16 things" && [[ -f "$WORK/project/.claude/skills/ponytail/SKILL.md" && -f "$WORK/project/CLAUDE.md" ]]'
 key u; key y
-check "u y undoes" 'wait_for "last: Restored"'
+check "u y undoes" 'wait_for "Last change: Undone"'
 check "the project matches a fresh clone" 'diff -r -q --exclude=.git --exclude=.aurora --exclude=.claude --exclude=.agents "$WORK/clean" "$WORK/project"'
 
 step "5. Runs: submit through the checkbox form"
 key 4
-check "the run is listed" 'wait_for "fresh" && shows "0/5"'
+check "the run is listed" 'wait_for "fresh" && shows "0 of 5 done"'
 key Enter
-check "its pipeline opens" 'shows "run fresh · bugfix" && shows "◔ running"'
+check "its pipeline opens" 'shows "Task fresh · Fix a bug" && shows "◔ in progress"'
 key s
-check "the form lists the criteria as checkboxes" 'wait_for "[ ] behaviour-recorded" && shows "[ ] reproduced"'
+check "the form lists the criteria as checkboxes" 'wait_for "(behaviour-recorded)" && shows "(reproduced)"'
 key Space; key j; key Space; key Enter
-check "the gate passes the stage" 'wait_for "reproduce: PASSED" && wait_for "1/5"'
+check "the gate passes the stage" 'wait_for "Reproduce: done" && wait_for "1 of 5 done"'
 
 step "6. Mouse"
 col=$(screen | sed -n 2p | python3 -I -c 'import sys; l=sys.stdin.read(); print(l.find("1 Skills") + 2)')
 click "$col" 2
-check "a click on a tab switches to it" 'shows "Skills × CLIs"'
+check "a click on a tab switches to it" 'shows "Skills for each AI tool"'
 
 step "7. Quit"
 key q

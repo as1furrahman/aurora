@@ -61,7 +61,7 @@ fn apply_refuses_until_flagged_skills_are_reviewed() {
     let mut app = on_install(&f);
     press(&mut app, &[KeyCode::Char('a')]);
     assert!(app.take_command().is_none());
-    assert!(screen(&app, 130, 30).contains("review scripted first"), "{}", screen(&app, 130, 30));
+    assert!(screen(&app, 130, 30).contains("Please check scripted first"), "{}", screen(&app, 130, 30));
 }
 
 #[test]
@@ -83,7 +83,7 @@ fn the_confirm_dialog_defaults_to_no() {
     select(&mut app, ".claude/skills/scripted");
     press(&mut app, &[KeyCode::Char('r'), KeyCode::Char('a')]);
     let s = screen(&app, 130, 30);
-    assert!(s.contains("Apply") && s.contains(".claude/skills/demo") && s.contains("y apply"), "{s}");
+    assert!(s.contains("Add these") && s.contains(".claude/skills/demo") && s.contains("y yes"), "{s}");
     press(&mut app, &[KeyCode::Enter]);
     assert!(app.take_command().is_none(), "Enter means No");
     press(&mut app, &[KeyCode::Char('a'), KeyCode::Char('n')]);
@@ -102,22 +102,22 @@ fn apply_then_undo_round_trips_through_the_engine() {
     assert!(f.project.join(".claude/skills/demo/SKILL.md").is_file());
     assert!(f.project.join("CLAUDE.md").is_file());
     let s = screen(&app, 130, 30);
-    assert!(s.contains("Applied") && s.contains("u undoes"), "{s}");
+    assert!(s.contains("Added") && s.contains("Press u to undo"), "{s}");
     assert!(rows(&app).iter().all(|a| a.kind == aurora_skills::plan::ActionKind::Unchanged), "re-plan is unchanged");
 
     press(&mut app, &[KeyCode::Char('a')]);
     assert!(app.take_command().is_none());
-    assert!(screen(&app, 130, 30).contains("Nothing to do"));
+    assert!(screen(&app, 130, 30).contains("Nothing to add"));
 
     press(&mut app, &[KeyCode::Char('u'), KeyCode::Char('y')]);
     assert_eq!(drain(&mut app), ["undo", "plan"]);
     assert!(!f.project.join("CLAUDE.md").exists() && !f.project.join(".claude/skills/demo").exists());
-    assert!(screen(&app, 130, 30).contains("Restored"));
+    assert!(screen(&app, 130, 30).contains("Undone: put back"));
     for _ in 0..200 {
         app.tick();
     }
     let s = screen(&app, 130, 30);
-    assert!(s.contains("last: Restored"), "the outcome stays visible after the toast fades:\n{s}");
+    assert!(s.contains("Last change: Undone"), "the outcome stays visible after the toast fades:\n{s}");
 }
 
 #[test]
@@ -130,7 +130,7 @@ fn one_operation_at_a_time() {
     assert!(matches!(first, Command::Apply { .. }));
     press(&mut app, &[KeyCode::Char('u')]);
     assert!(app.take_command().is_none(), "no undo while the apply runs");
-    assert!(screen(&app, 130, 30).contains("busy"));
+    assert!(screen(&app, 130, 30).contains("Please wait"));
     app.receive(execute(first));
 }
 
@@ -149,6 +149,6 @@ fn the_worker_rechecks_the_review_gate() {
     let planned = f.planned(&[]);
     let msg = execute(Command::Apply { planned: Box::new(planned), reviewed: vec![] });
     let Msg::Applied(Err(e)) = msg else { panic!("must refuse: {msg:?}") };
-    assert!(e.contains("scripted") && e.contains("review"), "{e}");
+    assert!(e.contains("scripted") && e.contains("check"), "{e}");
     assert!(!f.project.join("CLAUDE.md").exists(), "nothing was written");
 }

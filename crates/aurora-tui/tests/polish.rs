@@ -33,9 +33,12 @@ fn clicking_a_tab_title_switches_tab() {
     let mut app = loaded(&f);
     let s = screen(&app, AREA.width, AREA.height);
     let tabs_line = s.lines().nth(1).expect("tab row");
-    for (title, tab) in
-        [("2 Roles", Tab::Roles), ("4 Runs", Tab::Runs), ("3 Install", Tab::Install), ("1 Skills", Tab::Skills)]
-    {
+    for (title, tab) in [
+        ("2 Who does what", Tab::Roles),
+        ("4 Tasks", Tab::Runs),
+        ("3 Add to project", Tab::Install),
+        ("1 Skills", Tab::Skills),
+    ] {
         let col = tabs_line.find(title).expect("title on screen");
         // Column in characters, not bytes: the divider is a multi-byte glyph.
         let col = tabs_line[..col].chars().count() as u16 - 1;

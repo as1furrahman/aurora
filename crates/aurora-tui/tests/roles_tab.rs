@@ -53,11 +53,11 @@ fn the_detail_shows_invocation_syntax_and_enforcement() {
     for needle in [
         "review",
         "reviewer",
-        "codex",
+        "Codex",
         "`$checker`",
         "read_only",
         "hard",
-        "also plays tester",
+        "is also the checker",
         "aurora catalog recommend --preset bugfix",
     ] {
         assert!(s.contains(needle), "missing {needle:?}:\n{s}");
@@ -86,7 +86,7 @@ fn shift_p_cycles_the_profile_and_resets_the_clis() {
     assert!(req.clis.is_empty(), "the profile's own CLIs");
     assert!(rows(&app).iter().all(|s| s.cli == "claude"));
     let s = screen(&app, 130, 30);
-    assert!(s.contains("reduced independence"), "solo loses independent review:\n{s}");
+    assert!(s.contains("! Review and Fix are both done by Claude Code"), "solo loses independent review:\n{s}");
 }
 
 #[test]

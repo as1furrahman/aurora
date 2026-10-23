@@ -193,9 +193,9 @@ impl Tab {
     pub fn title(self) -> &'static str {
         match self {
             Tab::Skills => "Skills",
-            Tab::Roles => "Roles",
-            Tab::Install => "Install",
-            Tab::Runs => "Runs",
+            Tab::Roles => "Who does what",
+            Tab::Install => "Add to project",
+            Tab::Runs => "Tasks",
         }
     }
 }
@@ -419,7 +419,7 @@ impl App {
                         self.reviewed.clear();
                         self.record(msg);
                     }
-                    Err(e) => self.record(format!("not applied: {e}")),
+                    Err(e) => self.record(format!("Nothing was added: {e}")),
                 }
                 self.request_plan();
             }
@@ -430,11 +430,11 @@ impl App {
                         let skipped = if r.skipped.is_empty() {
                             String::new()
                         } else {
-                            format!("; {} skipped (changed since)", r.skipped.len())
+                            format!(" ({} you had changed since were left alone)", r.skipped.len())
                         };
-                        self.record(format!("Restored {} items from operation {}{skipped}", r.restored.len(), r.op_id));
+                        self.record(format!("Undone: put back {} things as they were{skipped}.", r.restored.len()));
                     }
-                    Err(e) => self.record(format!("not undone: {e}")),
+                    Err(e) => self.record(format!("Couldn't undo: {e}")),
                 }
                 self.request_plan();
             }
@@ -454,7 +454,7 @@ impl App {
                 Err(e) => self.notify(e),
             },
             Msg::Criteria { run_dir, stage, result } => match result {
-                Ok(c) if c.is_empty() => self.notify(format!("{stage} has no acceptance criteria")),
+                Ok(c) if c.is_empty() => self.notify(format!("{} has no checklist", crate::words::step(&stage))),
                 Ok(c) => {
                     let items = c.into_iter().map(|(id, d)| (id, d, false)).collect();
                     self.popups.push(Popup::Submit { run_dir, stage, items, cursor: 0 });
@@ -464,32 +464,42 @@ impl App {
             Msg::Submitted { stage, result } => {
                 match result {
                     Ok(r) => {
-                        let mut msg = format!("{stage}: {}", r.state);
+                        let (_, state) = crate::words::step_state(r.state);
+                        let mut msg = format!("{}: {state}", crate::words::step(&stage));
                         if r.awaiting_approval {
-                            msg.push_str(" · awaiting approval (A approves)");
+                            msg.push_str(" · waiting for your OK (press A)");
                         }
                         if r.escalated {
-                            msg.push_str(" · escalated");
+                            msg.push_str(" · too many tries, a person needs to look");
                         }
                         if !r.missing.is_empty() {
-                            msg.push_str(&format!(" · missing {}", r.missing.join(", ")));
+                            let files: Vec<&str> =
+                                r.missing.iter().map(|m| m.rsplit('/').next().unwrap_or(m)).collect();
+                            msg.push_str(&format!(" · still missing {}", files.join(", ")));
                         }
                         self.notify(msg);
                     }
-                    Err(e) => self.notify(format!("{stage}: {e}")),
+                    Err(e) => self.notify(format!("{}: {e}", crate::words::step(&stage))),
                 }
                 self.load_runs();
             }
             Msg::Approved { stage, result } => {
                 match result {
-                    Ok(r) => self.notify(format!("{stage} approved: {}", r.state)),
-                    Err(e) => self.notify(format!("{stage}: {e}")),
+                    Ok(r) => self.notify(format!(
+                        "You gave your OK for {}: {}",
+                        crate::words::step(&stage),
+                        crate::words::step_state(r.state).1
+                    )),
+                    Err(e) => self.notify(format!("{}: {e}", crate::words::step(&stage))),
                 }
                 self.load_runs();
             }
             Msg::Resumed(result) => {
                 match *result {
-                    Ok(r) => self.notify(format!("resumed {}: {} warnings", r.run_id, r.warnings.len())),
+                    Ok(r) => self.notify(match r.warnings.len() {
+                        0 => format!("Checked task {}: all fine", r.run_id),
+                        n => format!("Checked task {}: {n} things to look at (see details)", r.run_id),
+                    }),
                     Err(e) => self.notify(e),
                 }
                 self.load_runs();
@@ -675,7 +685,8 @@ impl App {
             }
             Action::StartApprove => {
                 if let Some((run_dir, stage)) = self.selected_run_stage() {
-                    let prompt = format!("Approve {stage} as (your name), then Enter:");
+                    let prompt =
+                        format!("Give your OK for {}. Type your name, then press Enter:", crate::words::step(&stage));
                     self.popups.push(Popup::Input { prompt, text: String::new(), run_dir, stage });
                 }
             }
@@ -692,7 +703,7 @@ impl App {
             Action::InputAccept => {
                 let empty = matches!(self.popups.last(), Some(Popup::Input { text, .. }) if text.trim().is_empty());
                 if empty {
-                    self.notify("a name is required to approve");
+                    self.notify("Please type your name first");
                 } else if let Some(Popup::Input { text, run_dir, stage, .. }) = self.popups.pop() {
                     self.commands.push_back(Command::Approve { run_dir, stage, by: text.trim().to_string() });
                 }
@@ -708,7 +719,7 @@ impl App {
                     .and_then(|(s, r)| s.handoff.as_ref().map(|h| format!("{}/{h}", r.run_dir)));
                 match path {
                     Some(text) => self.commands.push_back(Command::Copy { text }),
-                    None => self.notify("no handoff for this stage yet"),
+                    None => self.notify("This step has no instructions yet"),
                 }
             }
         }
@@ -733,10 +744,17 @@ impl App {
         let Some((run_dir, stage)) = self.selected_run_stage() else { return };
         match crate::screens::runs::selected_stage(self).and_then(|s| s.handoff.clone()) {
             Some(rel) => {
-                let title = format!(" {stage} handoff — paste it into the assigned CLI (Esc closes) ");
+                let tool = crate::screens::runs::selected_stage(self)
+                    .map(|s| crate::words::tool(&s.provider).to_string())
+                    .unwrap_or_default();
+                let title =
+                    format!(" Instructions for {}: copy them into {tool} (Esc closes) ", crate::words::step(&stage));
                 self.commands.push_back(Command::ReadText { title, run_dir, rel });
             }
-            None => self.notify(format!("{stage} has no handoff yet (it waits for earlier stages)")),
+            None => self.notify(format!(
+                "{} has no instructions yet: it waits for the steps before it",
+                crate::words::step(&stage)
+            )),
         }
     }
 
@@ -806,20 +824,20 @@ impl App {
     fn mark_reviewed(&mut self) {
         let Some(a) = self.selected_action() else { return };
         if !a.needs_review {
-            self.notify(format!("{} needs no review", a.entry));
+            self.notify(format!("{} doesn't need checking", a.entry));
         } else if let Some(i) = self.reviewed.iter().position(|r| *r == a.entry) {
             self.reviewed.remove(i);
-            self.notify(format!("{} no longer marked reviewed", a.entry));
+            self.notify(format!("{} is no longer marked as checked", a.entry));
         } else {
             self.reviewed.push(a.entry.clone());
-            self.notify(format!("{} marked reviewed for this session", a.entry));
+            self.notify(format!("{} marked as checked ✓", a.entry));
         }
     }
 
     fn open_review(&mut self) {
         let (Some(a), Some(p)) = (self.selected_action(), &self.planned) else { return };
         let Some(tree) = p.contents.get(&a.entry) else {
-            self.notify(format!("{} has no files to read here", a.target));
+            self.notify(format!("There's nothing to read for {}", a.entry));
             return;
         };
         let wanted: Vec<String> = match p.review_files.get(&a.entry) {
@@ -835,48 +853,55 @@ impl App {
                 .unwrap_or_else(|| "(not readable)".into());
             text.push_str(&format!("── {path} ──\n{body}\n"));
         }
-        let title = format!(" {} — {} (verified copy; Esc closes) ", a.entry, wanted.join(", "));
+        let title = format!(" Reading {}: {} (↑↓ scroll · Esc closes) ", a.entry, wanted.join(", "));
         self.popups.push(Popup::Viewer { title, text, scroll: 0 });
     }
 
     fn start_apply(&mut self) {
         if let Some(b) = self.busy {
-            return self.notify(format!("busy: {b}…"));
+            return self.notify(format!("Please wait: {b}…"));
         }
-        let Some(p) = &self.planned else { return self.notify("no plan yet") };
+        let Some(p) = &self.planned else { return self.notify("Still working out what to add, one moment") };
         let unreviewed = p.unreviewed(&self.reviewed);
         if !unreviewed.is_empty() {
-            return self
-                .notify(format!("review {} first (Enter shows the files, r marks reviewed)", unreviewed.join(", ")));
+            return self.notify(format!("Please check {} first: Enter to read it, then r", unreviewed.join(", ")));
         }
         if !p.plan.changed {
-            return self.notify("Nothing to do: the project already matches the plan.");
+            return self.notify("Nothing to add: your project already has everything.");
         }
         let changes: Vec<String> = p
             .plan
             .actions
             .iter()
             .filter(|a| matches!(a.kind, ActionKind::Create | ActionKind::Update | ActionKind::Remove))
-            .map(|a| format!("{} {}", format!("{:?}", a.kind).to_lowercase(), a.target))
+            .map(|a| {
+                let verb = match a.kind {
+                    ActionKind::Create => "add   ",
+                    ActionKind::Update => "update",
+                    _ => "remove",
+                };
+                format!("{verb} {}", a.target)
+            })
             .collect();
         let mut lines: Vec<String> = changes.iter().take(14).cloned().collect();
         if changes.len() > 14 {
             lines.push(format!("… and {} more", changes.len() - 14));
         }
         lines.push(String::new());
-        lines.push("Journaled under .aurora/ops/; undo with u. Nothing is ever deleted.".into());
-        let title = format!(" Apply {} changes to {}? ", p.change_count(), p.project.display());
+        lines.push("You can undo this at any time with u. Aurora keeps a backup of anything it replaces.".into());
+        let title = format!(" Add these {} things to your project? ", p.change_count());
         self.popups.push(Popup::Confirm { op: ConfirmOp::Apply, title, lines });
     }
 
     fn start_undo(&mut self) {
         if let Some(b) = self.busy {
-            return self.notify(format!("busy: {b}…"));
+            return self.notify(format!("Please wait: {b}…"));
         }
-        let title = format!(" Undo the last Aurora operation in {}? ", self.opts.project.display());
+        let title = " Undo Aurora's last change? ".to_string();
         let lines = vec![
-            "Restores what the last apply changed, where it is unchanged since.".to_string(),
-            "Removed copies are moved aside under .aurora/ops/, not deleted.".to_string(),
+            "Puts your project back the way it was before Aurora's last change.".to_string(),
+            "Anything you edited yourself since then is left alone. Nothing is deleted:".to_string(),
+            "removed files are kept as a backup in the .aurora folder.".to_string(),
         ];
         self.popups.push(Popup::Confirm { op: ConfirmOp::Undo, title, lines });
     }
@@ -886,7 +911,7 @@ impl App {
         match op {
             ConfirmOp::Apply => {
                 let Some(p) = &self.planned else { return };
-                self.busy = Some("applying");
+                self.busy = Some("adding to your project");
                 self.commands
                     .push_back(Command::Apply { planned: Box::new(p.clone()), reviewed: self.reviewed.clone() });
             }
