@@ -1,18 +1,22 @@
 //! `aurora skills inspect <dir>`: parse a SKILL.md, check it against the Agent Skills spec, and
 //! report how it behaves on each CLI. `aurora skills scan <dir>`: hash every file and run the
-//! static scanner. Both are read-only and never follow symlinks.
+//! static scanner. `aurora skills fetch`: download one skill at its pinned commit into the cache,
+//! check it against the catalog's hash and decide whether it is ready to install. None of these
+//! install anything, and none follow symlinks.
 
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anstream::{eprintln, println};
-use aurora_core::catalog::builtin_catalog;
+use aurora_core::catalog::{Kind, Trust, builtin_catalog};
 use aurora_core::providers::PROVIDER_IDS;
-use aurora_skills::scan::{Level, Verdict, scan as scan_tree};
+use aurora_skills::fetch::{FetchOptions, FetchRequest, fetch as fetch_skill};
+use aurora_skills::scan::{Finding, Level, Readiness, ReviewState, Verdict, readiness, scan as scan_tree};
 use aurora_skills::skill::{
     MAX_SKILL_MD_BYTES, Severity, Support, check_spec, listing_chars, parse_skill, shell_injections, support,
 };
 use aurora_skills::tree::{Limits, collect};
+use clap::Args;
 use serde_json::json;
 
 use crate::style::{BAD, DIM, HEAD, OK, WARN, paint};
@@ -144,7 +148,18 @@ pub fn scan(dir: &Path, as_json: bool) -> u8 {
     );
     println!("  verdict: {verdict}");
     println!("  sha256:  {hash}");
-    for f in &report.findings {
+    print_findings(&report.findings);
+    let note = match report.verdict {
+        Verdict::Clean => "No findings. A clean scan is a signal, not a guarantee: read unfamiliar skills before use.",
+        Verdict::NeedsReview => "Read every flagged file before installing; Aurora asks you to confirm the review.",
+        Verdict::Blocked => "Aurora will not install this skill; blocked findings cannot be overridden.",
+    };
+    println!("\n{}", paint(DIM, note));
+    code
+}
+
+fn print_findings(findings: &[Finding]) {
+    for f in findings {
         let tag = match f.level {
             Level::Block => paint(BAD, "block "),
             Level::Review => paint(WARN, "review"),
@@ -155,11 +170,151 @@ pub fn scan(dir: &Path, as_json: bool) -> u8 {
         };
         println!("  {tag} {:<20} {at}  {}", f.rule, f.detail);
     }
-    let note = match report.verdict {
-        Verdict::Clean => "No findings. A clean scan is a signal, not a guarantee: read unfamiliar skills before use.",
-        Verdict::NeedsReview => "Read every flagged file before installing; Aurora asks you to confirm the review.",
-        Verdict::Blocked => "Aurora will not install this skill; blocked findings cannot be overridden.",
+}
+
+#[derive(Debug, Args)]
+pub struct FetchArgs {
+    /// Catalog entry id (or give --repo, --rev and --path)
+    #[arg(required_unless_present = "repo", conflicts_with_all = ["repo", "rev", "path"])]
+    entry: Option<String>,
+    /// Repository, https://github.com/<owner>/<name>
+    #[arg(long, requires_all = ["rev", "path"])]
+    repo: Option<String>,
+    /// Full commit SHA
+    #[arg(long, requires = "repo")]
+    rev: Option<String>,
+    /// Skill directory inside the repository
+    #[arg(long, requires = "repo")]
+    path: Option<String>,
+    /// Cache directory (default: $AURORA_CACHE_DIR, else $XDG_CACHE_HOME/aurora/skills, else ~/.cache/aurora/skills)
+    #[arg(long, value_name = "DIR")]
+    cache: Option<PathBuf>,
+    /// Serve https://github.com/<owner>/<name> from DIR/<owner>/<name> (an offline mirror)
+    #[arg(long, value_name = "DIR")]
+    mirror: Option<PathBuf>,
+    /// Output in JSON format
+    #[arg(long)]
+    json: bool,
+}
+
+fn cache_dir(explicit: Option<&Path>) -> Result<PathBuf, String> {
+    if let Some(dir) = explicit {
+        return Ok(aurora_fs::paths::absolute(dir));
+    }
+    let var = |name: &str| std::env::var_os(name).filter(|v| !v.is_empty()).map(PathBuf::from);
+    if let Some(dir) = var("AURORA_CACHE_DIR") {
+        return Ok(dir);
+    }
+    if let Some(dir) = var("XDG_CACHE_HOME") {
+        return Ok(dir.join("aurora/skills"));
+    }
+    var("HOME")
+        .map(|h| h.join(".cache/aurora/skills"))
+        .ok_or_else(|| "cannot find a cache directory; pass --cache".into())
+}
+
+pub fn fetch(args: &FetchArgs) -> u8 {
+    let catalog = match builtin_catalog() {
+        Ok(cat) => cat,
+        Err(e) => return error(e),
     };
-    println!("\n{}", paint(DIM, note));
+    let (repo, rev, path, expected, review) = match &args.entry {
+        Some(id) => {
+            let Some(e) = catalog.get(id) else {
+                return error(format!("unknown catalog entry '{id}' (see `aurora catalog list`)"));
+            };
+            let Some(src) = catalog.source(&e.source) else {
+                return error(format!("entry '{id}' has no source"));
+            };
+            if matches!(e.kind, Kind::Framework | Kind::Infra) {
+                return error(format!("'{id}' is a {} and is not installed by Aurora; see {}", e.kind, src.repo));
+            }
+            let review = match (src.trust, &e.reviewed) {
+                (Trust::Community, _) => ReviewState::Community,
+                (_, Some(note)) => ReviewState::Catalog(note.clone()),
+                (_, None) => ReviewState::None,
+            };
+            (src.repo.clone(), src.rev.clone(), e.path.clone().unwrap_or_default(), e.sha256.clone(), review)
+        }
+        None => (
+            args.repo.clone().unwrap_or_default(),
+            args.rev.clone().unwrap_or_default(),
+            args.path.clone().unwrap_or_default(),
+            None,
+            ReviewState::None,
+        ),
+    };
+    let cache = match cache_dir(args.cache.as_deref()) {
+        Ok(dir) => dir,
+        Err(e) => return error(e),
+    };
+    let mut opts = FetchOptions::default();
+    let mut url = repo.clone();
+    if let Some(m) = &args.mirror {
+        let Some(rest) = repo.strip_prefix("https://github.com/") else {
+            return error(format!("--mirror only maps https://github.com repositories, not '{repo}'"));
+        };
+        url = format!("file://{}/{rest}", aurora_fs::paths::absolute(m).display());
+        opts.allow_file_urls = true;
+    }
+    let req = FetchRequest { repo: &url, rev: &rev, path: &path, cache_root: &cache };
+    let dir = match fetch_skill(&req, &opts) {
+        Ok(dir) => dir,
+        Err(e) => return error(format!("cannot fetch {repo}@{rev} {path}: {e}")),
+    };
+    let tree = match collect(&dir, &Limits::default()) {
+        Ok(tree) => tree,
+        Err(e) => return error(e),
+    };
+    let report = scan_tree(&tree);
+    let hash = tree.content_hash();
+    let ready = readiness(&tree, &report, expected.as_deref(), review);
+    let code = match &ready {
+        Readiness::Ready | Readiness::Reviewed(_) => 0,
+        Readiness::NeedsReview(_) => EXIT_SCAN_REVIEW,
+        Readiness::Blocked(_) => EXIT_SCAN_BLOCKED,
+        Readiness::IntegrityMismatch { .. } => 1,
+    };
+
+    if args.json {
+        let out = json!({
+            "entry": args.entry,
+            "repo": repo,
+            "rev": rev,
+            "path": path,
+            "dir": dir.display().to_string(),
+            "sha256": hash,
+            "expected_sha256": expected,
+            "verdict": report.verdict,
+            "findings": report.findings,
+            "readiness": ready,
+        });
+        println!("{}", serde_json::to_string_pretty(&out).unwrap_or_default());
+        return code;
+    }
+    let name = args.entry.clone().unwrap_or_else(|| path.clone());
+    println!("{}", paint(HEAD, format!("Fetched {name}: {repo}@{} {path}", &rev[..12.min(rev.len())])));
+    println!("  cache:   {}", dir.display());
+    let pin = match &expected {
+        Some(e) if *e == hash => paint(OK, "matches the catalog pin"),
+        Some(_) => paint(BAD, "DIFFERS from the catalog pin"),
+        None => paint(DIM, "not pinned in the catalog"),
+    };
+    println!("  sha256:  {hash} ({pin})");
+    print_findings(&report.findings);
+    let line = match &ready {
+        Readiness::Ready => paint(OK, "ready to install"),
+        Readiness::Reviewed(note) => {
+            paint(OK, format!("ready to install; flagged files were reviewed for the catalog: {note}"))
+        }
+        Readiness::NeedsReview(paths) => {
+            paint(WARN, format!("needs review: read {} before installing", paths.join(", ")))
+        }
+        Readiness::Blocked(rules) => paint(BAD, format!("blocked ({}); Aurora will not install it", rules.join(", "))),
+        Readiness::IntegrityMismatch { expected, .. } => {
+            paint(BAD, format!("integrity failure: the catalog pinned {expected}; nothing will be installed"))
+        }
+    };
+    println!("\n  {line}");
     code
 }

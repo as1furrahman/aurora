@@ -308,3 +308,66 @@ pub fn scan(tree: &SkillTree) -> ScanReport {
     };
     ScanReport { verdict, findings }
 }
+
+/// What a human review covers for this entry.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ReviewState {
+    /// No recorded review.
+    None,
+    /// The catalog records a review of the pinned content (curated or official sources).
+    Catalog(String),
+    /// A community source: never pre-reviewed by the catalog.
+    Community,
+}
+
+/// Whether a fetched skill may be installed, and what stands in the way.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "kebab-case", tag = "state", content = "detail")]
+pub enum Readiness {
+    Ready,
+    /// Needs review, already covered by the catalog's review of this exact content.
+    Reviewed(String),
+    /// A human must read these files (or, for community entries, the whole skill) first.
+    NeedsReview(Vec<String>),
+    /// Cannot be installed; the rules that block it.
+    Blocked(Vec<String>),
+    /// The content is not what the catalog pinned.
+    IntegrityMismatch {
+        expected: String,
+        got: String,
+    },
+}
+
+/// Decide readiness. Precedence: integrity, then blocking findings, then review.
+pub fn readiness(
+    tree: &SkillTree,
+    report: &ScanReport,
+    expected_sha256: Option<&str>,
+    review: ReviewState,
+) -> Readiness {
+    let got = tree.content_hash();
+    if let Some(expected) = expected_sha256
+        && expected != got
+    {
+        return Readiness::IntegrityMismatch { expected: expected.to_string(), got };
+    }
+    if report.verdict == Verdict::Blocked {
+        let mut rules: Vec<String> =
+            report.findings.iter().filter(|f| f.level == Level::Block).map(|f| f.rule.to_string()).collect();
+        rules.dedup();
+        return Readiness::Blocked(rules);
+    }
+    let mut flagged: Vec<String> = report.findings.iter().map(|f| f.path.clone()).collect();
+    flagged.sort();
+    flagged.dedup();
+    match review {
+        ReviewState::Community => Readiness::NeedsReview(if flagged.is_empty() {
+            tree.files.iter().map(|f| f.path.clone()).collect()
+        } else {
+            flagged
+        }),
+        _ if report.verdict == Verdict::Clean => Readiness::Ready,
+        ReviewState::Catalog(note) if expected_sha256.is_some() => Readiness::Reviewed(note),
+        _ => Readiness::NeedsReview(flagged),
+    }
+}

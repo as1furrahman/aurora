@@ -125,6 +125,12 @@ pub struct Entry {
     /// Overrides the source licence for this entry.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub license: Option<String>,
+    /// Content hash of the skill directory at `rev` (`aurora skills scan` / `fetch`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
+    /// Record of a human review of exactly that content: who/when and what was read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviewed: Option<String>,
     pub why: String,
 }
 
@@ -312,8 +318,22 @@ fn validate(raw: &RawCatalog) -> Vec<String> {
             }
             _ => {}
         }
-        if matches!(e.kind, Kind::Skill | Kind::Rules) && e.description_chars == 0 {
-            errors.push(format!("entry '{id}': description_chars must be measured (> 0)"));
+        if matches!(e.kind, Kind::Skill | Kind::Rules) {
+            if e.description_chars == 0 {
+                errors.push(format!("entry '{id}': description_chars must be measured (> 0)"));
+            }
+            if !e
+                .sha256
+                .as_deref()
+                .is_some_and(|s| s.len() == 64 && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)))
+            {
+                errors.push(format!(
+                    "entry '{id}': sha256 must be the 64-character content hash at rev (`aurora skills fetch {id}` prints it)"
+                ));
+            }
+        } else if e.sha256.is_some() || e.reviewed.is_some() {
+            errors
+                .push(format!("entry '{id}': a {:?} entry is never installed, so it has no sha256 or review", e.kind));
         }
         if matches!(e.kind, Kind::Framework | Kind::Infra) && e.tier != Tier::OptIn {
             errors.push(format!("entry '{id}': {:?} entries must be opt-in", e.kind));

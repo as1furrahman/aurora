@@ -59,6 +59,8 @@ enum SkillsCommand {
         #[arg(long)]
         json: bool,
     },
+    /// Fetch one skill at its pinned commit into the cache and check it (installs nothing)
+    Fetch(skills::FetchArgs),
     /// Hash every file and run the static scanner (exit 0 clean, 4 needs review, 3 blocked)
     Scan {
         /// Skill directory
@@ -212,6 +214,7 @@ fn main() -> ExitCode {
         Some(Command::Skills { command }) => match command {
             SkillsCommand::Inspect { dir, json } => skills::inspect(&dir, json),
             SkillsCommand::Scan { dir, json } => skills::scan(&dir, json),
+            SkillsCommand::Fetch(args) => skills::fetch(&args),
         },
         Some(Command::Catalog { command }) => match command {
             CatalogCommand::List { json } => catalog::list(json),

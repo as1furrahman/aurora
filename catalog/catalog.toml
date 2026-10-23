@@ -9,6 +9,8 @@
 #        rules     always-on instructions projected into CLAUDE.md / AGENTS.md (not a triggered skill)
 #        framework a whole lifecycle methodology; at most one per project; never installed by Aurora
 #        infra     a proxy, hook or MCP server; outside the skill layer; never installed by Aurora
+# sha256: content hash of the skill directory at rev (`aurora skills fetch <id>`); installs are refused
+#        when the fetched content differs. reviewed: what a human read, valid only for that hash.
 # tier:  baseline  every stage of every workflow
 #        stage     only the listed roles (and stages, when given)
 #        opt-in    only when requested with --with <id>
@@ -184,6 +186,7 @@ source = "karpathy"
 path = "skills/karpathy-guidelines"
 tier = "baseline"
 description_chars = 219
+sha256 = "c7e1df055c2f23d6e84e1c50c93ab212bc071748ea7f761d94cc162c0d189ee9"
 flags = ["no-license-file"]
 why = "Four always-on rules (think first, simplicity, surgical changes, goal-driven): the cheapest guard against over-engineering and unrequested edits."
 
@@ -194,6 +197,7 @@ source = "superpowers"
 path = "skills/verification-before-completion"
 tier = "baseline"
 description_chars = 225
+sha256 = "9c62dbf0e5e0380e2ba8aa38114714dda993d92112e74427a7e028a1e2300868"
 why = "Evidence before claims at every stage exit; matches Aurora's evidence-gated model."
 
 [[entries]]
@@ -203,6 +207,8 @@ source = "superpowers"
 path = "skills/systematic-debugging"
 tier = "baseline"
 description_chars = 91
+sha256 = "51a2a39b1857b3d0f2d80f04c82f41b59ad2bc717d620fbda46bdf13d447f4c1"
+reviewed = "2026-10-24: read find-polluter.sh (runs `npm test` once per test file to find the one that leaves a file behind; no network, writes nothing itself) and condition-based-waiting-example.ts (example code that is never run)."
 flags = ["scripts"]
 why = "Root-cause discipline whenever a test fails or behaviour surprises, in any stage. Bundles a find-polluter.sh helper."
 
@@ -213,6 +219,7 @@ source = "mattpocock"
 path = "skills/productivity/handoff"
 tier = "baseline"
 description_chars = 86
+sha256 = "e34bd0b68614d625cd71c921a0d45dbb58d296ad29f287f2882f03ca2336c644"
 flags = ["manual-only"]
 why = "Compacts a session into a handoff so the next role or a fresh session continues without re-deriving context (#12 on skills.sh)."
 
@@ -227,6 +234,7 @@ tier = "stage"
 roles = ["analyst"]
 stages = ["intake", "question"]
 description_chars = 51
+sha256 = "bbd0af7e350f36b3216a436b06c1214c5b83de838730bdcd84f3e880e7f99907"
 flags = ["manual-only"]
 why = "Relentless requirements interrogation before anything is specified (#2 on skills.sh)."
 
@@ -239,6 +247,7 @@ tier = "stage"
 roles = ["analyst"]
 stages = ["intake"]
 description_chars = 149
+sha256 = "1778c6a4fedf7b3d079b2e009b70e5b90a67ceda527eade8bb7c78a8ae5c8e49"
 flags = ["manual-only"]
 why = "Turns the clarified request into a testable specification."
 
@@ -251,6 +260,7 @@ tier = "stage"
 roles = ["analyst"]
 stages = ["question"]
 description_chars = 238
+sha256 = "ccfd7f91dce1c81132ba14bc3b2fc1e08819305bfb5ab7b610cd2d729a526b54"
 why = "Structured investigation for spikes."
 
 [[entries]]
@@ -262,6 +272,7 @@ tier = "stage"
 roles = ["architect"]
 stages = ["design", "plan"]
 description_chars = 84
+sha256 = "6010c72e452a65d933290c24f203ea7d6007ce6eed108e0fc3d08188fda27d10"
 why = "Bite-sized, test-first implementation plans."
 
 [[entries]]
@@ -273,6 +284,7 @@ tier = "stage"
 roles = ["architect"]
 stages = ["plan"]
 description_chars = 125
+sha256 = "e50ffc6a49d648800e67e6bd4b610b6bad6b614649851d0ae261c1df29e5fb3d"
 flags = ["manual-only"]
 why = "Finds deepening opportunities before a refactor is planned."
 
@@ -285,6 +297,7 @@ tier = "stage"
 roles = ["architect"]
 stages = ["explore"]
 description_chars = 179
+sha256 = "1b96809bd83d9623286d29617a78313faae2c49cff3d4ea62ef1df8dd5a7f9f9"
 why = "Throwaway prototypes that answer a spike's question instead of speculative production code."
 
 [[entries]]
@@ -296,6 +309,7 @@ tier = "stage"
 roles = ["implementer"]
 stages = ["implement", "fix", "remediate"]
 description_chars = 79
+sha256 = "01dcc0f4ace823b377581f5c93707fc2653bed70c61ef29d78181f967389cd6a"
 why = "Red-green-refactor with the failing test watched first: the red-to-green evidence Aurora's implement gates ask for."
 
 [[entries]]
@@ -307,6 +321,7 @@ tier = "stage"
 roles = ["implementer"]
 stages = ["implement", "fix", "remediate"]
 description_chars = 366
+sha256 = "c4aa20035de3b547346263de23d96e53fdca7f819d1514a0ece0296f556af321"
 flags = ["popularity-unverified"]
 why = "A 7-step 'do we need this code at all' ladder before writing code. Kept off intake and design, where it fights thorough specs."
 
@@ -319,6 +334,8 @@ tier = "stage"
 roles = ["implementer"]
 stages = ["root-cause"]
 description_chars = 156
+sha256 = "d2995226c379becce6e5233905d2956fdc7e47b7b6db0b18266a475f53a203a3"
+reviewed = "2026-10-24: read scripts/hitl-loop.template.sh (a template the agent copies and edits; it only prompts the user and prints the answers; no network or file writes)."
 flags = ["scripts"]
 why = "Hypothesis-driven diagnosis that ends in an evidenced cause. Bundles a loop template script."
 
@@ -331,6 +348,7 @@ tier = "stage"
 roles = ["implementer"]
 stages = ["remediate"]
 description_chars = 234
+sha256 = "79b9e3c16d10f970d10458a83117b15a43d82c0625129609c64ca6aac8914dfc"
 why = "Verifies review findings before acting on them instead of performative agreement."
 
 [[entries]]
@@ -342,6 +360,7 @@ tier = "stage"
 roles = ["tester"]
 stages = ["reproduce"]
 description_chars = 94
+sha256 = "3b321c1eaaaf469ff70195b6acb53485f7eeb989d3a344db4f235bde61d63862"
 flags = ["share-alike"]
 why = "A minimal, deterministic failing reproduction before any fix."
 
@@ -354,6 +373,7 @@ tier = "stage"
 roles = ["tester"]
 stages = ["accept"]
 description_chars = 101
+sha256 = "01564a6ec88509d3d79719558933f11f6d53d1424227dcb9d96fad495d3c2a9c"
 why = "Verifies the suite and presents merge / PR / keep options at acceptance."
 
 [[entries]]
@@ -364,6 +384,7 @@ path = "skills/code-review"
 tier = "stage"
 roles = ["reviewer"]
 description_chars = 215
+sha256 = "1dcd148d3831eb7285976d3ba19c8c0668f67742141bf24d5ce713ffd3453bbc"
 why = "Portable, severity-labelled code review from Sentry's engineering practice."
 
 [[entries]]
@@ -375,6 +396,7 @@ tier = "stage"
 roles = ["reviewer"]
 stages = ["review"]
 description_chars = 184
+sha256 = "6bab5df6c5ebcee692144e56af30fed5a424e2ddd35e312287717ba9264e7b33"
 why = "Bug-hunting pass over the change, complementing code-health review."
 
 [[entries]]
@@ -386,6 +408,7 @@ tier = "stage"
 roles = ["reviewer"]
 stages = ["review"]
 description_chars = 370
+sha256 = "271c6213e3fde20d78351f7d73f1029ffdae96ed48d5aec7ae4eed4ef0c251cf"
 flags = ["popularity-unverified"]
 why = "Reads untouched callers outside the diff and flags over-engineering."
 
@@ -398,6 +421,8 @@ tier = "stage"
 roles = ["reviewer"]
 stages = ["second-look"]
 description_chars = 477
+sha256 = "d01036b3417fa5fd71bdf6f18c85390a4b6e6a4759f96abfeb46c3015b890cee"
+reviewed = "2026-10-24: no scripts. allowed-tools pre-approves Read Write Grep Glob Bash in Claude Code; it must be stripped when installed for a read-only reviewer (R2 Step 3)."
 flags = ["allowed-tools", "share-alike"]
 why = "Security-focused review of what changed, for the independent second look."
 
@@ -409,6 +434,8 @@ path = "skills/security-review"
 tier = "stage"
 roles = ["security"]
 description_chars = 312
+sha256 = "db3197ccc38031e6329488e854e785fb539fe7dec18e6af83651799fcb06f2d2"
+reviewed = "2026-10-24: no scripts. references/supply-chain.md quotes a `curl ... | bash` preinstall hook as a DANGEROUS example. allowed-tools pre-approves Bash in Claude Code; it must be stripped for read-only roles (R2 Step 3)."
 flags = ["allowed-tools"]
 why = "Broad application-security checklist with per-language references."
 
@@ -421,6 +448,7 @@ tier = "stage"
 roles = ["security"]
 stages = ["assess"]
 description_chars = 376
+sha256 = "742d3c948575fc7c8256be9f9f844fd55e5a30ace6334b27fc728f4c603b4198"
 flags = ["allowed-tools", "share-alike"]
 why = "Finds dangerous API and configuration defaults across languages."
 
@@ -432,6 +460,7 @@ path = "skills/documentation-and-adrs"
 tier = "stage"
 roles = ["documenter"]
 description_chars = 290
+sha256 = "31bf508300b3654a1776891c3d55f4ff5e46fe52e08a075898b42f848730c80f"
 why = "Decision records and documentation written for future maintainers."
 
 # ---------------------------------------------------------------- opt-in skills (--with <id>)
@@ -444,6 +473,7 @@ path = "skills/caveman"
 tier = "opt-in"
 roles = ["implementer"]
 description_chars = 203
+sha256 = "ba56cd51ce7ddeaccca93848cb990db730782b32fcb83069db719150f0a75807"
 why = "Terse output on implementation stages. Its own README reports about 3% median gain over a plain 'be concise'."
 
 [[entries]]
@@ -454,6 +484,7 @@ path = "skills/planning-with-files"
 tier = "opt-in"
 roles = ["architect", "implementer"]
 description_chars = 606
+sha256 = "a1494342c0e462516e628c5234dbb4c09f41880bfc9a7fdf068a2f6ac9437bb5"
 flags = ["hooks", "scripts", "allowed-tools"]
 why = "Plans on disk that survive compaction in long sessions. Declares UserPromptSubmit, PreToolUse, PostToolUse, Stop and PreCompact hooks."
 
@@ -465,6 +496,7 @@ path = "plugins/property-based-testing/skills/property-based-testing"
 tier = "opt-in"
 roles = ["tester"]
 description_chars = 845
+sha256 = "616c0663d0e5165f48190945a15cbd93fa96cfe8e0422c1d201d338fa475800c"
 flags = ["share-alike"]
 why = "Property-based tests for parsers, serializers and other invariant-heavy code."
 
@@ -477,6 +509,7 @@ tier = "opt-in"
 roles = ["tester"]
 license = "Apache-2.0"
 description_chars = 204
+sha256 = "28c92c62a47cf3a89d2d118e4635338db8c69c7fbb1442cf8c5aaca36183ebae"
 flags = ["scripts"]
 why = "Playwright-driven checks for local web apps."
 
@@ -488,6 +521,7 @@ path = "skills/playwright-cli"
 tier = "opt-in"
 roles = ["tester"]
 description_chars = 77
+sha256 = "b7f4aa89bf27e653c28ff9efc08d73ae5541b32f904c5201ca1c326f3291f370"
 flags = ["allowed-tools"]
 why = "Browser automation through the playwright-cli binary; lighter on context than the Playwright MCP server."
 
@@ -500,6 +534,7 @@ tier = "opt-in"
 roles = ["tester"]
 stages = ["accept"]
 description_chars = 443
+sha256 = "a7c7f30b280e38bfbba29fe322dae8c847c408b081d91a312eb7abe8c0725c0f"
 flags = ["scripts", "allowed-tools", "share-alike"]
 why = "Evidence model for proving a patch fixed the issue without regressions."
 
@@ -512,6 +547,7 @@ tier = "opt-in"
 roles = ["tester"]
 stages = ["accept"]
 description_chars = 271
+sha256 = "f94d94f418e10b0f8e77c1af9cd21f0cd961a0a257ead19c29028ba38a40ac8f"
 why = "Pre-launch checklist when acceptance also means release."
 
 [[entries]]
@@ -523,6 +559,7 @@ tier = "opt-in"
 roles = ["security"]
 stages = ["assess"]
 description_chars = 707
+sha256 = "dca5a49785e5b8e008b812da0895a11efe115e310900b2c13f99fef281c3d91f"
 flags = ["scripts", "allowed-tools", "share-alike"]
 why = "Static analysis with Semgrep rulesets and merged SARIF output."
 
@@ -535,6 +572,7 @@ tier = "opt-in"
 roles = ["security"]
 stages = ["assess"]
 description_chars = 367
+sha256 = "d07975abd0ac6d5ba1db6886a368e21c413f3aac8ac09dc874bfedfe816205b5"
 flags = ["scripts", "allowed-tools", "share-alike"]
 why = "Dependency risk audit."
 
@@ -547,6 +585,7 @@ tier = "opt-in"
 roles = ["security"]
 stages = ["assess"]
 description_chars = 363
+sha256 = "a5997cce9088c2ac39b3ae73e58f809aa2de03d37ed3e9ed278e2174b1d42dd3"
 flags = ["allowed-tools"]
 why = "GitHub Actions workflow security (pwn requests, expression injection, credential escalation)."
 
@@ -559,6 +598,7 @@ tier = "opt-in"
 roles = ["security"]
 stages = ["assess"]
 description_chars = 329
+sha256 = "4763f1cc7b16ded1471a54acf5f47af8f75956ad3503459f1741078158b614da"
 flags = ["scripts", "allowed-tools"]
 why = "Audits agent skills themselves for prompt injection and dangerous code."
 
@@ -570,6 +610,7 @@ path = "skills/pr-writer"
 tier = "opt-in"
 roles = ["documenter"]
 description_chars = 152
+sha256 = "d33770cdbc269513f763d7bdf16c64561a1084f7fb331d8ccb48425ac37a07b8"
 why = "Concise pull-request descriptions."
 
 # ---------------------------------------------------------------- frameworks (never installed by Aurora)

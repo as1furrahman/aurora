@@ -81,6 +81,7 @@ source = "up"
 path = "skills/verify"
 tier = "baseline"
 description_chars = 100
+sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 why = "evidence before claims"
 "#;
 
@@ -108,8 +109,13 @@ fn installable_entries_have_a_path_and_a_measured_description() {
                 let path = e.path.as_deref().unwrap_or_else(|| panic!("{} has no path", e.id));
                 assert!(!path.starts_with('/') && !path.contains(".."), "{}: {path}", e.id);
                 assert!(e.description_chars > 0, "{}", e.id);
+                let sha = e.sha256.as_deref().unwrap_or_else(|| panic!("{} has no content pin", e.id));
+                assert!(sha.len() == 64 && sha.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()));
             }
-            Kind::Framework | Kind::Infra => assert_eq!(e.tier, Tier::OptIn, "{} must be opt-in", e.id),
+            Kind::Framework | Kind::Infra => {
+                assert_eq!(e.tier, Tier::OptIn, "{} must be opt-in", e.id);
+                assert!(e.sha256.is_none() && e.reviewed.is_none(), "{} is never installed", e.id);
+            }
         }
         assert!(!e.why.trim().is_empty(), "{} has no rationale", e.id);
     }
@@ -317,6 +323,12 @@ fn validation_rejects_bad_catalogs() {
     );
     assert!(validation_errors(&dup).iter().any(|e| e.contains("duplicate")));
 
+    let unpinned =
+        MINIMAL.replace("sha256 = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n", "");
+    assert!(validation_errors(&unpinned).iter().any(|e| e.contains("sha256")), "skills need a content pin");
+    let short = MINIMAL.replace(&"a".repeat(64), "abc");
+    assert!(validation_errors(&short).iter().any(|e| e.contains("sha256")));
+
     let bad_slot = MINIMAL.replace("tester = 2, reviewer = 2", "tester = 3, reviewer = 2");
     assert!(validation_errors(&bad_slot).iter().any(|e| e.contains("slot")));
 }
@@ -325,4 +337,16 @@ fn validation_rejects_bad_catalogs() {
 fn unknown_keys_are_rejected() {
     let typo = MINIMAL.replace("why = \"evidence before claims\"", "why = \"x\"\nrole = [\"tester\"]");
     assert!(matches!(parse_catalog_str(&typo), Err(CatalogError::Parse(_))));
+}
+
+#[test]
+fn reviewed_entries_needing_review_record_what_was_read() {
+    // Every default (baseline or stage) entry whose files need review carries a review note, so the
+    // pair profile installs without asking; opt-in and community entries may still ask.
+    let cat = catalog();
+    for id in ["systematic-debugging", "diagnosing-bugs", "differential-review", "security-review"] {
+        let e = cat.get(id).expect("entry");
+        let note = e.reviewed.as_deref().unwrap_or_else(|| panic!("{id} has no review note"));
+        assert!(note.starts_with("2026-") && note.len() > 30, "{id}: {note}");
+    }
 }

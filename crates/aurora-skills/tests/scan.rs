@@ -264,3 +264,62 @@ fn encoded_blobs_and_download_urls_need_review() {
     let docs = b"See https://docs.example.com/guide.html and https://github.com/o/r.\n";
     assert_eq!(rules(&skill_dir(&tmp.path().join("d"), &[("notes.md", docs)])).0, Verdict::Clean);
 }
+
+mod readiness {
+    use super::*;
+    use aurora_skills::scan::{Readiness, ReviewState, readiness};
+
+    fn tree_and_report(files: &[(&str, &[u8])]) -> (aurora_skills::tree::SkillTree, aurora_skills::scan::ScanReport) {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let dir = skill_dir(tmp.path(), files);
+        let tree = collect(&dir, &Limits::default()).expect("collect");
+        let report = scan(&tree);
+        (tree, report)
+    }
+
+    #[test]
+    fn clean_and_pinned_is_ready() {
+        let (tree, report) = tree_and_report(&[]);
+        let hash = tree.content_hash();
+        assert_eq!(readiness(&tree, &report, Some(&hash), ReviewState::None), Readiness::Ready);
+    }
+
+    #[test]
+    fn a_hash_mismatch_wins_over_everything() {
+        let (tree, report) = tree_and_report(&[]);
+        let wrong = "0".repeat(64);
+        let r = readiness(&tree, &report, Some(&wrong), ReviewState::Catalog("read it".into()));
+        assert!(matches!(r, Readiness::IntegrityMismatch { .. }), "{r:?}");
+    }
+
+    #[test]
+    fn review_findings_need_a_review_unless_the_catalog_reviewed_this_hash() {
+        let (tree, report) = tree_and_report(&[("run.sh", b"echo hi\n")]);
+        let hash = tree.content_hash();
+        let needs = readiness(&tree, &report, Some(&hash), ReviewState::None);
+        assert!(matches!(&needs, Readiness::NeedsReview(paths) if paths == &["run.sh".to_string()]), "{needs:?}");
+        let reviewed = readiness(&tree, &report, Some(&hash), ReviewState::Catalog("scripts read".into()));
+        assert_eq!(reviewed, Readiness::Reviewed("scripts read".into()));
+        // Community entries are never pre-reviewed by the catalog.
+        let community = readiness(&tree, &report, Some(&hash), ReviewState::Community);
+        assert!(matches!(community, Readiness::NeedsReview(_)), "{community:?}");
+        // Without a pinned hash there is nothing the review could have covered.
+        let unpinned = readiness(&tree, &report, None, ReviewState::Catalog("scripts read".into()));
+        assert!(matches!(unpinned, Readiness::NeedsReview(_)), "{unpinned:?}");
+    }
+
+    #[test]
+    fn community_entries_need_review_even_when_clean() {
+        let (tree, report) = tree_and_report(&[]);
+        let hash = tree.content_hash();
+        assert!(matches!(readiness(&tree, &report, Some(&hash), ReviewState::Community), Readiness::NeedsReview(_)));
+    }
+
+    #[test]
+    fn blocked_cannot_be_reviewed_away() {
+        let (tree, report) = tree_and_report(&[("x.pyc", b"\x6f\x0d\x0d\x0a")]);
+        let hash = tree.content_hash();
+        let r = readiness(&tree, &report, Some(&hash), ReviewState::Catalog("looked fine".into()));
+        assert!(matches!(r, Readiness::Blocked(_)), "{r:?}");
+    }
+}

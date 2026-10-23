@@ -128,3 +128,90 @@ fn scan_refuses_a_symlinked_root() {
     assert_eq!(code, 1);
     assert!(err.contains("symlink"), "{err}");
 }
+
+fn git(dir: &Path, args: &[&str]) -> String {
+    let out = std::process::Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(args)
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .env("GIT_AUTHOR_NAME", "t")
+        .env("GIT_AUTHOR_EMAIL", "t@example.invalid")
+        .env("GIT_COMMITTER_NAME", "t")
+        .env("GIT_COMMITTER_EMAIL", "t@example.invalid")
+        .output()
+        .expect("git runs");
+    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    String::from_utf8_lossy(&out.stdout).trim().to_string()
+}
+
+/// A local mirror laid out as <mirror>/<owner>/<name>, holding one skill with a script.
+fn mirror(root: &Path) -> (std::path::PathBuf, String) {
+    let repo = root.join("mirror/demo-org/demo-skills");
+    fs::create_dir_all(repo.join("skills/demo")).expect("mkdir");
+    git(&repo, &["init", "-q", "-b", "main"]);
+    git(&repo, &["config", "uploadpack.allowFilter", "true"]);
+    git(&repo, &["config", "uploadpack.allowAnySHA1InWant", "true"]);
+    fs::write(repo.join("skills/demo/SKILL.md"), "---\nname: demo\ndescription: d\n---\nok\n").expect("write");
+    fs::write(repo.join("skills/demo/run.sh"), "echo hi\n").expect("write");
+    git(&repo, &["add", "-A"]);
+    git(&repo, &["commit", "-q", "-m", "init"]);
+    let rev = git(&repo, &["rev-parse", "HEAD"]);
+    (root.join("mirror"), rev)
+}
+
+fn aurora_fetch(args: &[&str]) -> (i32, String, String) {
+    let out = Command::cargo_bin("aurora")
+        .expect("binary builds")
+        .env("NO_COLOR", "1")
+        .env_remove("AURORA_CACHE_DIR")
+        .args(["skills", "fetch"])
+        .args(args)
+        .output()
+        .expect("runs");
+    (
+        out.status.code().unwrap_or(-1),
+        String::from_utf8_lossy(&out.stdout).into_owned(),
+        String::from_utf8_lossy(&out.stderr).into_owned(),
+    )
+}
+
+#[test]
+fn fetch_ad_hoc_from_a_mirror_scans_and_reports_the_hash() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let (mirror, rev) = mirror(tmp.path());
+    let cache = tmp.path().join("cache");
+    let (m, c) = (mirror.display().to_string(), cache.display().to_string());
+    let args = ["--repo", "https://github.com/demo-org/demo-skills", "--rev", &rev, "--path", "skills/demo"];
+    let (code, out, err) = aurora_fetch(&[&args[..], &["--mirror", &m, "--cache", &c, "--json"]].concat());
+    assert_eq!(code, 4, "a bundled script needs review: {out}{err}");
+    let v: Value = serde_json::from_str(&out).expect("json");
+    assert_eq!(v["readiness"]["state"], "needs-review");
+    assert_eq!(v["sha256"].as_str().expect("hash").len(), 64);
+    assert!(v["dir"].as_str().expect("dir").starts_with(&c), "fetched into the given cache");
+
+    let (code, out, _) = aurora_fetch(&[&args[..], &["--mirror", &m, "--cache", &c]].concat());
+    assert_eq!(code, 4);
+    assert!(out.contains("run.sh") && out.contains("needs review"), "{out}");
+}
+
+#[test]
+fn fetch_by_entry_uses_the_catalog_pin() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let (mirror, _) = mirror(tmp.path());
+    let (m, c) = (mirror.display().to_string(), tmp.path().join("cache").display().to_string());
+    // The mirror has no obra/superpowers, so the pinned commit cannot be fetched: a clear error.
+    let (code, _, err) = aurora_fetch(&["verification-before-completion", "--mirror", &m, "--cache", &c]);
+    assert_eq!(code, 1);
+    assert!(err.contains("2ce8aa15d05bd57213e6f746f953aafb7ded7a8b") || err.contains("fetch"), "{err}");
+
+    let (code, _, err) = aurora_fetch(&["headroom", "--cache", &c]);
+    assert_eq!(code, 1);
+    assert!(err.contains("not installed by Aurora"), "{err}");
+    let (code, _, err) = aurora_fetch(&["nope", "--cache", &c]);
+    assert_eq!(code, 1);
+    assert!(err.contains("nope"), "{err}");
+    let (code, _, _) = aurora_fetch(&["--repo", "https://github.com/o/r", "--cache", &c]);
+    assert_eq!(code, 2, "--repo needs --rev and --path");
+}
