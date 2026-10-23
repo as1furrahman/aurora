@@ -241,7 +241,10 @@ fn plan_uses_path_detection_by_default() {
     let r = run(aurora(&e.path).args(["workflow", "plan", &example(), "--json"]));
     assert_eq!(r.code, 0, "{}", r.stderr);
     let plan = json(&r.stdout);
-    assert_eq!(plan["detection"], serde_json::json!({"antigravity": false, "claude": true, "codex": true}));
+    assert_eq!(
+        plan["detection"],
+        serde_json::json!({"antigravity": false, "claude": true, "codex": true, "hermes": false})
+    );
     let implement = plan["stages"].as_array().expect("stages").iter().find(|s| s["id"] == "implement").expect("stage");
     assert_eq!(implement["fallback_trail"][0]["reason"], "unavailable");
 }
@@ -301,7 +304,7 @@ fn providers_json() {
     let data = json(&r.stdout);
     let rows = data.as_array().expect("rows");
     let ids: Vec<&str> = rows.iter().map(|p| p["id"].as_str().expect("id")).collect();
-    assert_eq!(ids, ["antigravity", "claude", "codex"]);
+    assert_eq!(ids, ["antigravity", "claude", "codex", "hermes"]);
     for p in rows {
         assert_eq!(p["installed"], false);
         assert_eq!(p["headless_enabled"], false);

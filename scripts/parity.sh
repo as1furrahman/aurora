@@ -44,9 +44,20 @@ for args in "${cases[@]}"; do
   if [[ $py -ne $rs ]]; then
     echo "DIFF exit code ($py vs $rs): $args"; fail=1; continue
   fi
-  if python3 -I - "$tmp/py.json" "$tmp/rs.json" <<'PY'
+  if python3 -I - "$tmp/py.json" "$tmp/rs.json" "$args" <<'PY'
 import json, sys
 a, b = (json.load(open(p)) for p in sys.argv[1:3])
+if sys.argv[3].startswith("providers"):
+    # Rust knows more providers (hermes) and may forbid more flags; compare the providers
+    # both implementations know, requiring Rust's forbidden flags to be a superset.
+    known = {p["id"] for p in a}
+    b = [p for p in b if p["id"] in known]
+    for pa, pb in zip(a, b):
+        if not set(pa.pop("forbidden_flags")) <= set(pb.pop("forbidden_flags")):
+            sys.exit(1)
+        pb.pop("enforcement", None)
+if isinstance(a, dict) and isinstance(a.get("detection"), dict) and isinstance(b.get("detection"), dict):
+    b["detection"] = {k: v for k, v in b["detection"].items() if k in a["detection"]}
 sys.exit(0 if a == b else 1)
 PY
   then

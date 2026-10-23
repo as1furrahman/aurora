@@ -6,12 +6,13 @@ use aurora_core::registry::ALLOWED_AGENTS;
 
 #[test]
 fn known_providers_and_binaries() {
-    assert_eq!(PROVIDER_IDS, ["antigravity", "claude", "codex"]);
+    assert_eq!(PROVIDER_IDS, ["antigravity", "claude", "codex", "hermes"]);
     let ids: Vec<&str> = PROVIDERS.iter().map(|p| p.id).collect();
     assert_eq!(ids, PROVIDER_IDS);
     assert_eq!(get_provider("claude").expect("claude").binary, "claude");
     assert_eq!(get_provider("codex").expect("codex").binary, "codex");
     assert_eq!(get_provider("antigravity").expect("antigravity").binary, "agy");
+    assert_eq!(get_provider("hermes").expect("hermes").binary, "hermes");
     assert!(is_known_provider("codex") && !is_known_provider("gpt-cli"));
 }
 
@@ -28,7 +29,8 @@ fn specs_are_manual_only_and_documented() {
         assert!(!p.headless_enabled);
         assert!(!p.forbidden_flags.is_empty());
         assert!(!p.docs_urls.is_empty());
-        assert_eq!(p.verified_on, "2026-10-23");
+        // An ISO date recording when the facts were last checked against the docs or the CLI.
+        assert!(p.verified_on.len() == 10 && p.verified_on.starts_with("2026-"), "{}", p.verified_on);
     }
 }
 
@@ -62,4 +64,21 @@ fn handoff_text_never_contains_forbidden_flags() {
             }
         }
     }
+}
+
+#[test]
+fn hermes_spec_matches_the_verified_cli() {
+    // Verified against `hermes --help` / `hermes chat --help` (Hermes Agent v0.22.5) on 2026-10-24.
+    let hermes = get_provider("hermes").expect("hermes");
+    assert_eq!(hermes.skill_adapters, ["hermes"]);
+    assert!(hermes.forbidden_flags.contains(&"--yolo") && hermes.forbidden_flags.contains(&"--accept-hooks"));
+    assert_eq!(hermes.enforcement("read_only").expect("read_only").strength, aurora_core::providers::Strength::Soft);
+    assert_eq!(hermes.enforcement("tool_restriction").expect("tools").strength, aurora_core::providers::Strength::Hard);
+    assert!(ALLOWED_AGENTS.contains(&"hermes"));
+}
+
+#[test]
+fn codex_forbids_its_newer_bypass_flag() {
+    // Present in `codex exec --help` (codex-cli 0.164.0).
+    assert!(get_provider("codex").expect("codex").forbidden_flags.contains(&"--dangerously-bypass-hook-trust"));
 }

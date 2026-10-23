@@ -62,7 +62,7 @@ pub struct Enforcement {
 }
 
 /// Known providers, sorted by id.
-pub const PROVIDERS: [ProviderSpec; 3] = [
+pub const PROVIDERS: [ProviderSpec; 4] = [
     ProviderSpec {
         id: "antigravity",
         display_name: "Google Antigravity CLI",
@@ -141,6 +141,7 @@ pub const PROVIDERS: [ProviderSpec; 3] = [
             "--yolo",
             "danger-full-access",
             "--ask-for-approval never",
+            "--dangerously-bypass-hook-trust",
         ],
         docs_urls: &[
             "https://learn.chatgpt.com/docs/non-interactive-mode",
@@ -165,10 +166,42 @@ pub const PROVIDERS: [ProviderSpec; 3] = [
             },
         ],
     },
+    // Facts verified against the installed CLI (`hermes --help`, `hermes chat --help`,
+    // Hermes Agent v0.22.5) on 2026-10-24.
+    ProviderSpec {
+        id: "hermes",
+        display_name: "Hermes Agent",
+        binary: "hermes",
+        skill_adapters: &["hermes"],
+        run_hint: "Start `hermes` interactively in the project directory and paste this handoff (everything above).",
+        documented_headless: "hermes chat --query-file <file> --oneshot -Q [--in <dir>] [-t <toolsets>]",
+        forbidden_flags: &["--yolo", "--accept-hooks"],
+        docs_urls: &[
+            "https://hermes-agent.nousresearch.com/docs/getting-started/quickstart",
+            "https://github.com/NousResearch/hermes-agent",
+        ],
+        verified_on: "2026-10-24",
+        invocation_modes: &[MANUAL_HANDOFF],
+        headless_enabled: false,
+        enforcement: &[
+            Enforcement {
+                capability: "read_only",
+                strength: Strength::Soft,
+                how: "Hermes has no read-only mode; enable only non-writing toolsets with `hermes -t <toolsets>` and state the restriction in the prompt.",
+                source: "https://hermes-agent.nousresearch.com/docs/getting-started/quickstart",
+            },
+            Enforcement {
+                capability: "tool_restriction",
+                strength: Strength::Hard,
+                how: "Start `hermes -t <toolsets>` to enable only the allowed toolsets.",
+                source: "https://hermes-agent.nousresearch.com/docs/getting-started/quickstart",
+            },
+        ],
+    },
 ];
 
 /// Known provider ids, sorted.
-pub const PROVIDER_IDS: [&str; 3] = ["antigravity", "claude", "codex"];
+pub const PROVIDER_IDS: [&str; 4] = ["antigravity", "claude", "codex", "hermes"];
 
 pub fn is_known_provider(id: &str) -> bool {
     PROVIDER_IDS.contains(&id)

@@ -10,7 +10,7 @@ use crate::util::{is_kebab_id, is_semver, py_list};
 
 /// Skill-storage adapter ids a skill may declare in `compatible_agents`.
 pub const ALLOWED_AGENTS: &[&str] =
-    &["antigravity-cli", "antigravity-workspace", "antigravity-ide", "codex-cli", "claude-code", "universal"];
+    &["antigravity-cli", "antigravity-workspace", "antigravity-ide", "codex-cli", "claude-code", "hermes", "universal"];
 
 /// A skill entry from the registry.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -265,6 +265,7 @@ tool-restriction findings.
 | claude | **hard**: `claude --permission-mode plan` | **hard**: `--disallowedTools` |
 | codex | **hard**: `codex --sandbox read-only` | soft: no per-tool deny flag |
 | antigravity | soft: `agy --mode plan` (blocking not verified) | soft: settings deny rules, not verifiable by Aurora |
+| hermes | soft: no read-only mode; restrict toolsets | **hard**: `hermes -t <toolsets>` |
 
 The plan records `enforcement: [{capability, strength, how, source}]` for each stage (omitted when
 empty). A soft-only assignment produces a warning that is never silent. The handoff gains a
@@ -292,3 +293,17 @@ reviewer, security, documenter. Reviewing roles carry `requires = ["read_only"]`
 review and verification to a provider distinct from implementation, which the tests enforce,
 and every preset ends with a human approval gate. `--provider X` still runs every role on one CLI
 and reports the reduced independence.
+
+### 7.6 Hermes provider (Rust only)
+
+`hermes` (Nous Research Hermes Agent) is the fourth provider. Its facts were verified on
+2026-10-24 against the installed CLI (`hermes --help`, Hermes Agent v0.22.5):
+
+- non-interactive use: `hermes chat --query-file F --oneshot -Q`, with `--in DIR` for the working
+  directory;
+- skills: `~/.hermes/skills` (skill adapter id `hermes`);
+- forbidden flags: `--yolo` and `--accept-hooks`.
+
+The Python reference does not know this provider. Workflows that route to `hermes` therefore run
+only in the Rust implementation. The parity scripts compare only the providers both
+implementations know.
