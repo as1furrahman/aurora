@@ -1,6 +1,7 @@
 //! `aurora` — role-based agent skill manager and workflow orchestrator.
 //!
-//! Exit codes: 0 ok, 1 error, 2 usage error (clap), 3 plan/run has blocked stages.
+//! Exit codes: 0 ok, 1 error, 2 usage error (clap), 3 plan/run has blocked stages or a skill scan
+//! is blocked, 4 a skill scan needs review.
 
 mod catalog;
 mod providers;
@@ -53,6 +54,14 @@ enum SkillsCommand {
     /// Check one skill directory: spec issues, per-CLI support, listing cost, shell injections
     Inspect {
         /// Directory containing SKILL.md
+        dir: PathBuf,
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Hash every file and run the static scanner (exit 0 clean, 4 needs review, 3 blocked)
+    Scan {
+        /// Skill directory
         dir: PathBuf,
         /// Output in JSON format
         #[arg(long)]
@@ -200,7 +209,10 @@ fn main() -> ExitCode {
             0
         }
         Some(Command::Providers { json }) => providers::run(json),
-        Some(Command::Skills { command: SkillsCommand::Inspect { dir, json } }) => skills::inspect(&dir, json),
+        Some(Command::Skills { command }) => match command {
+            SkillsCommand::Inspect { dir, json } => skills::inspect(&dir, json),
+            SkillsCommand::Scan { dir, json } => skills::scan(&dir, json),
+        },
         Some(Command::Catalog { command }) => match command {
             CatalogCommand::List { json } => catalog::list(json),
             CatalogCommand::Show { id, json } => catalog::show(&id, json),

@@ -1,5 +1,6 @@
 //! `aurora skills inspect <dir>`: parse a SKILL.md, check it against the Agent Skills spec, and
-//! report how it behaves on each CLI. Read-only; the file is read without following symlinks.
+//! report how it behaves on each CLI. `aurora skills scan <dir>`: hash every file and run the
+//! static scanner. Both are read-only and never follow symlinks.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -7,9 +8,11 @@ use std::path::Path;
 use anstream::{eprintln, println};
 use aurora_core::catalog::builtin_catalog;
 use aurora_core::providers::PROVIDER_IDS;
+use aurora_skills::scan::{Level, Verdict, scan as scan_tree};
 use aurora_skills::skill::{
     MAX_SKILL_MD_BYTES, Severity, Support, check_spec, listing_chars, parse_skill, shell_injections, support,
 };
+use aurora_skills::tree::{Limits, collect};
 use serde_json::json;
 
 use crate::style::{BAD, DIM, HEAD, OK, WARN, paint};
@@ -102,4 +105,61 @@ pub fn inspect(dir: &Path, as_json: bool) -> u8 {
     }
     println!("\n{}", paint(DIM, "Inspection only: nothing was installed or executed."));
     u8::from(failed)
+}
+
+pub const EXIT_SCAN_BLOCKED: u8 = 3;
+pub const EXIT_SCAN_REVIEW: u8 = 4;
+
+pub fn scan(dir: &Path, as_json: bool) -> u8 {
+    let tree = match collect(dir, &Limits::default()) {
+        Ok(tree) => tree,
+        Err(e) => return error(e),
+    };
+    let report = scan_tree(&tree);
+    let hash = tree.content_hash();
+    let code = match report.verdict {
+        Verdict::Clean => 0,
+        Verdict::NeedsReview => EXIT_SCAN_REVIEW,
+        Verdict::Blocked => EXIT_SCAN_BLOCKED,
+    };
+    if as_json {
+        let out = json!({
+            "dir": aurora_fs::paths::absolute(dir).display().to_string(),
+            "verdict": report.verdict,
+            "sha256": hash,
+            "files": tree.files.len(),
+            "findings": report.findings,
+        });
+        println!("{}", serde_json::to_string_pretty(&out).unwrap_or_default());
+        return code;
+    }
+    let verdict = match report.verdict {
+        Verdict::Clean => paint(OK, "clean"),
+        Verdict::NeedsReview => paint(WARN, "needs review"),
+        Verdict::Blocked => paint(BAD, "blocked"),
+    };
+    println!(
+        "{}",
+        paint(HEAD, format!("Scan: {} ({} files)", aurora_fs::paths::absolute(dir).display(), tree.files.len()))
+    );
+    println!("  verdict: {verdict}");
+    println!("  sha256:  {hash}");
+    for f in &report.findings {
+        let tag = match f.level {
+            Level::Block => paint(BAD, "block "),
+            Level::Review => paint(WARN, "review"),
+        };
+        let at = match f.line {
+            Some(line) => format!("{}:{line}", f.path),
+            None => f.path.clone(),
+        };
+        println!("  {tag} {:<20} {at}  {}", f.rule, f.detail);
+    }
+    let note = match report.verdict {
+        Verdict::Clean => "No findings. A clean scan is a signal, not a guarantee: read unfamiliar skills before use.",
+        Verdict::NeedsReview => "Read every flagged file before installing; Aurora asks you to confirm the review.",
+        Verdict::Blocked => "Aurora will not install this skill; blocked findings cannot be overridden.",
+    };
+    println!("\n{}", paint(DIM, note));
+    code
 }

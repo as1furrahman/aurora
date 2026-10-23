@@ -80,3 +80,51 @@ fn unreadable_or_unsafe_skills_fail_clearly() {
     assert_eq!(code, 1);
     assert!(err.contains("frontmatter"), "{err}");
 }
+
+fn scan(dir: &Path, json: bool) -> (i32, String, String) {
+    let mut cmd = Command::cargo_bin("aurora").expect("binary builds");
+    cmd.env("NO_COLOR", "1").args(["skills", "scan"]).arg(dir);
+    if json {
+        cmd.arg("--json");
+    }
+    let out = cmd.output().expect("runs");
+    (
+        out.status.code().unwrap_or(-1),
+        String::from_utf8_lossy(&out.stdout).into_owned(),
+        String::from_utf8_lossy(&out.stderr).into_owned(),
+    )
+}
+
+#[test]
+fn scan_exit_codes_follow_the_verdict() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let clean = write_skill(tmp.path(), "clean", "---\nname: clean\ndescription: d\n---\nok\n");
+    let (code, out, _) = scan(&clean, false);
+    assert_eq!(code, 0, "{out}");
+    assert!(out.contains("clean") && out.contains("sha256"), "{out}");
+
+    let review = write_skill(tmp.path(), "review", "---\nname: review\ndescription: d\n---\nok\n");
+    fs::write(review.join("helper.sh"), "echo hi\n").expect("write");
+    let (code, out, _) = scan(&review, false);
+    assert_eq!(code, 4, "{out}");
+    assert!(out.contains("needs review") && out.contains("helper.sh"), "{out}");
+
+    let blocked = write_skill(tmp.path(), "blocked", "---\nname: blocked\ndescription: d\n---\nok\n");
+    fs::write(blocked.join("helper.pyc"), b"\x6f\x0d\x0d\x0a").expect("write");
+    let (code, out, _) = scan(&blocked, true);
+    assert_eq!(code, 3);
+    let v: Value = serde_json::from_str(&out).expect("json");
+    assert_eq!(v["verdict"], "blocked");
+    assert_eq!(v["findings"][0]["rule"], "bytecode");
+    assert_eq!(v["sha256"].as_str().expect("hash").len(), 64);
+}
+
+#[test]
+fn scan_refuses_a_symlinked_root() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let dir = write_skill(tmp.path(), "real", "---\nname: real\ndescription: d\n---\n");
+    std::os::unix::fs::symlink(&dir, tmp.path().join("link")).expect("symlink");
+    let (code, _, err) = scan(&tmp.path().join("link"), false);
+    assert_eq!(code, 1);
+    assert!(err.contains("symlink"), "{err}");
+}
