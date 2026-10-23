@@ -1,0 +1,54 @@
+# Canonical Skill Registry for Agent Workbench (AWB)
+# Format: TOML (Parsed deterministically via Python standard library tomllib)
+
+[registry]
+version = "1.0.0"
+updated_at = "2026-10-23T05:08:00Z"
+description = "Canonical multi-agent skill registry"
+
+[[skills]]
+id = "principles"
+name = "Baseline Engineering Principles"
+version = "1.0.0"
+category = "core"
+description = "Core rules: correctness outranks token savings, deterministic safety, test-first verification."
+dependencies = []
+compatible_agents = ["antigravity-cli", "antigravity-workspace", "antigravity-ide", "codex-cli"]
+triggers = ["always", "on-start"]
+files = ["skills/principles/SKILL.md"]
+
+[[skills]]
+id = "task-router"
+name = "Autonomous Task Router"
+version = "1.0.0"
+category = "workflow"
+description = "Routes complex programming tasks to targeted, minimal skill specializations without context bloat."
+dependencies = ["principles"]
+compatible_agents = ["antigravity-cli", "antigravity-workspace", "codex-cli"]
+triggers = ["on-complex-task", "router"]
+files = ["skills/task-router/SKILL.md"]
+
+[[skills]]
+id = "verification-guard"
+name = "Verification and Audit Guard"
+version = "1.0.0"
+category = "verification"
+description = "Independent pre- and post-mutation verification, cryptographic preservation auditing, and test assertions."
+dependencies = ["principles"]
+compatible_agents = ["antigravity-cli", "antigravity-workspace", "codex-cli"]
+triggers = ["pre-mutation", "post-mutation", "audit"]
+files = ["skills/verification-guard/SKILL.md"]
+
+[[skills]]
+id = "token-efficient-workflow"
+name = "Token-Efficient Hardened Workflow"
+version = "1.0.0"
+category = "optimization"
+description = "Universal token-efficient workflow using descriptor pinning, atomic file safety, and minimal tool overhead."
+dependencies = ["principles", "task-router"]
+compatible_agents = ["antigravity-cli", "antigravity-workspace", "codex-cli"]
+triggers = ["on-coding-task", "refactor"]
+files = [
+    "skills/token-efficient-workflow/SKILL.md",
+    "skills/token-efficient-workflow/rules/efficient-workflow.md"
+]

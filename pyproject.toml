@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aurora"
+version = "0.1.0"
+description = "Aurora — Universal Agent Skill Manager for reusable coding-agent skills and workflows"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Aurora Team" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: POSIX :: Linux",
+]
+dependencies = []
+
+[project.scripts]
+aurora = "awb.cli:main"
+awb = "awb.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["awb*"]

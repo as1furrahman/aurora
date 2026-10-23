@@ -1,0 +1,3044 @@
+{
+  "summary": {
+    "/home/asif/projects/token-efficient-workflow": {
+      "regular_files": 5,
+      "directories": 0,
+      "symlinks": 0,
+      "total_nodes": 5
+    },
+    "/home/asif/projects/dwl": {
+      "regular_files": 71,
+      "directories": 27,
+      "symlinks": 0,
+      "total_nodes": 98
+    },
+    "/home/asif/projects/dwl-native-bar-lab": {
+      "regular_files": 119,
+      "directories": 53,
+      "symlinks": 1,
+      "total_nodes": 173
+    },
+    "/home/asif/.codex/skills/.system": {
+      "regular_files": 49,
+      "directories": 21,
+      "symlinks": 0,
+      "total_nodes": 70
+    }
+  },
+  "entries": {
+    "/home/asif/projects/token-efficient-workflow/install.sh": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 40775,
+      "link_target": null,
+      "sha256": "b7c3c62167cc7cffde83bebdabb0b3d37aca2efb8a069ce9f83cb881d32816cc"
+    },
+    "/home/asif/projects/token-efficient-workflow/rollback.py": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 30580,
+      "link_target": null,
+      "sha256": "ef60ceafb01d48a86d9110b017e29aa7f805a57fa9457cd348f3df135f6e50bf"
+    },
+    "/home/asif/projects/token-efficient-workflow/README.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 6442,
+      "link_target": null,
+      "sha256": "9022dbd5e7ac6bfb6c9a1139e33c48a8b1783399b05ad30e8ac48699bd6b3d4d"
+    },
+    "/home/asif/projects/token-efficient-workflow/SKILL.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2467,
+      "link_target": null,
+      "sha256": "73a096ec59e52fde86c19b0b6780469017f6b968190752c848920930fe498ec9"
+    },
+    "/home/asif/projects/token-efficient-workflow/REPORT.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 10959,
+      "link_target": null,
+      "sha256": "0aa0a62317ebb4b2f224136200de7b099278a315f68bb31f7ffad58f46112c69"
+    },
+    "/home/asif/projects/dwl/.git": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.gitea": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/protocols": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.gitignore": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 55,
+      "link_target": null,
+      "sha256": "1847a9c35cf2a57ff7de08faf9739f64ea09da1c1c6b52ee074829b150aee0d8"
+    },
+    "/home/asif/projects/dwl/.mailmap": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 215,
+      "link_target": null,
+      "sha256": "21deac3db501c07f5ae4ca395a583fda68134d0982a140850e2d774d16517fc3"
+    },
+    "/home/asif/projects/dwl/CHANGELOG.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 9718,
+      "link_target": null,
+      "sha256": "05979c1958e2405b2050d1e24d54a0259ce8d17443fad51bb7c08fb9fc89f3c7"
+    },
+    "/home/asif/projects/dwl/LICENSE": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 35748,
+      "link_target": null,
+      "sha256": "43566c2dba12c15ab53ac9cfceb555d4beb67a94b120ba6197a4b41fa5e213bb"
+    },
+    "/home/asif/projects/dwl/LICENSE.dwm": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2011,
+      "link_target": null,
+      "sha256": "7f67d0de95f565d3a66ce87c3a51d961428a414472b4761be11dd0d8f5e0c6d3"
+    },
+    "/home/asif/projects/dwl/LICENSE.sway": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1061,
+      "link_target": null,
+      "sha256": "bd35722bff46327f5eded1d211207277bbe043d2a22048b282c42ef801593b8b"
+    },
+    "/home/asif/projects/dwl/LICENSE.tinywl": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 7214,
+      "link_target": null,
+      "sha256": "6ff842e24236a23562b52bae691dd9cb4f75c68a6e9e6662f6de41f993bc23c3"
+    },
+    "/home/asif/projects/dwl/Makefile": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 3132,
+      "link_target": null,
+      "sha256": "ba0cb3269225b358f73246ef6818999c90bd44d724670104575b0620db64d7d2"
+    },
+    "/home/asif/projects/dwl/README.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 9626,
+      "link_target": null,
+      "sha256": "765a6803abb7a79b13f9ae98dad82d4abdde5290ea7b2f7a2f396fa8cc6bd30f"
+    },
+    "/home/asif/projects/dwl/dwl.1": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 5629,
+      "link_target": null,
+      "sha256": "f90060e3400998b808f6f5a278e0bf468e9b606169ed91ca782d4ce6e59eeba6"
+    },
+    "/home/asif/projects/dwl/dwl.desktop": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 75,
+      "link_target": null,
+      "sha256": "0b680d24c1de643c02b49241b708736d3b8589fb4eca7ba7a9522603e1b0bf1a"
+    },
+    "/home/asif/projects/dwl/util.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1598,
+      "link_target": null,
+      "sha256": "e476ca6e71d68365b397fa6e41b4d9e83c6aaab2cb73eefcf8e23dff2b125d7a"
+    },
+    "/home/asif/projects/dwl/client.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 10811,
+      "link_target": null,
+      "sha256": "aaedec7eb8ceb01d7908c8e20be15e04db5576b1067d346d3c32d85385de08b4"
+    },
+    "/home/asif/projects/dwl/config.def.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 8584,
+      "link_target": null,
+      "sha256": "ae3db77f72dc39d7eb4988bde315f8df94b46d4f8512bc0ef31e389953473a2a"
+    },
+    "/home/asif/projects/dwl/config.mk": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1376,
+      "link_target": null,
+      "sha256": "13d3f3506e4765b73d252369a6e25bf5a7bdbfabe2bbe7e788cc2b6f529e3d8f"
+    },
+    "/home/asif/projects/dwl/ime.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 20284,
+      "link_target": null,
+      "sha256": "51c640e0cce061e7dd8c17b7f387d4a048ce1f247947c736541a694be0343f9b"
+    },
+    "/home/asif/projects/dwl/ADDITIONAL_KEYS.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 17552,
+      "link_target": null,
+      "sha256": "e5115f251b625506cd28afe7e7591b2fc0db7a637ed2972830d61dad426f2c05"
+    },
+    "/home/asif/projects/dwl/config.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 13103,
+      "link_target": null,
+      "sha256": "a85742bf14f30e4c947b46b1614d069b0fd1583673923610ed266b6b7dbf6ba4"
+    },
+    "/home/asif/projects/dwl/cursor-shape-v1-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 5489,
+      "link_target": null,
+      "sha256": "826473420267dfcd8177999ece9043664f64a496357c8c459e157af2d79f11aa"
+    },
+    "/home/asif/projects/dwl/ext-image-copy-capture-v1-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2955,
+      "link_target": null,
+      "sha256": "01e06f1ef12d07be65263f3f508f9fdeca6a5efcc682cd36bf44fff67adfbf0e"
+    },
+    "/home/asif/projects/dwl/pointer-constraints-unstable-v1-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1836,
+      "link_target": null,
+      "sha256": "2e9e4f6ba8532598959c31f299cceb14d0f05f0a2b73a4aff678574296458168"
+    },
+    "/home/asif/projects/dwl/wlr-layer-shell-unstable-v1-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 5812,
+      "link_target": null,
+      "sha256": "8e7ce196c825e4f657dd618378bde9d1a87dabfcf718fa11b0af499e16be3743"
+    },
+    "/home/asif/projects/dwl/wlr-output-power-management-unstable-v1-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 8930,
+      "link_target": null,
+      "sha256": "90a73e3b90ef26a5315531b019b28d38b048f520c9d56ad198c39a817ccb0495"
+    },
+    "/home/asif/projects/dwl/xdg-shell-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 82774,
+      "link_target": null,
+      "sha256": "53cef09c271379c57c95d87d09b85856daf82897f76e5f4a504e012ae9180815"
+    },
+    "/home/asif/projects/dwl/dwl.c": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 114193,
+      "link_target": null,
+      "sha256": "b6943d326a3aba261641fd168afe6c0a234d2b588856c86ff8e034cd4d668c9a"
+    },
+    "/home/asif/projects/dwl/dwl": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 309568,
+      "link_target": null,
+      "sha256": "c10b072c356792b97b39cf28d0d0e9cd06a0cc8033b488411b2906c2538880a4"
+    },
+    "/home/asif/projects/dwl/config.h.bak.1792618994": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 11351,
+      "link_target": null,
+      "sha256": "c1b55dd9058a0848b037f470f93e955fb0afc8d2a8f1dab0b286f8f28865257d"
+    },
+    "/home/asif/projects/dwl/.git/hooks": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/info": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/refs": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/logs": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/description": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 73,
+      "link_target": null,
+      "sha256": "85ab6c163d43a17ea9cf7788308bca1466f1b0a8d1cc92e26e9bf63da4062aee"
+    },
+    "/home/asif/projects/dwl/.git/packed-refs": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2272,
+      "link_target": null,
+      "sha256": "494817445a2496f24bb2367f41b237053c702e3470ab03db60d5d3682a110404"
+    },
+    "/home/asif/projects/dwl/.git/HEAD": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 29,
+      "link_target": null,
+      "sha256": "9cdf2d1da99c57eae5178efcdd0a7ffb1d11dfacb2bab7bd0d5406b2fa2a4005"
+    },
+    "/home/asif/projects/dwl/.git/COMMIT_EDITMSG": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 59,
+      "link_target": null,
+      "sha256": "761b99144322033b0abcc7c0f0a00400300ad151e412c7f4fd7d7016addbb43b"
+    },
+    "/home/asif/projects/dwl/.git/config": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 316,
+      "link_target": null,
+      "sha256": "a4bc381d04353e3fa500acc4be0d8582360270c2886c0694c41a58cd623b50c5"
+    },
+    "/home/asif/projects/dwl/.git/index": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2050,
+      "link_target": null,
+      "sha256": "dc4bdef521caa8ecc2b43dc5dcf5f45ce2a94fe8a78b1749ec08491aa125bca1"
+    },
+    "/home/asif/projects/dwl/.git/hooks/applypatch-msg.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 478,
+      "link_target": null,
+      "sha256": "0223497a0b8b033aa58a3a521b8629869386cf7ab0e2f101963d328aa62193f7"
+    },
+    "/home/asif/projects/dwl/.git/hooks/commit-msg.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1972,
+      "link_target": null,
+      "sha256": "efc1401b0e99d1ff51494d154d98b46c1e99059bcd8bf9f73cecde19fd3eb23b"
+    },
+    "/home/asif/projects/dwl/.git/hooks/fsmonitor-watchman.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4611,
+      "link_target": null,
+      "sha256": "9159720099ad5595b8e66645cbfd47763c1e920f46e0b50ae75e642bbec57ef0"
+    },
+    "/home/asif/projects/dwl/.git/hooks/post-update.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 189,
+      "link_target": null,
+      "sha256": "81765af2daef323061dcbc5e61fc16481cb74b3bac9ad8a174b186523586f6c5"
+    },
+    "/home/asif/projects/dwl/.git/hooks/pre-applypatch.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 424,
+      "link_target": null,
+      "sha256": "e15c5b469ea3e0a695bea6f2c82bcf8e62821074939ddd85b77e0007ff165475"
+    },
+    "/home/asif/projects/dwl/.git/hooks/pre-commit.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1649,
+      "link_target": null,
+      "sha256": "57185b7b9f05239d7ab52db045f5b89eb31348d7b2177eab214f5eb872e1971b"
+    },
+    "/home/asif/projects/dwl/.git/hooks/pre-merge-commit.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 416,
+      "link_target": null,
+      "sha256": "d3825a70337940ebbd0a5c072984e13245920cdf8898bd225c8d27a6dfc9cb53"
+    },
+    "/home/asif/projects/dwl/.git/hooks/pre-push.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1374,
+      "link_target": null,
+      "sha256": "ecce9c7e04d3f5dd9d8ada81753dd1d549a9634b26770042b58dda00217d086a"
+    },
+    "/home/asif/projects/dwl/.git/hooks/pre-rebase.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4898,
+      "link_target": null,
+      "sha256": "4febce867790052338076f4e66cc47efb14879d18097d1d61c8261859eaaa7b3"
+    },
+    "/home/asif/projects/dwl/.git/hooks/pre-receive.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 544,
+      "link_target": null,
+      "sha256": "a4c3d2b9c7bb3fd8d1441c31bd4ee71a595d66b44fcf49ddb310252320169989"
+    },
+    "/home/asif/projects/dwl/.git/hooks/prepare-commit-msg.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1492,
+      "link_target": null,
+      "sha256": "e9ddcaa4189fddd25ed97fc8c789eca7b6ca16390b2392ae3276f0c8e1aa4619"
+    },
+    "/home/asif/projects/dwl/.git/hooks/push-to-checkout.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2783,
+      "link_target": null,
+      "sha256": "a53d0741798b287c6dd7afa64aee473f305e65d3f49463bb9d7408ec3b12bf5f"
+    },
+    "/home/asif/projects/dwl/.git/hooks/sendemail-validate.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2308,
+      "link_target": null,
+      "sha256": "44ebfc923dc5466bc009602f0ecf067b9c65459abfe8868ddc49b78e6ced7a92"
+    },
+    "/home/asif/projects/dwl/.git/hooks/update.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 3650,
+      "link_target": null,
+      "sha256": "8d5f2fa83e103cf08b57eaa67521df9194f45cbdbcb37da52ad586097a14d106"
+    },
+    "/home/asif/projects/dwl/.git/info/exclude": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 240,
+      "link_target": null,
+      "sha256": "6671fe83b7a07c8932ee89164d1f2793b2318058eb8b98dc5c06ee0a5a3b0ec1"
+    },
+    "/home/asif/projects/dwl/.git/objects/pack": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects/info": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects/1e": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects/5a": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects/1f": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects/95": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects/f6": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects/58": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects/a9": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects/pack/pack-8db2639034605108217b3442a7c1ddc14dd404ad.pack": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1532834,
+      "link_target": null,
+      "sha256": "2437fa6032f76196ef61ea35d01731716be08ca9311f39886f1da0f8572a3939"
+    },
+    "/home/asif/projects/dwl/.git/objects/pack/pack-8db2639034605108217b3442a7c1ddc14dd404ad.rev": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 17816,
+      "link_target": null,
+      "sha256": "f53e64f766f1f69cc1374c5a508228117d78bebff733d2f7f02c034d77add03a"
+    },
+    "/home/asif/projects/dwl/.git/objects/pack/pack-8db2639034605108217b3442a7c1ddc14dd404ad.idx": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 125420,
+      "link_target": null,
+      "sha256": "f64415c3d1c402c19f7eb69841569da7fc5312b00af94c314a40664d2c9d90e1"
+    },
+    "/home/asif/projects/dwl/.git/objects/info/commit-graphs": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/objects/info/commit-graphs/graph-55bfd0ba3bc514c28e6c515c9fcd33296571aa71.graph": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 87392,
+      "link_target": null,
+      "sha256": "8308596236728844aadbd33d1625a5935f996e7e3d21891a269ed2c623ae7a01"
+    },
+    "/home/asif/projects/dwl/.git/objects/info/commit-graphs/commit-graph-chain": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 41,
+      "link_target": null,
+      "sha256": "a636a4c904798cd15737ea343df847ea362797cc18cfbfb4ff11a28ba2f696bb"
+    },
+    "/home/asif/projects/dwl/.git/objects/1e/8f817a36e85a7c64b83566c3d769ed5dfb1188": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 3545,
+      "link_target": null,
+      "sha256": "fb1fcd80e2101c128850758eb90c124e8f2fbd48fa7be38b3f2fc6c14467432a"
+    },
+    "/home/asif/projects/dwl/.git/objects/5a/d2a0795c9c9227aa8417f776e48102f20f8242": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 632,
+      "link_target": null,
+      "sha256": "8b8902691c0cec8ff002c7b6ae0a45af5e81970d1a88c1fc431b13ab55c1d45c"
+    },
+    "/home/asif/projects/dwl/.git/objects/1f/b7051f7b71158f79b54bcbfef4acaee9713ed1": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 198,
+      "link_target": null,
+      "sha256": "393d4d35c142a8408bea3cdc16a2c022bf6f299baaff3d974313f947547044b4"
+    },
+    "/home/asif/projects/dwl/.git/objects/95/9b26b8103e272dfa112ab6a7ccbde9b9b437c0": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4814,
+      "link_target": null,
+      "sha256": "4f3f14683360c1727273fe5775070fe4057b9138fac211c9d529c860d2ac852b"
+    },
+    "/home/asif/projects/dwl/.git/objects/f6/d273b8e91d8acaa3279bfb42dc5adf00bbf7cb": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 9309,
+      "link_target": null,
+      "sha256": "18d12d52cdc0e22e8e221597f14757bf54de19c11eab745cbe279e9d4facb9ae"
+    },
+    "/home/asif/projects/dwl/.git/objects/58/2e6a67bb7c4d4810f818ef3acef20c85a211ee": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 673,
+      "link_target": null,
+      "sha256": "3842b3af10bf539b43efe232d8c43faa48d3a3d41087becd6f078e0acd1f0040"
+    },
+    "/home/asif/projects/dwl/.git/objects/a9/b825da7f91e9d3c765ac846c39b82dd945825e": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 234,
+      "link_target": null,
+      "sha256": "3979ae122a993ac3591df73739a1d4e7063920d9266422a67f010172a09290f7"
+    },
+    "/home/asif/projects/dwl/.git/refs/heads": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/refs/tags": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/refs/remotes": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/refs/heads/main": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 41,
+      "link_target": null,
+      "sha256": "163e82a6265a2af884f7de2d012bc5c94f75b426d134064a2c1366d70833507a"
+    },
+    "/home/asif/projects/dwl/.git/refs/heads/local-config": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 41,
+      "link_target": null,
+      "sha256": "35363acd9201ac13c850023df06e865affed61ea8d3253d60ffd0fcfc43a7781"
+    },
+    "/home/asif/projects/dwl/.git/refs/remotes/origin": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/refs/remotes/origin/HEAD": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 30,
+      "link_target": null,
+      "sha256": "2bb6a24aa0fc6c484100f5d51a29bbad841cd2c755f5d93faa204e5dbb4eb2b4"
+    },
+    "/home/asif/projects/dwl/.git/logs/refs": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/logs/HEAD": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 941,
+      "link_target": null,
+      "sha256": "5b629a00e32f2542008ccca9b358cffac0cae31987b96951a0d343238d6975a4"
+    },
+    "/home/asif/projects/dwl/.git/logs/refs/remotes": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/logs/refs/heads": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/logs/refs/remotes/origin": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.git/logs/refs/remotes/origin/HEAD": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 180,
+      "link_target": null,
+      "sha256": "485afc4e2e6502910137eb27486892acd411ffcda9d38915de1bff2f23b7d4a3"
+    },
+    "/home/asif/projects/dwl/.git/logs/refs/heads/main": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 180,
+      "link_target": null,
+      "sha256": "485afc4e2e6502910137eb27486892acd411ffcda9d38915de1bff2f23b7d4a3"
+    },
+    "/home/asif/projects/dwl/.git/logs/refs/heads/local-config": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 538,
+      "link_target": null,
+      "sha256": "5bf623e692bbf67ac68e6f61bb32d8ea1c1dd2a3076828d037e9190944bd90ad"
+    },
+    "/home/asif/projects/dwl/.gitea/issue_template": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl/.gitea/issue_template/bug_report.yml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1898,
+      "link_target": null,
+      "sha256": "0240588d6c232e0819b067560d1bbf5660a6ad1706e9295ec5071f80ef401587"
+    },
+    "/home/asif/projects/dwl/.gitea/issue_template/enhancement-idea.yml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 173,
+      "link_target": null,
+      "sha256": "c51adbb08fcfffcc3f43e6f98320562bece90904648edc093cbb504d261fb146"
+    },
+    "/home/asif/projects/dwl/protocols/wlr-layer-shell-unstable-v1.xml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 18462,
+      "link_target": null,
+      "sha256": "996b8c66e1c2276c443336d4cb174634e8e5948823779042f244930525b79cc2"
+    },
+    "/home/asif/projects/dwl/protocols/wlr-output-power-management-unstable-v1.xml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 5595,
+      "link_target": null,
+      "sha256": "4a415d02b8e6b1650aea9f352d5381411166cb8221ab9cb92af57193a1c5918d"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.gitea": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/protocols": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/pkgconfig": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/extras": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.gitignore": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 55,
+      "link_target": null,
+      "sha256": "1847a9c35cf2a57ff7de08faf9739f64ea09da1c1c6b52ee074829b150aee0d8"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.mailmap": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 215,
+      "link_target": null,
+      "sha256": "21deac3db501c07f5ae4ca395a583fda68134d0982a140850e2d774d16517fc3"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/CHANGELOG.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 9718,
+      "link_target": null,
+      "sha256": "05979c1958e2405b2050d1e24d54a0259ce8d17443fad51bb7c08fb9fc89f3c7"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/LICENSE": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 35748,
+      "link_target": null,
+      "sha256": "43566c2dba12c15ab53ac9cfceb555d4beb67a94b120ba6197a4b41fa5e213bb"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/LICENSE.dwm": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2011,
+      "link_target": null,
+      "sha256": "7f67d0de95f565d3a66ce87c3a51d961428a414472b4761be11dd0d8f5e0c6d3"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/LICENSE.sway": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1061,
+      "link_target": null,
+      "sha256": "bd35722bff46327f5eded1d211207277bbe043d2a22048b282c42ef801593b8b"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/LICENSE.tinywl": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 7214,
+      "link_target": null,
+      "sha256": "6ff842e24236a23562b52bae691dd9cb4f75c68a6e9e6662f6de41f993bc23c3"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/README.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 9626,
+      "link_target": null,
+      "sha256": "765a6803abb7a79b13f9ae98dad82d4abdde5290ea7b2f7a2f396fa8cc6bd30f"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/dwl.1": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 5629,
+      "link_target": null,
+      "sha256": "f90060e3400998b808f6f5a278e0bf468e9b606169ed91ca782d4ce6e59eeba6"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/dwl.desktop": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 75,
+      "link_target": null,
+      "sha256": "0b680d24c1de643c02b49241b708736d3b8589fb4eca7ba7a9522603e1b0bf1a"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/util.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1598,
+      "link_target": null,
+      "sha256": "e476ca6e71d68365b397fa6e41b4d9e83c6aaab2cb73eefcf8e23dff2b125d7a"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/client.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 10811,
+      "link_target": null,
+      "sha256": "aaedec7eb8ceb01d7908c8e20be15e04db5576b1067d346d3c32d85385de08b4"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/config.def.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 8584,
+      "link_target": null,
+      "sha256": "ae3db77f72dc39d7eb4988bde315f8df94b46d4f8512bc0ef31e389953473a2a"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/config.mk": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1376,
+      "link_target": null,
+      "sha256": "13d3f3506e4765b73d252369a6e25bf5a7bdbfabe2bbe7e788cc2b6f529e3d8f"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/ime.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 20284,
+      "link_target": null,
+      "sha256": "51c640e0cce061e7dd8c17b7f387d4a048ce1f247947c736541a694be0343f9b"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/ADDITIONAL_KEYS.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 17141,
+      "link_target": null,
+      "sha256": "f2c40177333222dc35fa5d6156d1e1aca20b95f344593e0da1752f06f66e20ac"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/dwl.c": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 124971,
+      "link_target": null,
+      "sha256": "54bc140fadfaa1c68e44ce4207e52137acc96993c3a0213496fa70bc7c44f22a"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/drwl.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 8078,
+      "link_target": null,
+      "sha256": "b6e241bf9600e6b53f4a41f590e56dd4550977b9f8a4bbb3f056175cdc77a9ff"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/native-bar-gaplessgrid.patch": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 45813,
+      "link_target": null,
+      "sha256": "4235b1904e3dad7b31b3f7aa24dd3e1b3d97083e5111b89c1d0cd7bb3de09f49"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/dwl-status-loop": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 6031,
+      "link_target": null,
+      "sha256": "9243811e9e1379d9f7b30e1ad650291ae7cc5d01a3cef02686c23123a6002877"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/PRE_DEPLOYMENT_AUDIT_REPORT.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 38410,
+      "link_target": null,
+      "sha256": "49b1af9c7efe280b673e570bd463d410faffd70ebac1ce4e32367347756e4749"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/native-bar-review-bundle.tar.gz": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 195196,
+      "link_target": null,
+      "sha256": "9d74a7040dae3cea4851bea3e803ca955949d3234a1610c95c26b47654728058"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/test-statusin.c": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 24852,
+      "link_target": null,
+      "sha256": "024302c2c279c313b0a48d55f7bd91e1419ebcdb0a0c6abbdcd29059183f6bb8"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/statusin.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2912,
+      "link_target": null,
+      "sha256": "a6a913c80487b9d4e921d2a75a30b13cc195af64167ff0ede14d15dd11ae185e"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/grid.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1068,
+      "link_target": null,
+      "sha256": "2015770a8b4e6e5fe5c3bca3c076fd555a1a59248370cd8c038a6942f4dfc427"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/Makefile": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 3236,
+      "link_target": null,
+      "sha256": "61f8f5cbd6cc4bc06709f2f177dda755221003eaaaf6e12d20894e2faa1c5f87"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/test-supervisor.sh": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 12484,
+      "link_target": null,
+      "sha256": "d8880a0d520ceb2fcba5f714a5f3a794f04ea11e895133c1bb4364f4555b99dd"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/dwl-status-supervisor": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 6274,
+      "link_target": null,
+      "sha256": "02374edf849716ea0867d13c2fb18228d5a3f00c41759eb44a8e0aa4f01f1f3d"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/dwl-session-nativebar": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1688,
+      "link_target": null,
+      "sha256": "b97c46131d131a578a23df23253ae49b31db5a0fd1416134df255d53d9d9c6f2"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/test-statusin": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 137512,
+      "link_target": null,
+      "sha256": "192bea53c0dcdb90d508fca9e22cf50ab0a17076920961ee39e40e0ffae6b518"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/deploy-native-bar.sh": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 18639,
+      "link_target": null,
+      "sha256": "62de37d449898a86e68b077bb39445dfb622c9085b303b26333f848dceb0e826"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/rollback-native-bar.sh": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 13383,
+      "link_target": null,
+      "sha256": "e5fda54d958524903c0961f935b81f77e8950272f01c1fbe618a4de1ba39acee"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/test-deploy-mock.sh": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 11959,
+      "link_target": null,
+      "sha256": "b8bc0d88a063b9b0bdabab55bdff7097262a9b6a763cfd2a776421942e777a4e"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/backup-manifest-20261022_003747.env": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 808,
+      "link_target": null,
+      "sha256": "6ed8415fef68afea01087a8405ba74dd0da02dcdcdf2793cc7387814b45ff5c8"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/latest-backup-manifest.env": {
+      "type": "symlink_file",
+      "mode": "0o120777",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 74,
+      "link_target": "/home/asif/projects/dwl-native-bar-lab/backup-manifest-20261022_003747.env",
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/config.h.bak.1792610287": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 12613,
+      "link_target": null,
+      "sha256": "7edf027dd57e1825aebec8c8e8c32f7d6b571b09c7c71ff51951fd6901b0204f"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/config.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 13103,
+      "link_target": null,
+      "sha256": "a85742bf14f30e4c947b46b1614d069b0fd1583673923610ed266b6b7dbf6ba4"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/dwl.c.bak.1792610936": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 124406,
+      "link_target": null,
+      "sha256": "8964bedce35e7d822a71b8ca74a6de436439a4ed9f6609000337f548ceb57abd"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/dwl.c.bak.1792611363": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 124689,
+      "link_target": null,
+      "sha256": "8d575e5af2b6935f324422df51f1115fc1182e0f790637ea1780e6cfefbc5d02"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/config.h.bak.1792611363": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 12613,
+      "link_target": null,
+      "sha256": "7edf027dd57e1825aebec8c8e8c32f7d6b571b09c7c71ff51951fd6901b0204f"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/config.h.bak.1792612924": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 12755,
+      "link_target": null,
+      "sha256": "f36cdbd5c6af52a0fa69e3fc252688fd2b0efd1bfe3264046e0122760ec33653"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/cursor-shape-v1-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 5489,
+      "link_target": null,
+      "sha256": "826473420267dfcd8177999ece9043664f64a496357c8c459e157af2d79f11aa"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/ext-image-copy-capture-v1-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2955,
+      "link_target": null,
+      "sha256": "01e06f1ef12d07be65263f3f508f9fdeca6a5efcc682cd36bf44fff67adfbf0e"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/pointer-constraints-unstable-v1-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1836,
+      "link_target": null,
+      "sha256": "2e9e4f6ba8532598959c31f299cceb14d0f05f0a2b73a4aff678574296458168"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/wlr-layer-shell-unstable-v1-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 5812,
+      "link_target": null,
+      "sha256": "8e7ce196c825e4f657dd618378bde9d1a87dabfcf718fa11b0af499e16be3743"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/wlr-output-power-management-unstable-v1-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 8930,
+      "link_target": null,
+      "sha256": "90a73e3b90ef26a5315531b019b28d38b048f520c9d56ad198c39a817ccb0495"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/xdg-shell-protocol.h": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 82774,
+      "link_target": null,
+      "sha256": "53cef09c271379c57c95d87d09b85856daf82897f76e5f4a504e012ae9180815"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/config.h.bak.1792618971": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 12815,
+      "link_target": null,
+      "sha256": "bf633889ce4824f254ca857c7ae64c3b3505f690535bcd30c986a3501aa218dd"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/dwl": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 360816,
+      "link_target": null,
+      "sha256": "8bf6a5acc9696e627cfea48012eca53b5e83e52b694c94524038428d34189a3e"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/info": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/refs": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/logs": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/description": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 73,
+      "link_target": null,
+      "sha256": "85ab6c163d43a17ea9cf7788308bca1466f1b0a8d1cc92e26e9bf63da4062aee"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/packed-refs": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2272,
+      "link_target": null,
+      "sha256": "494817445a2496f24bb2367f41b237053c702e3470ab03db60d5d3682a110404"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/HEAD": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 29,
+      "link_target": null,
+      "sha256": "9cdf2d1da99c57eae5178efcdd0a7ffb1d11dfacb2bab7bd0d5406b2fa2a4005"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/COMMIT_EDITMSG": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 59,
+      "link_target": null,
+      "sha256": "761b99144322033b0abcc7c0f0a00400300ad151e412c7f4fd7d7016addbb43b"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/config": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 316,
+      "link_target": null,
+      "sha256": "a4bc381d04353e3fa500acc4be0d8582360270c2886c0694c41a58cd623b50c5"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/index": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2393,
+      "link_target": null,
+      "sha256": "a0760f0f1178e8005d34fcc8adad2512a6beb0e2d588d01a6ff383a5533c67da"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/applypatch-msg.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 478,
+      "link_target": null,
+      "sha256": "0223497a0b8b033aa58a3a521b8629869386cf7ab0e2f101963d328aa62193f7"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/commit-msg.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1972,
+      "link_target": null,
+      "sha256": "efc1401b0e99d1ff51494d154d98b46c1e99059bcd8bf9f73cecde19fd3eb23b"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/fsmonitor-watchman.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4611,
+      "link_target": null,
+      "sha256": "9159720099ad5595b8e66645cbfd47763c1e920f46e0b50ae75e642bbec57ef0"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/post-update.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 189,
+      "link_target": null,
+      "sha256": "81765af2daef323061dcbc5e61fc16481cb74b3bac9ad8a174b186523586f6c5"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/pre-applypatch.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 424,
+      "link_target": null,
+      "sha256": "e15c5b469ea3e0a695bea6f2c82bcf8e62821074939ddd85b77e0007ff165475"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/pre-commit.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1649,
+      "link_target": null,
+      "sha256": "57185b7b9f05239d7ab52db045f5b89eb31348d7b2177eab214f5eb872e1971b"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/pre-merge-commit.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 416,
+      "link_target": null,
+      "sha256": "d3825a70337940ebbd0a5c072984e13245920cdf8898bd225c8d27a6dfc9cb53"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/pre-push.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1374,
+      "link_target": null,
+      "sha256": "ecce9c7e04d3f5dd9d8ada81753dd1d549a9634b26770042b58dda00217d086a"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/pre-rebase.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4898,
+      "link_target": null,
+      "sha256": "4febce867790052338076f4e66cc47efb14879d18097d1d61c8261859eaaa7b3"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/pre-receive.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 544,
+      "link_target": null,
+      "sha256": "a4c3d2b9c7bb3fd8d1441c31bd4ee71a595d66b44fcf49ddb310252320169989"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/prepare-commit-msg.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1492,
+      "link_target": null,
+      "sha256": "e9ddcaa4189fddd25ed97fc8c789eca7b6ca16390b2392ae3276f0c8e1aa4619"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/push-to-checkout.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2783,
+      "link_target": null,
+      "sha256": "a53d0741798b287c6dd7afa64aee473f305e65d3f49463bb9d7408ec3b12bf5f"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/sendemail-validate.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2308,
+      "link_target": null,
+      "sha256": "44ebfc923dc5466bc009602f0ecf067b9c65459abfe8868ddc49b78e6ced7a92"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/hooks/update.sample": {
+      "type": "regular_file",
+      "mode": "0o100755",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 3650,
+      "link_target": null,
+      "sha256": "8d5f2fa83e103cf08b57eaa67521df9194f45cbdbcb37da52ad586097a14d106"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/info/exclude": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 240,
+      "link_target": null,
+      "sha256": "6671fe83b7a07c8932ee89164d1f2793b2318058eb8b98dc5c06ee0a5a3b0ec1"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/pack": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/info": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/1e": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/5a": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/1f": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/c0": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/31": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/f6": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/4d": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/c9": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/42": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/79": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/8f": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/de": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/3d": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/ad": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/a7": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/e2": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/06": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/0c": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/85": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/eb": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/7d": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/d0": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/48": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/61": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/37": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/ac": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/4b": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/78": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/e0": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/95": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/73": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/pack/pack-8db2639034605108217b3442a7c1ddc14dd404ad.pack": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1532834,
+      "link_target": null,
+      "sha256": "2437fa6032f76196ef61ea35d01731716be08ca9311f39886f1da0f8572a3939"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/pack/pack-8db2639034605108217b3442a7c1ddc14dd404ad.idx": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 125420,
+      "link_target": null,
+      "sha256": "f64415c3d1c402c19f7eb69841569da7fc5312b00af94c314a40664d2c9d90e1"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/pack/pack-8db2639034605108217b3442a7c1ddc14dd404ad.rev": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 17816,
+      "link_target": null,
+      "sha256": "f53e64f766f1f69cc1374c5a508228117d78bebff733d2f7f02c034d77add03a"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/info/commit-graphs": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/info/commit-graphs/commit-graph-chain": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 41,
+      "link_target": null,
+      "sha256": "a636a4c904798cd15737ea343df847ea362797cc18cfbfb4ff11a28ba2f696bb"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/info/commit-graphs/graph-55bfd0ba3bc514c28e6c515c9fcd33296571aa71.graph": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 87392,
+      "link_target": null,
+      "sha256": "8308596236728844aadbd33d1625a5935f996e7e3d21891a269ed2c623ae7a01"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/1e/8f817a36e85a7c64b83566c3d769ed5dfb1188": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 3545,
+      "link_target": null,
+      "sha256": "fb1fcd80e2101c128850758eb90c124e8f2fbd48fa7be38b3f2fc6c14467432a"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/5a/d2a0795c9c9227aa8417f776e48102f20f8242": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 632,
+      "link_target": null,
+      "sha256": "8b8902691c0cec8ff002c7b6ae0a45af5e81970d1a88c1fc431b13ab55c1d45c"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/1f/b7051f7b71158f79b54bcbfef4acaee9713ed1": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 198,
+      "link_target": null,
+      "sha256": "393d4d35c142a8408bea3cdc16a2c022bf6f299baaff3d974313f947547044b4"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/c0/f9ad908a6c55f5e0694b8f0c14312b3e9397a1": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1540,
+      "link_target": null,
+      "sha256": "95c0cd11a4ba3df16f08833b2f53637db377be726fdc9f242b7e2e9055212843"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/31/911f9aff00fa75c4cfd0210599a3595be9b08e": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4479,
+      "link_target": null,
+      "sha256": "aeaa56f4316b407762457acd6f444834ac398749924efbe86e209937e1ad2193"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/31/08f9ada7f1d84056f1b1474dc95a03c8fde0c9": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 795,
+      "link_target": null,
+      "sha256": "f7bd4132b566b5145f0936e67515201c8204df2cb98b521eb0a6250974e154a2"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/f6/7758bdfcaed99b8d29ac7748947a488384ae74": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 47871,
+      "link_target": null,
+      "sha256": "e0a27aae19628ecbb5ec9f44f1df63467a8348817ff763493c1b30afc0027fa2"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/4d/86bf01fd1265347ab505d0a0d7dfdcac15bec7": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 3957,
+      "link_target": null,
+      "sha256": "dee9d4e68be7dc0a44bb4e00c134ad5a9d0bcd52faf959449f489f6d6d50bcae"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/c9/8b297fa801507ca2858fa1d03ba32872c2f6ba": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 732,
+      "link_target": null,
+      "sha256": "5b10806c93e1dc428f4b0f861c4adf0b55e26b37c354971d78a9c36541f4f313"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/42/7d484139b75621f06e0de52c8df1c4fd2e798a": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1489,
+      "link_target": null,
+      "sha256": "eb752df93cc26b16751de18e90f27522f5ddfec16142bfa240c80a0a2005ec58"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/79/5f95ee4bde6827e9c5ca396d7ce0db1ff5679e": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 724,
+      "link_target": null,
+      "sha256": "f5a6f8c55c5ec2f9e52fc3fe8d867390b467751db01e7adc4f8ca64801098aeb"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/8f/7e29e3c2512d839f154fbd48b3af32ca943422": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 238,
+      "link_target": null,
+      "sha256": "343febd2d692affe2892ab8b78f94c6e3ccf51fca98cd023747ca983d0447dfa"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/de/a2c442cfe49d88dc3ec0d9989168fcaa5cafb8": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4664,
+      "link_target": null,
+      "sha256": "13698479639bdcf93a8a49af1f582d0cf0ef4746eb386f8dbb4a0d91fde7d2e3"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/3d/db2d54da1ac882bb609c18a0188ef402e8a5bc": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 9129,
+      "link_target": null,
+      "sha256": "5192e85b83543bf65ee508d27285c39ac7e87e50f04b6b336e5c24a356f56123"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/ad/7dd67c92da1195d006b48aa1c641c3bd1e5fc0": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 765,
+      "link_target": null,
+      "sha256": "85c0d5fda000cffc4115ada4fb1d703e2799666140e8b7a636132bdd40c1edc1"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/a7/8462b9928157d00c13e8212cc96c618f4046cf": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 255,
+      "link_target": null,
+      "sha256": "4c3c09a2d9275cb2ec10e826f360148a894b0e0b73d54981dd6f26ce297efb57"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/e2/3d7c882e6f7a6a60ece4a8b2efafe78d90ced9": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 48001,
+      "link_target": null,
+      "sha256": "0125822deb3e49a04bb63cd157d72c3e659ad6c47f88a4023b7fdd6abe52909e"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/06/f9c9f16a9cebc334f848618468a7f067d26109": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 765,
+      "link_target": null,
+      "sha256": "3a0ea88ad26b8d47588b0aa0c7fc5f9780695ec14d0a0704c80f8631a50fac61"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/0c/1c391e4ec5e5bf420e613f942ff129dfb3af40": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 222,
+      "link_target": null,
+      "sha256": "c73d51294aea1446c46e38b2e27a8960fdc89c038d9603ef32c2d630a07de930"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/85/261467e678b355a56a7a5048db0a77a67179d4": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4726,
+      "link_target": null,
+      "sha256": "d862317001bad598682ab36fee232d94d0177a4950c4738ea2a5a7cf6541b8d2"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/eb/a78e64c221404fa3e423adf84de4c72fd007a2": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 48122,
+      "link_target": null,
+      "sha256": "bcb62bbd4e44bc3d3abd4287cf1aed67c9a3653c1208b5f315ecb25c21ffa6b6"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/7d/8dd7fa73899a57bc93cd0f85a8f7a1e61fdb53": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 764,
+      "link_target": null,
+      "sha256": "e0bb3a07695908a8aabdb32296498f7c61e15ea6b0fa51dfba4b62d1155a3daf"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/d0/b400661fbe84ae1002a5de322008e0f1c19ea1": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 228,
+      "link_target": null,
+      "sha256": "439788253fe3fe006a400ff545b35a798bbfa01697261d8e9464b6bdfba38992"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/48/e7e637dedffb869f9a46d3b506cf2e85b3d256": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4747,
+      "link_target": null,
+      "sha256": "57b5b64014c04c81121198ae49714560f995b64e6f607d127b1570784ca6c636"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/61/06c7e6cb2b9a22a95ae6ce216d0d3791d9a2f8": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 768,
+      "link_target": null,
+      "sha256": "936837a13eb1c68bcf911f0a095a998b3033d6a306b67920bf8dedbe2bae3b9f"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/37/8ac00159b67c9d9dbb108d41b40dfa49947479": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 227,
+      "link_target": null,
+      "sha256": "77f67524f200df304fee2eeb143cd1496c25928e38cb498a24fc8c76c7f353d8"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/ac/f6e54d49e2bd72c5760636da39ac6995ab8a1d": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 234,
+      "link_target": null,
+      "sha256": "b4888a4a29e86d938630aa474c5cbde221294dc7e2bc5e848a5a35c9c760b06d"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/4b/78fe55a992b2d1066fe79489820ff776686d5d": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 56,
+      "link_target": null,
+      "sha256": "2a0926cfb6366be9f24f6716439512356849f503fff51ff8b0bf32fbc51d45e1"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/78/8ecefaf5f167dc96b1a22521be2cedf4bb6f2f": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 798,
+      "link_target": null,
+      "sha256": "dfe700b92c94c0fcca035e043173dfdeabb50c82342475f3d6c38838793d0426"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/e0/a5f58970d6628d2b7f0ef7dda79403e4a57f1d": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 206,
+      "link_target": null,
+      "sha256": "b5516a50614fc131ac86e7fe79322352e8e4a19e244f6418b236107ff0091f2a"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/95/9b26b8103e272dfa112ab6a7ccbde9b9b437c0": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4814,
+      "link_target": null,
+      "sha256": "4f3f14683360c1727273fe5775070fe4057b9138fac211c9d529c860d2ac852b"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/objects/73/c57c366be570f24ba28ce5647929437c5c3a79": {
+      "type": "regular_file",
+      "mode": "0o100444",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 232,
+      "link_target": null,
+      "sha256": "b8877cdcaed7d12e2d0f955d34957c4e98003e0f50028a10bbb1f9ce3afe2ec0"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/refs/heads": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/refs/tags": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/refs/remotes": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/refs/heads/main": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 41,
+      "link_target": null,
+      "sha256": "163e82a6265a2af884f7de2d012bc5c94f75b426d134064a2c1366d70833507a"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/refs/heads/local-config": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 41,
+      "link_target": null,
+      "sha256": "9ec0fabf50a5efc7b094ef484f6bf67e86661d8c3c9bd76afcf5c226a515a991"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/refs/remotes/origin": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/refs/remotes/origin/HEAD": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 30,
+      "link_target": null,
+      "sha256": "2bb6a24aa0fc6c484100f5d51a29bbad841cd2c755f5d93faa204e5dbb4eb2b4"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/logs/refs": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/logs/HEAD": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2134,
+      "link_target": null,
+      "sha256": "c90d9b53e5c6cab2e51b8a30bb4b0d80e7b320edec37232d40178da2ae58b15f"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/logs/refs/remotes": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/logs/refs/heads": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/logs/refs/remotes/origin": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/logs/refs/remotes/origin/HEAD": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 180,
+      "link_target": null,
+      "sha256": "485afc4e2e6502910137eb27486892acd411ffcda9d38915de1bff2f23b7d4a3"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/logs/refs/heads/main": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 180,
+      "link_target": null,
+      "sha256": "485afc4e2e6502910137eb27486892acd411ffcda9d38915de1bff2f23b7d4a3"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.git/logs/refs/heads/local-config": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1731,
+      "link_target": null,
+      "sha256": "f1652e0af494df948c288b5c9d53e3e8358b03a85c1ef1734794a56768d89402"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.gitea/issue_template": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.gitea/issue_template/bug_report.yml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1898,
+      "link_target": null,
+      "sha256": "0240588d6c232e0819b067560d1bbf5660a6ad1706e9295ec5071f80ef401587"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/.gitea/issue_template/enhancement-idea.yml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 173,
+      "link_target": null,
+      "sha256": "c51adbb08fcfffcc3f43e6f98320562bece90904648edc093cbb504d261fb146"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/protocols/wlr-layer-shell-unstable-v1.xml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 18462,
+      "link_target": null,
+      "sha256": "996b8c66e1c2276c443336d4cb174634e8e5948823779042f244930525b79cc2"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/protocols/wlr-output-power-management-unstable-v1.xml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 5595,
+      "link_target": null,
+      "sha256": "4a415d02b8e6b1650aea9f352d5381411166cb8221ab9cb92af57193a1c5918d"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/pkgconfig/tllist.pc": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 154,
+      "link_target": null,
+      "sha256": "dff681e4ff2afa11b8e7864ae65b2ba5537a0519715d3bc50c582719fee5d288"
+    },
+    "/home/asif/projects/dwl-native-bar-lab/extras/connect.ini": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 359,
+      "link_target": null,
+      "sha256": "675402c176a9b5dd1dbe5ed2bb3dedba87a12361c12882fa539cc6c7eaf2b72c"
+    },
+    "/home/asif/.codex/skills/.system/imagegen": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/openai-docs": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/review-agent": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/skill-creator": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/skill-installer": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/.codex-system-skills.marker": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 17,
+      "link_target": null,
+      "sha256": "626d55b2d6105b5e8ad04dc5a654a2fb922c4f517d9df3239b68c157f01ec0b9"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/agents": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/imagegen/assets": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/imagegen/references": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/imagegen/scripts": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/imagegen/LICENSE.txt": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 10776,
+      "link_target": null,
+      "sha256": "4dd13869245e356246a5b770723247bbb80a8f07a181d1d3d873a1734297cdb9"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/SKILL.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 19201,
+      "link_target": null,
+      "sha256": "681ddb4ad6d06a2acc78a3535b583f8d0c1ea800ecda3d56370d3310fd2cd4ba"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/agents/openai.yaml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 275,
+      "link_target": null,
+      "sha256": "9ca574af14580dc7a2a3dc37a1796d17f93cb8850be66501f0799ef8603e9dc0"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/assets/imagegen-small.svg": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2889,
+      "link_target": null,
+      "sha256": "cff5f34f57ff60b3ee92eaedd17b15e96dd4b9e776df3e78936c9e00d42be294"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/assets/imagegen.png": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1711,
+      "link_target": null,
+      "sha256": "95952f644064eb9e890f98d8db07216347186526e4c41ad66d3420629eb86e20"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/references/cli.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 9655,
+      "link_target": null,
+      "sha256": "ecfc2e09261a0feb3482517a5fa0ff410cb7d1958e3cbd2ac6b61586f5b81405"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/references/codex-network.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1779,
+      "link_target": null,
+      "sha256": "c88298ca4481f6116a16fa7987434fc977f8b311c1bbc0c3d862ffd0c5981148"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/references/image-api.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 6072,
+      "link_target": null,
+      "sha256": "dc975d7af8a4888967251a0276014b4a71ea30455294944b762256373ce3e569"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/references/prompting.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 8282,
+      "link_target": null,
+      "sha256": "b210b051c775860267080941eba968212bf0ac7fce581d75c5dcc217d8293f8b"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/references/sample-prompts.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 17617,
+      "link_target": null,
+      "sha256": "70474177d151855b175c6133de2aae1d90b7f146b0dab50ec830972c47d72183"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/scripts/image_gen.py": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 34667,
+      "link_target": null,
+      "sha256": "b4345cf835e5b593b97df6bb2b70bda493b8a97eee4cabbc99b2fa57dba9b448"
+    },
+    "/home/asif/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 13905,
+      "link_target": null,
+      "sha256": "a5893c4bd04b21abced33731ea89d2ac428e81d92a0368eb18ffbe4fda5253e2"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/agents": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/assets": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/references": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/scripts": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/LICENSE.txt": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 10776,
+      "link_target": null,
+      "sha256": "4dd13869245e356246a5b770723247bbb80a8f07a181d1d3d873a1734297cdb9"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/SKILL.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 5437,
+      "link_target": null,
+      "sha256": "aa6829e21df2223167c85d2e49b6337a7345c84c1033f1ec10182c7882b36d45"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/agents/openai.yaml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 370,
+      "link_target": null,
+      "sha256": "44b9efac6be1bae32d869aa2942fecbe4dcae82682ee03e4120f2f9b7d4658ec"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/assets/openai-small.svg": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1091,
+      "link_target": null,
+      "sha256": "45be1f0757eb18889eefb1e7db79668ef46a275dc4e0e78e8df5ebd7f6cdeadc"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/assets/openai.png": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1429,
+      "link_target": null,
+      "sha256": "156cc84d7332bfe95b310350bd470b690d22aa33d65340cc6c2e06022946194c"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/references/codex-self-knowledge.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 7417,
+      "link_target": null,
+      "sha256": "8c8fb00e6e5cb1977924f5164684a6095427fa828bbc765225f17d9aeb79a912"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/references/latest-model.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1339,
+      "link_target": null,
+      "sha256": "7e5b9437c6ad98a73da46ba3f7f5c86f88aea2a15242318f32c487eb28a90852"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/references/mcp-diagnostics.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2318,
+      "link_target": null,
+      "sha256": "49bbd2f73df7bbd7f86c80425dea4da2d301c22046080399a36bfc0ca49509e9"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/references/model-migration.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 5631,
+      "link_target": null,
+      "sha256": "138c05dd06047b069a7aab09e657b6a6a0d25b6959cbe2473baae95f47e72883"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/references/model-selection.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1344,
+      "link_target": null,
+      "sha256": "ba2d164abbca30435a460a0bc3a7d82398dce2bdf092705c98ba55b3f3af38a8"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/references/official-docs.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 3337,
+      "link_target": null,
+      "sha256": "7962f2dce55089b93bde4115bb89fd42f20993c1597a2b13edd4956f463875b9"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/references/prompting-guide.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 10128,
+      "link_target": null,
+      "sha256": "5c791edd5bfc9363cb4251ac3ccd3b1dbac3bb2a6654f78606a9d2357c97c172"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/references/upgrade-guide.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1503,
+      "link_target": null,
+      "sha256": "63352ece4bd1ee82b225bb4cb4fa2ea4f0dbf57a308845fa30f2c8d7f1d291d1"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/references/upgrading-to-gpt-6-astra.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 19676,
+      "link_target": null,
+      "sha256": "cacacdfe0b516f7420af51df10dfa0829bf67c4a670544d58992f6ce4ac22583"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/scripts/fetch-codex-manual.mjs": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 15668,
+      "link_target": null,
+      "sha256": "1ea0ca869e3fdf06e83a9972fc4c602b0505a96b22e4b0d9629656f5b545e5ff"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/scripts/resolve-latest-model-info": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1038,
+      "link_target": null,
+      "sha256": "7354dbb030ca0736dd633a7ca1b930cf640abd40370725dea3a458cb51d49523"
+    },
+    "/home/asif/.codex/skills/.system/openai-docs/scripts/resolve-latest-model-info.cjs": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 3916,
+      "link_target": null,
+      "sha256": "589b89515ab63fff87efde0b9c76eb72e674582aebc3afbc29ceae09abddafe3"
+    },
+    "/home/asif/.codex/skills/.system/review-agent/agents": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/review-agent/SKILL.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2661,
+      "link_target": null,
+      "sha256": "07079efd0dc76f05fade424e5dfb048dce1de2df7626e1a4f56292a4f3f92228"
+    },
+    "/home/asif/.codex/skills/.system/review-agent/agents/openai.yaml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 252,
+      "link_target": null,
+      "sha256": "4d867a46d15e36ac880176484aae160f59855340c6059b2ea6ab9fbc9af084de"
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/agents": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/assets": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/references": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/scripts": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/SKILL.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 15311,
+      "link_target": null,
+      "sha256": "6656e54755638e8efcf275a472b9672eaa8a9a1b9e59dc210e275b03b59e1e66"
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/license.txt": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 11358,
+      "link_target": null,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/agents/openai.yaml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 183,
+      "link_target": null,
+      "sha256": "d07d21b93fcf3d4dc8d9a3399c05fc226a49a333a96d3e1c68b451b8dd9eade6"
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/assets/skill-creator-small.svg": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1319,
+      "link_target": null,
+      "sha256": "6591bf8ea9bb9435890dbdea299e0d2bd05f3aa893a335d26e4c535e93c8e7fb"
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/assets/skill-creator.png": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1563,
+      "link_target": null,
+      "sha256": "a4024b0306ddb05847e1012879d37aaf1e658205199da596f5145ed7a88d9162"
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/references/openai_yaml.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2356,
+      "link_target": null,
+      "sha256": "ffac39318e408108141d40f820968e59f70434a891694f9bf1d25be8237b150c"
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/scripts/generate_openai_yaml.py": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 6669,
+      "link_target": null,
+      "sha256": "816df12072d74faf924d802a6599a139997e1441e90bfe4869ec304f2e5e2851"
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/scripts/init_skill.py": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 10314,
+      "link_target": null,
+      "sha256": "bf0656a5f9d8d8cdecf0245eaf27e1df8e0e9b6d40ccdda814eb8e3d5f6992c8"
+    },
+    "/home/asif/.codex/skills/.system/skill-creator/scripts/quick_validate.py": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 4249,
+      "link_target": null,
+      "sha256": "ee6dba90f44d37171c5a6edb8095979c54919ff6822c1a907afca2e78c48738c"
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/agents": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/assets": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/scripts": {
+      "type": "dir",
+      "mode": "0o40755",
+      "uid": 1000,
+      "gid": 1000,
+      "link_target": null,
+      "sha256": null
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/LICENSE.txt": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 11358,
+      "link_target": null,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/SKILL.md": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 3367,
+      "link_target": null,
+      "sha256": "d68b77e5bbb34dedab89d134da52855f140fc4b4299b80104f534e3b9e98f8ee"
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/agents/openai.yaml": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 221,
+      "link_target": null,
+      "sha256": "5ce223d8b1070b82c42298538f1b8d376f788eb9e7a42a987e8c094070d73f0e"
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/assets/skill-installer-small.svg": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 923,
+      "link_target": null,
+      "sha256": "3928703ff00dc1a681e7a22401843b7edcbd4b2051651ce4c43b75f7e140504e"
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/assets/skill-installer.png": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 1086,
+      "link_target": null,
+      "sha256": "d0a230b1a79b71b858b7c215a0fbb0768d6459c14ea4ef80c61592629bf0e605"
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/scripts/github_utils.py": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 659,
+      "link_target": null,
+      "sha256": "61c1bbe2ae217433b4b6f9f09f21aca4df52c12598068343ade719f706e4859b"
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 11917,
+      "link_target": null,
+      "sha256": "38f311b75664bb063808f982c600271ebc4b560830f491705190f88a94e3e781"
+    },
+    "/home/asif/.codex/skills/.system/skill-installer/scripts/list-skills.py": {
+      "type": "regular_file",
+      "mode": "0o100644",
+      "uid": 1000,
+      "gid": 1000,
+      "size": 2948,
+      "link_target": null,
+      "sha256": "9d6dfb2abf3afeee7f027a89fb1626b918a973da18f4eb6c25681286301beb41"
+    }
+  },
+  "total_nodes": 346
+}
