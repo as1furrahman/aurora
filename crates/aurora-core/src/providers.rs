@@ -19,6 +19,9 @@ pub struct ProviderSpec {
     pub binary: &'static str,
     /// Skill-storage adapter ids whose skills this CLI can load.
     pub skill_adapters: &'static [&'static str],
+    /// How a user or agent invokes an installed skill by name (`{}` is the name); empty when
+    /// the CLI has no documented syntax.
+    pub skill_invocation: &'static str,
     pub run_hint: &'static str,
     pub documented_headless: &'static str,
     /// Permission-bypass flags Aurora must never emit.
@@ -30,6 +33,17 @@ pub struct ProviderSpec {
     /// How strongly this CLI can enforce each capability a role may require (after the AWS
     /// CLI Agent Orchestrator tool-restriction table; sources per entry).
     pub enforcement: &'static [Enforcement],
+}
+
+impl ProviderSpec {
+    /// How to invoke skill `name` on this CLI, formatted for a handoff.
+    pub fn invoke_skill(&self, name: &str) -> String {
+        if self.skill_invocation.is_empty() {
+            format!("`{name}` (ask for this skill by name)")
+        } else {
+            format!("`{}`", self.skill_invocation.replace("{}", name))
+        }
+    }
 }
 
 /// Capabilities a role may require (`requires = [...]`).
@@ -68,6 +82,7 @@ pub const PROVIDERS: [ProviderSpec; 4] = [
         display_name: "Google Antigravity CLI",
         binary: "agy",
         skill_adapters: &["antigravity-cli", "antigravity-workspace"],
+        skill_invocation: "",
         run_hint: "Start `agy` interactively in the project directory and paste this handoff (everything above).",
         documented_headless: "agy -p <prompt> [--output-format text|json|stream-json]",
         forbidden_flags: &["--dangerously-skip-permissions"],
@@ -99,6 +114,7 @@ pub const PROVIDERS: [ProviderSpec; 4] = [
         display_name: "Claude Code",
         binary: "claude",
         skill_adapters: &["claude-code"],
+        skill_invocation: "/{}",
         run_hint: "Start `claude` interactively in the project directory and paste this handoff (everything above).",
         documented_headless: "claude -p <prompt> [--output-format text|json|stream-json]",
         forbidden_flags: &[
@@ -134,6 +150,7 @@ pub const PROVIDERS: [ProviderSpec; 4] = [
         display_name: "OpenAI Codex CLI",
         binary: "codex",
         skill_adapters: &["codex-cli"],
+        skill_invocation: "${}",
         run_hint: "Start `codex` interactively in the project directory and paste this handoff (everything above).",
         documented_headless: "codex exec <prompt> [--json] [-C <dir>] (default sandbox: read-only)",
         forbidden_flags: &[
@@ -173,6 +190,7 @@ pub const PROVIDERS: [ProviderSpec; 4] = [
         display_name: "Hermes Agent",
         binary: "hermes",
         skill_adapters: &["hermes"],
+        skill_invocation: "/{}",
         run_hint: "Start `hermes` interactively in the project directory and paste this handoff (everything above).",
         documented_headless: "hermes chat --query-file <file> --oneshot -Q [--in <dir>] [-t <toolsets>]",
         forbidden_flags: &["--yolo", "--accept-hooks"],

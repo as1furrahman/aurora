@@ -36,12 +36,12 @@ optional: without them, check 1 fails, because it expects all four to be detecte
 examples/real-bugfix-demo/run-demo.sh        # DEMO_DIR defaults to /opt/aurora-demo
 ```
 
-It prints each Aurora command's output and **24 checks**. Among them:
+It prints each Aurora command's output and **25 checks**. Among them:
 
-- **Routing:** the shipped preset refuses Hermes as an implementer until the workflow allows
-  it.
+- **Routing:** any CLI may play any preset role, and `--profile pair` routes the whole workflow
+  (claude builds, codex tests and reviews).
 - **Compatibility:** the shipped registry blocks Hermes as `incompatible`, so nothing is silently
-  converted.
+  converted, and the block says how to fix it.
 - **Independence:** review runs on a different CLI from the fix.
 - **Read-only reviewer:** the reviewer's handoff carries the `claude --permission-mode plan`
   safeguard.
@@ -53,12 +53,12 @@ It prints each Aurora command's output and **24 checks**. Among them:
 
 ## What the dry run taught us (inputs for the TUI and later milestones)
 
-1. **Presets need editing before Hermes can play a role.** Their eligible lists name only
-   claude, codex and antigravity. The TUI's Roles board should make "allow this CLI for this
-   role" a single action.
+1. **Presets needed editing before Hermes could play a role.** Fixed in R2 Step 5: every preset
+   role now allows all four CLIs (preferences unchanged). The TUI's Roles board should still make
+   "allow this CLI for this role" a single action for team workflows.
 2. **The shipped registry declares no Hermes compatibility,** so plans block. That is correct
-   behaviour, but the message should say how to fix it: declare the skill compatible in your
-   registry, or route the stage elsewhere.
+   behaviour; since R2 Step 5 the plan prints the fix (route the stage elsewhere, or declare the
+   skill compatible in a team registry).
 3. **Operators type one `--met` flag per criterion.** Forgetting one fails the gate with a clear
    message. In the TUI, the submit form should show the criteria as checkboxes.
 4. **`github` has no format definition of its own at this commit:** tabulate builds it from

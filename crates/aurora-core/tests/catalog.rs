@@ -218,10 +218,19 @@ fn clis_override_fills_profile_slots_in_order() {
 
 #[test]
 fn ineligible_provider_is_a_warning_with_a_fix() {
+    // A team workflow that keeps Hermes off the tester role (presets allow every CLI everywhere).
+    let p = PRESETS.iter().find(|p| p.name == "bugfix").expect("bugfix");
+    let restricted = p.toml.replacen(
+        "[routing.roles.tester]\neligible = [\"codex\", \"claude\", \"antigravity\", \"hermes\"]",
+        "[routing.roles.tester]\neligible = [\"codex\", \"claude\", \"antigravity\"]",
+        1,
+    );
+    assert_ne!(restricted, p.toml, "the tester routing block was found");
+    let wf = parse_workflow_str(&restricted, None, "restricted").expect("valid");
     let req = RecommendRequest { profile: "pair".into(), clis: vec!["claude".into(), "hermes".into()], with: vec![] };
-    let rec = catalog().recommend(&preset("bugfix"), &req).expect("recommend");
+    let rec = catalog().recommend(&wf, &req).expect("recommend");
     let w = rec.warnings.iter().find(|w| w.contains("not eligible")).expect("eligibility warning");
-    assert!(w.contains("hermes") && w.contains("eligible"), "{w}");
+    assert!(w.contains("hermes") && w.contains("[routing.roles.tester].eligible"), "{w}");
 }
 
 #[test]

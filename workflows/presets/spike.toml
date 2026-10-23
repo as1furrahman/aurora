@@ -59,9 +59,9 @@ requires_approval = true
 allow_override = true
 
 [routing.roles.analyst]
-eligible = ["claude", "codex", "antigravity"]
+eligible = ["claude", "codex", "antigravity", "hermes"]
 preferred = "claude"
 
 [routing.roles.architect]
-eligible = ["claude", "codex", "antigravity"]
+eligible = ["claude", "codex", "antigravity", "hermes"]
 preferred = "claude"

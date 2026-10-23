@@ -165,11 +165,48 @@ pub fn plan_from_args(def: &DefinitionArgs, routing: &RoutingArgs) -> Result<(Wo
         Err(LoadError::Registry(e)) => return Err(e),
         Err(LoadError::Definition(e)) => return Err(e.to_string()),
     };
-    let routes = parse_routes(&routing.route).map_err(|e| e.to_string())?;
     let detected = (!routing.no_detect).then(providers::detect_all);
-    let opts = PlanOptions { provider_override: routing.provider.as_deref(), routes, detected: detected.as_ref() };
+    let opts = plan_options(&wf, routing, detected.as_ref())?;
     let plan = build_plan(&wf, Some(&reg), &opts).map_err(|e| e.to_string())?;
     Ok((wf, plan))
+}
+
+/// Planning options from the CLI routing flags. With `--profile`/`--clis`, every stage is
+/// routed through the catalog profile and its recommended skills are attached.
+pub fn plan_options<'a>(
+    wf: &WorkflowDefinition,
+    routing: &'a RoutingArgs,
+    detected: Option<&'a aurora_core::workflow::Detection>,
+) -> Result<PlanOptions<'a>, String> {
+    let mut opts = PlanOptions {
+        provider_override: routing.provider.as_deref(),
+        routes: parse_routes(&routing.route).map_err(|e| e.to_string())?,
+        detected,
+        ..Default::default()
+    };
+    if routing.profile.is_none() && routing.clis.is_empty() {
+        if !routing.with.is_empty() {
+            return Err("--with needs --profile or --clis".into());
+        }
+        return Ok(opts);
+    }
+    let catalog = aurora_core::catalog::builtin_catalog().map_err(|e| e.to_string())?;
+    let profile = routing.profile.clone().unwrap_or_else(|| {
+        match routing.clis.len() {
+            1 => "solo",
+            3 => "trio",
+            _ => "pair",
+        }
+        .to_string()
+    });
+    let req =
+        aurora_core::catalog::RecommendRequest { profile, clis: routing.clis.clone(), with: routing.with.clone() };
+    let rec = catalog.recommend(wf, &req).map_err(|e| e.to_string())?;
+    for s in rec.stages {
+        opts.routes.insert(s.stage.clone(), s.provider);
+        opts.stage_skills.insert(s.stage, s.skills);
+    }
+    Ok(opts)
 }
 
 pub fn plan(def: &DefinitionArgs, routing: &RoutingArgs) -> u8 {
@@ -209,6 +246,16 @@ pub fn print_plan(plan: &Plan) {
         }
         for reason in &s.blocked_reasons {
             println!("  {} {}: {reason}", paint(BAD, "[BLOCKED]"), s.id);
+            if reason.starts_with("incompatible") {
+                let adapter = aurora_core::providers::get_provider(&s.provider)
+                    .map(|p| p.skill_adapters[0])
+                    .unwrap_or(&s.provider);
+                println!(
+                    "    fix: route the stage to a CLI that can load the skill (--route {}=<cli>), or declare \
+                     `{adapter}` in the skill's compatible_agents in a team registry (--registry FILE)",
+                    s.id
+                );
+            }
         }
         for w in &s.warnings {
             println!("  {} {}: {w}", paint(WARN, "[warning]"), s.id);

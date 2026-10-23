@@ -95,19 +95,19 @@ verdict = "review.json"
 allow_override = true
 
 [routing.roles.tester]
-eligible = ["codex", "claude", "antigravity"]
+eligible = ["codex", "claude", "antigravity", "hermes"]
 preferred = "codex"
 
 [routing.roles.architect]
-eligible = ["claude", "codex", "antigravity"]
+eligible = ["claude", "codex", "antigravity", "hermes"]
 preferred = "claude"
 
 [routing.roles.implementer]
-eligible = ["claude", "codex", "antigravity"]
+eligible = ["claude", "codex", "antigravity", "hermes"]
 preferred = "claude"
 
 [routing.roles.reviewer]
-eligible = ["codex", "claude", "antigravity"]
+eligible = ["codex", "claude", "antigravity", "hermes"]
 preferred = "codex"
 
 [[routing.fallback]]

@@ -79,15 +79,15 @@ requires_approval = true
 allow_override = true
 
 [routing.roles.security]
-eligible = ["claude", "codex", "antigravity"]
+eligible = ["claude", "codex", "antigravity", "hermes"]
 preferred = "claude"
 
 [routing.roles.reviewer]
-eligible = ["codex", "claude", "antigravity"]
+eligible = ["codex", "claude", "antigravity", "hermes"]
 preferred = "codex"
 
 [routing.roles.documenter]
-eligible = ["claude", "codex", "antigravity"]
+eligible = ["claude", "codex", "antigravity", "hermes"]
 preferred = "claude"
 
 [[routing.fallback]]

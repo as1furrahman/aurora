@@ -157,27 +157,27 @@ independent_of = ["implement"]
 allow_override = true
 
 [routing.roles.analyst]
-eligible = ["claude", "codex", "antigravity"]
+eligible = ["claude", "codex", "antigravity", "hermes"]
 preferred = "claude"
 
 [routing.roles.architect]
-eligible = ["claude", "codex", "antigravity"]
+eligible = ["claude", "codex", "antigravity", "hermes"]
 preferred = "claude"
 
 [routing.roles.implementer]
-eligible = ["claude", "codex", "antigravity"]
+eligible = ["claude", "codex", "antigravity", "hermes"]
 preferred = "claude"
 
 [routing.roles.tester]
-eligible = ["codex", "claude", "antigravity"]
+eligible = ["codex", "claude", "antigravity", "hermes"]
 preferred = "codex"
 
 [routing.roles.reviewer]
-eligible = ["codex", "claude", "antigravity"]
+eligible = ["codex", "claude", "antigravity", "hermes"]
 preferred = "codex"
 
 [routing.roles.documenter]
-eligible = ["claude", "codex", "antigravity"]
+eligible = ["claude", "codex", "antigravity", "hermes"]
 preferred = "claude"
 
 [[routing.fallback]]

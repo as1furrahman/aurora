@@ -206,6 +206,15 @@ struct RoutingArgs {
     /// Skip PATH detection of provider binaries
     #[arg(long)]
     no_detect: bool,
+    /// Route every stage through a catalog CLI profile (solo, pair, trio) and name its skills
+    #[arg(long, conflicts_with_all = ["provider", "route"])]
+    profile: Option<String>,
+    /// CLIs filling the profile slots, comma-separated (picks solo/pair/trio by count)
+    #[arg(long, value_delimiter = ',', conflicts_with_all = ["provider", "route"])]
+    clis: Vec<String>,
+    /// Include an opt-in catalog entry in the stage skills (repeatable)
+    #[arg(long, value_name = "ENTRY")]
+    with: Vec<String>,
 }
 
 fn main() -> ExitCode {

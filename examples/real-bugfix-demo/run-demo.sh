@@ -51,16 +51,16 @@ step "2. Start from the built-in bugfix preset"
 code "$AURORA" workflow init bugfix --output "$WF"
 check "preset written" '[[ -f "$WF" ]]'
 
-step "3. Route root-cause to Hermes before allowing it in the workflow: refused"
-code "$AURORA" workflow plan "$WF" --registry "$REG" --no-detect "${ROUTES[@]}" && c=0 || c=$?
-check "ineligible provider is a clear error (exit 1)" '[[ $c -eq 1 ]] && grep -q "not eligible" "$DEMO/last.out"'
-# Presets are meant to be edited: allow hermes to play the implementer role.
-sed -i '/^\[routing.roles.implementer\]/,/^$/ s/eligible = \["claude", "codex", "antigravity"\]/eligible = ["claude", "codex", "antigravity", "hermes"]/' "$WF"
-check "implementer role now lists hermes" 'grep -A1 "routing.roles.implementer" "$WF" | grep -q hermes'
+step "3. Any CLI may play any role; the catalog's pair profile routes the whole workflow by itself"
+check "the preset lets hermes play the implementer role" 'grep -A1 "routing.roles.implementer" "$WF" | grep -q hermes'
+code "$AURORA" workflow plan "$WF" --profile pair --no-detect && c=0 || c=$?
+check "pair profile: claude builds, codex tests and reviews" \
+  '"$AURORA" workflow plan "$WF" --profile pair --no-detect --json | jq_py "[s[\"provider\"] for s in d[\"stages\"]]" | grep -qF "['"'"'codex'"'"', '"'"'claude'"'"', '"'"'claude'"'"', '"'"'codex'"'"', '"'"'codex'"'"']"'
 
 step "4. Plan against the shipped registry: Hermes cannot load the required skills"
 code "$AURORA" workflow plan "$WF" --no-detect "${ROUTES[@]}" && c=0 || c=$?
 check "plan blocked (exit 3), no lossy conversion" '[[ $c -eq 3 ]] && grep -q "incompatible" "$DEMO/last.out"'
+check "the block says how to fix it" 'grep -q "fix: route the stage" "$DEMO/last.out" && grep -q -- "--registry FILE" "$DEMO/last.out"'
 
 step "5. Plan with the team registry that declares Hermes compatibility"
 code "$AURORA" workflow plan "$WF" --registry "$REG" --no-detect "${ROUTES[@]}" && c=0 || c=$?

@@ -4,13 +4,13 @@
 use std::path::PathBuf;
 
 use anstream::{eprintln, println};
-use aurora_core::workflow::{PlanOptions, StageState};
+use aurora_core::workflow::StageState;
 use aurora_fs::engine::{Engine, StatusReport};
 use aurora_fs::runs::RunError;
 use clap::Args;
 
 use crate::style::{BAD, HEAD, OK, WARN, paint};
-use crate::workflow::{EXIT_BLOCKED, parse_routes, print_plan};
+use crate::workflow::{EXIT_BLOCKED, plan_options, print_plan};
 use crate::{DefinitionArgs, RoutingArgs, providers, registry};
 
 #[derive(Debug, Args)]
@@ -34,10 +34,12 @@ fn print_json(value: &impl serde::Serialize) {
 
 pub fn start(def: &DefinitionArgs, routing: &RoutingArgs, run_root: &std::path::Path, run_id: Option<&str>) -> u8 {
     let outcome = (|| -> Result<_, String> {
-        let routes = parse_routes(&routing.route).map_err(|e| e.to_string())?;
         let reg = registry::load(def.registry.as_deref())?;
         let detected = (!routing.no_detect).then(providers::detect_all);
-        let opts = PlanOptions { provider_override: routing.provider.as_deref(), routes, detected: detected.as_ref() };
+        let raw = std::fs::read(&def.file).map_err(|e| format!("cannot read {}: {e}", def.file.display()))?;
+        let wf = aurora_core::workflow::parse_workflow_bytes(&raw, Some(&reg), &def.file.display().to_string())
+            .map_err(|e| e.to_string())?;
+        let opts = plan_options(&wf, routing, detected.as_ref())?;
         Engine::host().start_run(&def.file, run_root, Some(&reg), &opts, run_id, None).map_err(|e| e.to_string())
     })();
     let started = match outcome {

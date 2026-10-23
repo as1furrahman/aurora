@@ -38,6 +38,7 @@ fn rust_plans_match_python_goldens() {
                 })
                 .collect(),
             detected: detected.as_ref(),
+            ..Default::default()
         };
         let plan = build_plan(&wf, registry.as_ref(), &opts).expect("plan builds");
         let actual = serde_json::to_value(&plan).expect("serialize");

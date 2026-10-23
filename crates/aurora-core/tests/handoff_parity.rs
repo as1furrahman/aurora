@@ -37,6 +37,7 @@ fn rust_bundles_match_python_goldens() {
                 .map(|p| (p[0].as_str().expect("s").to_string(), p[1].as_str().expect("p").to_string()))
                 .collect(),
             detected: None,
+            ..Default::default()
         };
         let plan = build_plan(&wf, Some(&registry), &opts).expect("plan");
         let stage = plan.stage(case["stage"].as_str().expect("stage")).expect("stage plan");

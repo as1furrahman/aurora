@@ -87,6 +87,10 @@ pub struct PlannedStage {
     /// otherwise, so plans without verdicts stay identical to the Python plan).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verdict: Option<String>,
+    /// Catalog skills to use in this stage (from a CLI profile; omitted when none, keeping plans
+    /// identical to the Python plan).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stage_skills: Vec<String>,
 }
 
 impl PlannedStage {
@@ -139,12 +143,17 @@ pub struct PlanOptions<'a> {
     pub provider_override: Option<&'a str>,
     pub routes: IndexMap<String, String>,
     pub detected: Option<&'a Detection>,
+    /// Stage id -> catalog skills to name in its handoff.
+    pub stage_skills: IndexMap<String, Vec<String>>,
 }
 
 /// Build a plan. Never performs I/O.
 pub fn build_plan(wf: &WorkflowDefinition, registry: Option<&Registry>, opts: &PlanOptions) -> Result<Plan, PlanError> {
     let override_ = opts.provider_override.filter(|p| !p.is_empty());
     check_options(wf, override_, &opts.routes)?;
+    if let Some(unknown) = opts.stage_skills.keys().find(|s| wf.stage(s).is_none()) {
+        return Err(PlanError(format!("stage skills name unknown stage '{unknown}'")));
+    }
 
     let mut warnings = Vec::new();
     if registry.is_none() {
@@ -154,7 +163,9 @@ pub fn build_plan(wf: &WorkflowDefinition, registry: Option<&Registry>, opts: &P
     let order = topological(&wf.stages);
     let mut assigned: HashMap<&str, PlannedStage> = HashMap::new();
     for stage in &order {
-        assigned.insert(stage.id.as_str(), plan_stage(wf, stage, registry, override_, &opts.routes, opts.detected));
+        let mut planned = plan_stage(wf, stage, registry, override_, &opts.routes, opts.detected);
+        planned.stage_skills = opts.stage_skills.get(&stage.id).cloned().unwrap_or_default();
+        assigned.insert(stage.id.as_str(), planned);
     }
 
     for stage in &wf.stages {
@@ -449,5 +460,6 @@ fn plan_stage(
         max_attempts: stage.max_attempts,
         on_exhausted: stage.on_exhausted.clone(),
         verdict: stage.verdict.as_ref().map(|v| artifact(&stage.id, v)),
+        stage_skills: Vec::new(),
     }
 }

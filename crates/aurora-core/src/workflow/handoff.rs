@@ -74,6 +74,13 @@ pub fn render_handoff_with_notes(
     lines.extend(["", "## Skills", ""].map(String::from));
     lines.push(format!("- Required: {}", or_none(&stage_plan.required_skills)));
     lines.push(format!("- Recommended: {}", or_none(&stage_plan.recommended_skills)));
+    if !stage_plan.stage_skills.is_empty() {
+        let names: Vec<String> = stage_plan.stage_skills.iter().map(|s| provider.invoke_skill(s)).collect();
+        lines.push(format!(
+            "- Use for this stage: {} (Aurora catalog; `aurora skills apply` installs them)",
+            names.join(", ")
+        ));
+    }
 
     if !stage_plan.enforcement.is_empty() {
         lines.extend(["", "## Required safeguards", ""].map(String::from));
