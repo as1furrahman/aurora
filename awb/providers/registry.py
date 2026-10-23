@@ -13,7 +13,7 @@ _SPECS = (
         display_name="Google Antigravity CLI",
         binary="agy",
         skill_adapters=("antigravity-cli", "antigravity-workspace"),
-        run_hint="Start `agy` interactively in the project directory and paste the prompt below.",
+        run_hint="Start `agy` interactively in the project directory and paste this handoff (everything above).",
         documented_headless="agy -p <prompt> [--output-format text|json|stream-json]",
         forbidden_flags=("--dangerously-skip-permissions",),
         docs_urls=(
@@ -28,7 +28,7 @@ _SPECS = (
         display_name="Claude Code",
         binary="claude",
         skill_adapters=("claude-code",),
-        run_hint="Start `claude` interactively in the project directory and paste the prompt below.",
+        run_hint="Start `claude` interactively in the project directory and paste this handoff (everything above).",
         documented_headless="claude -p <prompt> [--output-format text|json|stream-json]",
         forbidden_flags=(
             "--dangerously-skip-permissions",
@@ -47,7 +47,7 @@ _SPECS = (
         display_name="OpenAI Codex CLI",
         binary="codex",
         skill_adapters=("codex-cli",),
-        run_hint="Start `codex` interactively in the project directory and paste the prompt below.",
+        run_hint="Start `codex` interactively in the project directory and paste this handoff (everything above).",
         documented_headless="codex exec <prompt> [--json] [-C <dir>] (default sandbox: read-only)",
         forbidden_flags=(
             "--dangerously-bypass-approvals-and-sandbox",

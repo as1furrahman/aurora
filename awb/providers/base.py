@@ -61,12 +61,12 @@ class ExecutionProvider:
         return ProviderDetection(provider_id=self.spec.id, installed=path is not None, path=path)
 
     def build_handoff(self, prompt: str) -> str:
-        """Wrap a role prompt with provider-specific manual run instructions. Pure."""
+        """Append provider-specific manual run instructions to a role prompt. Pure."""
         return (
+            f"{prompt.rstrip()}\n\n"
             f"## How to run this stage with {self.spec.display_name}\n\n"
             f"{self.spec.run_hint}\n\n"
-            "Use the CLI's normal permission prompts. Do not use flags that bypass approvals or sandboxing.\n\n"
-            f"{prompt}"
+            "Use the CLI's normal permission prompts. Do not use flags that bypass approvals or sandboxing.\n"
         )
 
     def execute(self, prompt: str, cwd: Path) -> None:

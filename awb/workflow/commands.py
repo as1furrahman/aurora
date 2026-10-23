@@ -44,9 +44,35 @@ def add_workflow_parser(subparsers) -> None:
     with_definition(plan_parser)
     with_routing(plan_parser)
 
+    start_parser = wf_sub.add_parser("start", help="Create a run, pin the definition, and issue handoff bundles")
+    with_definition(start_parser)
+    with_routing(start_parser)
+    start_parser.add_argument("--run-root", type=Path, required=True,
+                              help="Existing directory that will contain the run directory")
+    start_parser.add_argument("--run-id", default=None, help="Run directory name (default: <workflow-id>-<UTC time>)")
+
+    def with_run(p, stage=False):
+        p.add_argument("--run", type=Path, required=True, help="Run directory")
+        if stage:
+            p.add_argument("--stage", required=True, help="Stage id")
+        p.add_argument("--json", action="store_true", help="Output in JSON format")
+
+    with_run(wf_sub.add_parser("status", help="Show run state, completion, escalations and evidence drift"))
+    with_run(wf_sub.add_parser("resume", help="Verify integrity and re-issue missing handoffs (never re-runs PASSED stages)"))
+    submit_parser = wf_sub.add_parser("submit", help="Submit a stage's evidence and evaluate its acceptance gate")
+    with_run(submit_parser, stage=True)
+    submit_parser.add_argument("--met", action="append", default=[], metavar="CRITERION",
+                               help="Claim an acceptance criterion as met (repeatable)")
+    submit_parser.add_argument("--not-applicable", action="store_true",
+                               help="Mark an optional stage NOT_APPLICABLE (requires NOT_APPLICABLE.md)")
+    approve_parser = wf_sub.add_parser("approve", help="Record human approval for a stage awaiting approval")
+    with_run(approve_parser, stage=True)
+    approve_parser.add_argument("--by", required=True, help="Name of the approving person")
+
 
 def run_workflow_command(args: argparse.Namespace, config: Config) -> int:
-    handlers = {"validate": _cmd_validate, "show": _cmd_show, "plan": _cmd_plan}
+    handlers = {"validate": _cmd_validate, "show": _cmd_show, "plan": _cmd_plan, "start": _cmd_start,
+                "status": _cmd_status, "resume": _cmd_resume, "submit": _cmd_submit, "approve": _cmd_approve}
     handler = handlers.get(args.workflow_command)
     if handler is None:
         print("Error: specify a workflow subcommand: " + ", ".join(handlers), file=sys.stderr)
@@ -207,3 +233,118 @@ def _cmd_plan(args, config: Config) -> int:
     else:
         print_plan(plan)
     return EXIT_BLOCKED if plan["blocked"] else 0
+
+
+def _cmd_start(args, config: Config) -> int:
+    from .engine import start_run
+
+    try:
+        routes = parse_routes(args.route)
+        registry = load_registry(args.registry or config.registry_path)
+        run_dir, record = start_run(
+            args.file, args.run_root, registry=registry, provider_override=args.provider, routes=routes,
+            detected=None if args.no_detect else detect_providers(), run_id=args.run_id,
+        )
+    except AWBError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    issued = [sid for sid, st in record["stages"].items() if st["handoff"]]
+    blocked = [sid for sid, st in record["stages"].items() if st["state"] == "BLOCKED"]
+    if args.json:
+        print(json.dumps({"run_dir": str(run_dir), "run_id": record["run_id"], "issued": issued,
+                          "blocked": blocked, "warnings": record["_warnings"] + record["plan"]["warnings"]}, indent=2))
+    else:
+        print_plan(record["plan"])
+        print(f"\nRun created: {run_dir}")
+        for sid in issued:
+            print(f"  handoff issued: {run_dir / record['stages'][sid]['handoff']['path']}")
+        for sid in blocked:
+            print(f"  [BLOCKED] {sid}")
+    return EXIT_BLOCKED if blocked else 0
+
+
+def print_status(report: dict) -> None:
+    done = "COMPLETE" if report["complete"] else "INCOMPLETE"
+    print(f"Aurora — Run {report['run_id']} [{report['workflow']['id']} v{report['workflow']['version']}] "
+          f"(mode: {report['mode']}): {done}")
+    print("-" * 65)
+    for s in report["stages"]:
+        extra = []
+        if s["awaiting_approval"]:
+            extra.append("awaiting approval")
+        if s["escalated"]:
+            extra.append("ESCALATED")
+        if s["waiting_on"]:
+            extra.append(f"waiting on {', '.join(s['waiting_on'])}")
+        print(f"  {s['id']:<14} {s['state']:<15} {s['provider']:<12} attempts {s['attempts']}/{s['max_attempts']}"
+              + (f"  ({'; '.join(extra)})" if extra else ""))
+        for m in s["missing"]:
+            print(f"      missing: {m}")
+        for r in s["blocked_reasons"]:
+            print(f"      blocked: {r}")
+    for d in report["drift"]:
+        print(f"  [DRIFT] {d['stage']}: {d['path']} ({d['problem']})")
+    if report["reduced_independence"]:
+        print(f"  [independence] reduced (same provider): {', '.join(report['reduced_independence'])}")
+    for w in report["warnings"]:
+        print(f"  [warning] {w}")
+
+
+def _report(args, fn) -> int:
+    try:
+        report = fn()
+    except AWBError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(report, indent=2))
+    else:
+        print_status(report)
+    return 0
+
+
+def _cmd_status(args, config: Config) -> int:
+    from .engine import status
+    return _report(args, lambda: status(args.run))
+
+
+def _cmd_resume(args, config: Config) -> int:
+    from .engine import resume
+    return _report(args, lambda: resume(args.run))
+
+
+def _cmd_submit(args, config: Config) -> int:
+    from .engine import submit
+
+    try:
+        result = submit(args.run, args.stage, met=args.met, not_applicable=args.not_applicable)
+    except AWBError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        label = result["state"] + (" (gate satisfied; awaiting approval)" if result["awaiting_approval"] else "")
+        print(f"Stage {result['stage']}: {label} [attempt {result['attempts']}]")
+        for m in result["missing"]:
+            print(f"  missing: {m}")
+        if result["escalated"]:
+            print("  ESCALATED: attempts exhausted; human decision required")
+        for w in result["warnings"]:
+            print(f"  [warning] {w}")
+    return 0 if result["state"] in ("PASSED", "NOT_APPLICABLE") or result["awaiting_approval"] else 1
+
+
+def _cmd_approve(args, config: Config) -> int:
+    from .engine import approve
+
+    try:
+        result = approve(args.run, args.stage, by=args.by)
+    except AWBError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"Stage {result['stage']}: {result['state']} (approved by {args.by})")
+    return 0

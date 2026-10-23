@@ -1,0 +1,33 @@
+$ aurora workflow validate
+VALID: plan-implement-review v1.0.0 (4 roles, 6 stages)
+  sha256: cab4526ead1b8150dbaca61bef7fb9c1d52504ca70afd543ee32fb774c36b2ff
+[exit=0]
+$ aurora workflow plan --no-detect  (summary)
+multi [('plan', 'claude', 'preferred'), ('implement', 'antigravity', 'preferred'), ('test', 'codex', 'preferred'), ('review', 'codex', 'preferred'), ('remediate', 'antigravity', 'preferred'), ('final-verify', 'codex', 'preferred')] blocked= False
+$ aurora workflow plan --no-detect --provider claude (summary)
+single [('plan', 'claude', 'override'), ('implement', 'claude', 'override'), ('test', 'claude', 'override'), ('review', 'claude', 'override'), ('remediate', 'claude', 'override'), ('final-verify', 'claude', 'override')] blocked= False
+$ aurora workflow plan --no-detect --route implement=codex (summary)
+multi [('plan', 'claude', 'preferred'), ('implement', 'codex', 'route'), ('test', 'codex', 'preferred'), ('review', 'codex', 'preferred'), ('remediate', 'antigravity', 'preferred'), ('final-verify', 'codex', 'preferred')] blocked= False
+$ aurora workflow start --run-root R --run-id demo
+
+Run created: /tmp/claude-1000/-home-thesriz-Development/f52d709a-6457-418d-a51e-0398bf251a89/scratchpad/e2e-runs/demo
+  handoff issued: /tmp/claude-1000/-home-thesriz-Development/f52d709a-6457-418d-a51e-0398bf251a89/scratchpad/e2e-runs/demo/handoff/plan.md
+[exit=0]
+$ submit plan (no evidence)
+Stage plan: FAILED [attempt 1]
+  missing: output missing: artifacts/plan/plan.md
+  missing: criterion 'plan-written' lacks evidence: ['plan.md']
+[exit=1]
+$ submit plan (with evidence)
+Stage plan: PASSED [attempt 2]
+[exit=0]
+$ status
+Aurora — Run demo [plan-implement-review v1.0.0] (mode: multi): INCOMPLETE
+-----------------------------------------------------------------
+  plan           PASSED          claude       attempts 2/2
+  implement      RUNNING         antigravity  attempts 0/2
+  test           PENDING         codex        attempts 0/3  (waiting on implement)
+  review         PENDING         codex        attempts 0/2  (waiting on test)
+  remediate      PENDING         antigravity  attempts 0/2  (waiting on review)
+  final-verify   PENDING         codex        attempts 0/2  (waiting on remediate)
+[exit=0]

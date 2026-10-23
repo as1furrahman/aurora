@@ -147,8 +147,8 @@ RUNNING/FAILED (optional stage) ──submit --not-applicable + justification─
 - **Approve** (`aurora workflow approve --run R --stage S --by NAME`) only applies to a stage that is
   awaiting approval.
 - `SKIPPED` is reserved in the v1 enum. The v1 engine never produces it.
-- **Run complete** means every non-optional stage is `PASSED` and every optional stage is `PASSED`
-  or `NOT_APPLICABLE`.
+- **Run complete** means every non-optional stage is `PASSED`, every optional stage is `PASSED`
+  or `NOT_APPLICABLE`, and no accepted evidence has drifted since acceptance.
 
 ## 5. Resume and integrity
 
@@ -175,9 +175,9 @@ either the old record (the next resume re-issues identical bundles idempotently)
     "<id>": {
       "state": "RUNNING", "provider": "claude", "attempts": 0,
       "awaiting_approval": false, "escalated": false,
-      "handoff": {"path": "handoff/<id>.md", "sha256": "…"},
+      "handoff": {"path": "handoff/<id>.md", "sha256": "…", "preserved_existing": false},
       "evidence": {"artifacts/<id>/plan.md": "<sha256>"},
-      "criteria_met": ["plan-written"], "missing": [],
+      "criteria_met": ["plan-written"], "missing": [], "blocked_reasons": [],
       "approval": null, "not_applicable_reason": null
     }
   },
