@@ -15,7 +15,8 @@ aurora-fs.workspace = true
 ratatui = "0.30"
 
 [dev-dependencies]
-insta = "1"
+insta = { version = "1", features = ["filters"] }
+tempfile = "3"
 
 [lints]
 workspace = true

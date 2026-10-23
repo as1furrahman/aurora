@@ -1,0 +1,28 @@
+---
+source: crates/aurora-tui/tests/skills_tab.rs
+expression: s
+---
+"Aurora · [tmp]/project · bugfix · pair                                               "
+" 1 Skills │ 2 Roles │ 3 Install │ 4 Runs                                                                      "
+"┌▶ Skills × CLIs────────────────────────────────────────────┐┌  Skill────────────────────────────────────────┐"
+"│  skill                           claude       codex       ││house-rules                                    │"
+"│▶ house-rules (rules)               +            +         ││rules · baseline · curated                     │"
+"│  demo                              +            +         ││Why house-rules.                               │"
+"│  checker                           ·            +         ││                                               │"
+"│  scripted                          ?            ·         ││source                                         │"
+"│  extra (opt-in)                    ·            ·         ││https://github.com/demo-org/team-skills/tree/98│"
+"│                                                           ││040b1a5ff976dbb3decc8a74b14a8b7b2d73e6/skills/h│"
+"│                                                           ││ouse-rules                                     │"
+"│                                                           ││licence  MIT                                   │"
+"│                                                           ││roles    all   stages: all                     │"
+"│                                                           ││                                               │"
+"│                                                           ││Per CLI                                        │"
+"│                                                           ││  claude      + create · CLAUDE.md             │"
+"│                                                           ││  codex       + create · AGENTS.md             │"
+"│✓ installed  + create  ? after review  ↑ update            ││                                               │"
+"│≠ modified  ! foreign  ◐ shared dir  · not wanted          ││review   no review needed                      │"
+"│listing budget (what each CLI will load):                  ││                                               │"
+"│  claude      ▕█░░░░░░░░░░░▏ 56/8000 · 2 skills            ││Equivalent commands                            │"
+"│  codex       ▕█░░░░░░░░░░░▏ 55/8000 · 2 skills            ││  aurora catalog show house-rules              │"
+"└───────────────────────────────────────────────────────────┘└───────────────────────────────────────────────┘"
+"r refresh  i opt-in  1-4 tabs  Tab focus  j/k move  / filter  ? help  q quit                                  "

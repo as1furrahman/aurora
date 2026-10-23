@@ -1,7 +1,14 @@
 //! The TUI model: one `App`, one `Action` enum, pure `update` transitions.
+//!
+//! Side effects never happen here. A key that needs work (planning, applying) queues a
+//! [`Command`]; the event loop runs it on a worker thread and feeds the result back as a [`Msg`].
+//! Results from superseded requests are recognised by their generation and ignored.
 
+use std::collections::VecDeque;
 use std::path::PathBuf;
 
+use aurora_app::install::{InstallRequest, Planned, WorkflowSource};
+use aurora_core::catalog::{Catalog, Tier};
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::keymap::{Ctx, resolve};
@@ -29,6 +36,22 @@ pub enum Action {
     OpenHelp,
     ClosePopup,
     Back,
+    /// Re-run the install plan.
+    Refresh,
+    /// Include or drop the selected opt-in catalog entry (`--with`).
+    ToggleOptIn,
+}
+
+/// Work for the event loop to run off the UI thread.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Command {
+    Plan { generation: u64, request: InstallRequest },
+}
+
+/// Results coming back from the event loop.
+#[derive(Debug)]
+pub enum Msg {
+    Planned { generation: u64, result: Result<Planned, String> },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -44,6 +67,16 @@ impl Tab {
 
     pub fn index(self) -> usize {
         Tab::ALL.iter().position(|t| *t == self).unwrap_or(0)
+    }
+
+    /// Key context for tab-specific bindings.
+    pub fn ctx(self) -> Ctx {
+        match self {
+            Tab::Skills => Ctx::Skills,
+            Tab::Roles => Ctx::Roles,
+            Tab::Install => Ctx::Install,
+            Tab::Runs => Ctx::Runs,
+        }
     }
 
     pub fn title(self) -> &'static str {
@@ -98,7 +131,7 @@ impl Default for TuiOptions {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct App {
     pub opts: TuiOptions,
     pub tab: Tab,
@@ -106,6 +139,20 @@ pub struct App {
     /// Cursor per tab.
     pub cursor: [usize; 4],
     pub quit: bool,
+    /// The catalog the plan is made from (built-in unless `--catalog`).
+    pub catalog: Result<Catalog, String>,
+    /// The latest install plan, if one finished.
+    pub planned: Option<Planned>,
+    /// Why the latest plan failed, if it did.
+    pub plan_error: Option<String>,
+    /// A plan is running.
+    pub loading: bool,
+    /// Opt-in entries included (`--with`).
+    pub with: Vec<String>,
+    /// Event-loop iterations, for the spinner.
+    pub ticks: u64,
+    generation: u64,
+    commands: VecDeque<Command>,
     popups: Vec<Popup>,
     filter: String,
     filter_edit: Option<String>,
@@ -113,16 +160,86 @@ pub struct App {
 
 impl App {
     pub fn new(opts: TuiOptions) -> App {
-        App {
+        let catalog = aurora_app::fetch::load_catalog(opts.catalog.as_deref());
+        let mut app = App {
             opts,
             tab: Tab::Skills,
             focus: Focus::List,
             cursor: [0; 4],
             quit: false,
+            catalog,
+            planned: None,
+            plan_error: None,
+            loading: false,
+            with: Vec::new(),
+            ticks: 0,
+            generation: 0,
+            commands: VecDeque::new(),
             popups: Vec::new(),
             filter: String::new(),
             filter_edit: None,
+        };
+        app.request_plan();
+        app
+    }
+
+    /// The `aurora skills plan` request for the current settings.
+    pub fn install_request(&self) -> InstallRequest {
+        InstallRequest {
+            workflow: WorkflowSource::Preset(self.opts.preset.clone()),
+            profile: self.opts.profile.clone(),
+            clis: self.opts.clis.clone(),
+            with: self.with.clone(),
+            project: self.opts.project.clone(),
+            keep_hooks: false,
+            prune: false,
+            catalog: self.opts.catalog.clone(),
+            cache: self.opts.cache.clone(),
+            mirror: self.opts.mirror.clone(),
         }
+    }
+
+    fn request_plan(&mut self) {
+        self.generation += 1;
+        self.loading = true;
+        self.commands.retain(|c| !matches!(c, Command::Plan { .. }));
+        self.commands.push_back(Command::Plan { generation: self.generation, request: self.install_request() });
+    }
+
+    /// The next piece of work for the event loop.
+    pub fn take_command(&mut self) -> Option<Command> {
+        self.commands.pop_front()
+    }
+
+    /// A result from the event loop.
+    pub fn receive(&mut self, msg: Msg) {
+        match msg {
+            Msg::Planned { generation, result } => {
+                if generation != self.generation {
+                    return;
+                }
+                self.loading = false;
+                match result {
+                    Ok(planned) => {
+                        self.planned = Some(planned);
+                        self.plan_error = None;
+                    }
+                    Err(e) => self.plan_error = Some(e),
+                }
+                self.clamp();
+            }
+        }
+    }
+
+    pub fn tick(&mut self) {
+        self.ticks = self.ticks.wrapping_add(1);
+    }
+
+    /// Keep every cursor inside its list.
+    fn clamp(&mut self) {
+        let len = crate::screens::skills::rows(self).len();
+        let c = &mut self.cursor[Tab::Skills.index()];
+        *c = (*c).min(len.saturating_sub(1));
     }
 
     pub fn help_open(&self) -> bool {
@@ -163,7 +280,8 @@ impl App {
         let action = match key.code {
             KeyCode::Char(c) if typed(c) => Some(Action::FilterChar(c)),
             KeyCode::Backspace if ctx == Ctx::Filter => Some(Action::FilterBackspace),
-            _ => resolve(ctx, key),
+            _ if ctx == Ctx::Normal => resolve(&[self.tab.ctx(), Ctx::Normal, Ctx::Global], key),
+            _ => resolve(&[ctx, Ctx::Global], key),
         };
         if let Some(a) = action {
             self.update(a);
@@ -214,7 +332,25 @@ impl App {
                     self.focus = Focus::List;
                 }
             }
+            Action::Refresh => self.request_plan(),
+            Action::ToggleOptIn => self.toggle_opt_in(),
         }
+        self.clamp();
+    }
+
+    fn toggle_opt_in(&mut self) {
+        let rows = crate::screens::skills::rows(self);
+        let Some(row) = rows.get(self.cursor[Tab::Skills.index()]) else { return };
+        if row.tier != Tier::OptIn {
+            return;
+        }
+        let id = row.id.clone();
+        if let Some(i) = self.with.iter().position(|w| *w == id) {
+            self.with.remove(i);
+        } else {
+            self.with.push(id);
+        }
+        self.request_plan();
     }
 
     fn scroll(&mut self, action: Action) {

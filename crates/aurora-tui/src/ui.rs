@@ -8,7 +8,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Wrap};
 
 use crate::app::{App, Focus, Tab};
-use crate::keymap::{Binding, Ctx, bindings, footer};
+use crate::keymap::{Binding, Ctx, bindings, footer_for};
 
 pub const MIN_WIDTH: u16 = 60;
 pub const MIN_HEIGHT: u16 = 12;
@@ -57,7 +57,15 @@ pub fn render(f: &mut Frame, app: &App) {
         app.opts.preset,
         app.opts.profile.as_deref().unwrap_or("pair")
     );
-    f.render_widget(Paragraph::new(Line::from(Span::styled(title, theme.accent()))), header);
+    let status = if app.loading {
+        const SPIN: [&str; 4] = ["⠋", "⠙", "⠸", "⠴"];
+        format!("   {} planning…", SPIN[(app.ticks % 4) as usize])
+    } else if app.plan_error.is_some() {
+        "   ✗ plan failed (r retry)".to_string()
+    } else {
+        String::new()
+    };
+    f.render_widget(Paragraph::new(Line::from(vec![Span::styled(title, theme.accent()), Span::raw(status)])), header);
 
     let titles: Vec<String> = Tab::ALL.iter().enumerate().map(|(i, t)| format!("{} {}", i + 1, t.title())).collect();
     f.render_widget(
@@ -91,18 +99,47 @@ fn render_body(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
         Tab::Install => ("Install plan", "Action"),
         Tab::Runs => ("Runs", "Run"),
     };
-    let empty = Paragraph::new(Span::styled("Nothing loaded yet.", theme.dim()));
-    if area.width < SPLIT_WIDTH {
-        let (title, focused) = match app.focus {
-            Focus::List => (list_title, true),
-            Focus::Detail => (detail_title, true),
-        };
-        f.render_widget(empty.block(pane(title, focused, theme)), area);
+    let (left, right) = if area.width < SPLIT_WIDTH {
+        match app.focus {
+            Focus::List => (Some(area), None),
+            Focus::Detail => (None, Some(area)),
+        }
+    } else {
+        let [l, r] = Layout::horizontal([Constraint::Percentage(55), Constraint::Percentage(45)]).areas(area);
+        (Some(l), Some(r))
+    };
+    if let Some(l) = left {
+        let block = pane(list_title, app.focus == Focus::List, theme);
+        let inner = block.inner(l);
+        f.render_widget(block, l);
+        render_list(f, app, inner, theme);
+    }
+    if let Some(r) = right {
+        let block = pane(detail_title, app.focus == Focus::Detail, theme);
+        let inner = block.inner(r);
+        f.render_widget(block, r);
+        render_detail(f, app, inner, theme);
+    }
+}
+
+fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
+    if let Some(e) = &app.plan_error {
+        let text = format!("The install plan failed:\n\n{e}\n\nPress r to retry.");
+        f.render_widget(Paragraph::new(text).wrap(Wrap { trim: false }), area);
         return;
     }
-    let [left, right] = Layout::horizontal([Constraint::Percentage(55), Constraint::Percentage(45)]).areas(area);
-    f.render_widget(empty.clone().block(pane(list_title, app.focus == Focus::List, theme)), left);
-    f.render_widget(empty.block(pane(detail_title, app.focus == Focus::Detail, theme)), right);
+    match app.tab {
+        Tab::Skills if app.planned.is_some() => crate::screens::skills::render_list(f, app, area, theme),
+        Tab::Skills => f.render_widget(Paragraph::new(Span::styled("Planning the install…", theme.dim())), area),
+        _ => f.render_widget(Paragraph::new(Span::styled("Nothing loaded yet.", theme.dim())), area),
+    }
+}
+
+fn render_detail(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
+    match app.tab {
+        Tab::Skills => crate::screens::skills::render_detail(f, app, area, theme),
+        _ => f.render_widget(Paragraph::new(Span::styled("Nothing loaded yet.", theme.dim())), area),
+    }
 }
 
 fn key_spans(binds: &[&Binding], theme: Theme) -> Vec<Span<'static>> {
@@ -125,7 +162,8 @@ fn render_footer(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
         spans.push(Span::styled(format!("/{}▏", app.filter()), theme.accent()));
         spans.push(Span::raw("   "));
     }
-    spans.extend(key_spans(&footer(ctx), theme));
+    let ctxs: Vec<Ctx> = if ctx == Ctx::Normal { vec![app.tab.ctx(), Ctx::Normal] } else { vec![ctx] };
+    spans.extend(key_spans(&footer_for(&ctxs), theme));
     if ctx == Ctx::Normal && !app.filter().is_empty() {
         spans.push(Span::raw("   "));
         spans.push(Span::styled(format!("/{}", app.filter()), theme.accent()));
@@ -142,7 +180,7 @@ pub fn centered(area: Rect, w: u16, h: u16) -> Rect {
 
 fn render_help(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
     let mut lines: Vec<Line> = Vec::new();
-    for ctx in [Ctx::Normal, Ctx::Filter, Ctx::Help, Ctx::Global] {
+    for ctx in [app.tab.ctx(), Ctx::Normal, Ctx::Filter, Ctx::Help, Ctx::Global] {
         lines.push(Line::from(Span::styled(ctx.title(), theme.accent())));
         let mut seen: Vec<&str> = Vec::new();
         for b in bindings().iter().filter(|b| b.ctx == ctx) {

@@ -13,6 +13,10 @@ pub enum Ctx {
     Normal,
     Help,
     Filter,
+    Skills,
+    Roles,
+    Install,
+    Runs,
 }
 
 impl Ctx {
@@ -22,6 +26,10 @@ impl Ctx {
             Ctx::Normal => "Lists and tabs",
             Ctx::Help => "Help",
             Ctx::Filter => "While filtering",
+            Ctx::Skills => "Skills tab",
+            Ctx::Roles => "Roles tab",
+            Ctx::Install => "Install tab",
+            Ctx::Runs => "Runs tab",
         }
     }
 }
@@ -54,6 +62,23 @@ const fn b(
 }
 
 static BINDINGS: &[Binding] = &[
+    b(
+        Ctx::Skills,
+        &[(KeyCode::Char('r'), NONE)],
+        "r refresh",
+        "Re-run the install plan (aurora skills plan)",
+        Action::Refresh,
+        true,
+    ),
+    b(
+        Ctx::Skills,
+        &[(KeyCode::Char('i'), NONE)],
+        "i opt-in",
+        "Include or drop the selected opt-in skill (--with)",
+        Action::ToggleOptIn,
+        true,
+    ),
+    b(Ctx::Skills, &[(KeyCode::Enter, NONE)], "Enter detail", "Focus the detail pane", Action::FocusNext, false),
     b(Ctx::Global, &[(KeyCode::Char('c'), CTRL)], "^C quit", "Quit Aurora at once", Action::Quit, false),
     b(
         Ctx::Normal,
@@ -178,10 +203,17 @@ pub fn bindings() -> &'static [Binding] {
 
 /// Footer bindings for `ctx`, one per label.
 pub fn footer(ctx: Ctx) -> Vec<&'static Binding> {
+    footer_for(&[ctx])
+}
+
+/// Footer bindings for several contexts, in order, one per label.
+pub fn footer_for(ctxs: &[Ctx]) -> Vec<&'static Binding> {
     let mut out: Vec<&Binding> = Vec::new();
-    for bind in BINDINGS.iter().filter(|b| b.ctx == ctx && b.footer) {
-        if !out.iter().any(|o| o.label == bind.label) {
-            out.push(bind);
+    for ctx in ctxs {
+        for bind in BINDINGS.iter().filter(|b| b.ctx == *ctx && b.footer) {
+            if !out.iter().any(|o| o.label == bind.label) {
+                out.push(bind);
+            }
         }
     }
     out
@@ -195,9 +227,8 @@ fn normalize(key: KeyEvent) -> (KeyCode, KeyModifiers) {
     }
 }
 
-/// The action bound to `key` in `ctx`, falling back to the global bindings.
-pub fn resolve(ctx: Ctx, key: KeyEvent) -> Option<Action> {
+/// The action bound to `key` in the first of `ctxs` that binds it.
+pub fn resolve(ctxs: &[Ctx], key: KeyEvent) -> Option<Action> {
     let k = normalize(key);
-    let find = |c: Ctx| BINDINGS.iter().find(|b| b.ctx == c && b.keys.contains(&k)).map(|b| b.action);
-    find(ctx).or_else(|| find(Ctx::Global))
+    ctxs.iter().find_map(|c| BINDINGS.iter().find(|b| b.ctx == *c && b.keys.contains(&k)).map(|b| b.action))
 }
