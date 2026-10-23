@@ -7,8 +7,11 @@
 use std::collections::VecDeque;
 use std::path::PathBuf;
 
-use aurora_app::install::{InstallRequest, Planned, WorkflowSource};
+use aurora_app::install::{InstallRequest, Planned, WorkflowSource, load_workflow};
 use aurora_core::catalog::{Catalog, Tier};
+use aurora_core::presets::PRESETS;
+use aurora_core::providers::PROVIDER_IDS;
+use aurora_core::workflow::WorkflowDefinition;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::keymap::{Ctx, resolve};
@@ -40,6 +43,12 @@ pub enum Action {
     Refresh,
     /// Include or drop the selected opt-in catalog entry (`--with`).
     ToggleOptIn,
+    /// Next workflow preset.
+    CyclePreset,
+    /// Next CLI profile (solo, pair, trio), with its own CLIs.
+    CycleProfile,
+    /// Give the selected stage's role slot to the next CLI not already in the profile.
+    CycleCli,
 }
 
 /// Work for the event loop to run off the UI thread.
@@ -141,6 +150,8 @@ pub struct App {
     pub quit: bool,
     /// The catalog the plan is made from (built-in unless `--catalog`).
     pub catalog: Result<Catalog, String>,
+    /// The workflow being planned.
+    pub workflow: Result<WorkflowDefinition, String>,
     /// The latest install plan, if one finished.
     pub planned: Option<Planned>,
     /// Why the latest plan failed, if it did.
@@ -161,6 +172,7 @@ pub struct App {
 impl App {
     pub fn new(opts: TuiOptions) -> App {
         let catalog = aurora_app::fetch::load_catalog(opts.catalog.as_deref());
+        let workflow = load_workflow(&WorkflowSource::Preset(opts.preset.clone()));
         let mut app = App {
             opts,
             tab: Tab::Skills,
@@ -168,6 +180,7 @@ impl App {
             cursor: [0; 4],
             quit: false,
             catalog,
+            workflow,
             planned: None,
             plan_error: None,
             loading: false,
@@ -237,9 +250,14 @@ impl App {
 
     /// Keep every cursor inside its list.
     fn clamp(&mut self) {
-        let len = crate::screens::skills::rows(self).len();
-        let c = &mut self.cursor[Tab::Skills.index()];
-        *c = (*c).min(len.saturating_sub(1));
+        let lens = [
+            (Tab::Skills, crate::screens::skills::rows(self).len()),
+            (Tab::Roles, crate::screens::roles::rows(self).len()),
+        ];
+        for (tab, len) in lens {
+            let c = &mut self.cursor[tab.index()];
+            *c = (*c).min(len.saturating_sub(1));
+        }
     }
 
     pub fn help_open(&self) -> bool {
@@ -334,8 +352,58 @@ impl App {
             }
             Action::Refresh => self.request_plan(),
             Action::ToggleOptIn => self.toggle_opt_in(),
+            Action::CyclePreset => self.cycle_preset(),
+            Action::CycleProfile => self.cycle_profile(),
+            Action::CycleCli => self.cycle_cli(),
         }
         self.clamp();
+    }
+
+    fn cycle_preset(&mut self) {
+        let i = PRESETS.iter().position(|p| p.name == self.opts.preset).map_or(0, |i| (i + 1) % PRESETS.len());
+        self.opts.preset = PRESETS[i].name.to_string();
+        self.workflow = load_workflow(&WorkflowSource::Preset(self.opts.preset.clone()));
+        self.cursor[Tab::Roles.index()] = 0;
+        self.request_plan();
+    }
+
+    /// The profile in effect: the planned one, else the requested one.
+    fn current_profile(&self) -> String {
+        match &self.planned {
+            Some(p) => p.recommendation.profile.clone(),
+            None => aurora_app::install::default_profile(self.opts.profile.as_deref(), self.opts.clis.len()),
+        }
+    }
+
+    fn cycle_profile(&mut self) {
+        let Ok(cat) = &self.catalog else { return };
+        let names: Vec<&String> = cat.profiles().keys().collect();
+        if names.is_empty() {
+            return;
+        }
+        let current = self.current_profile();
+        let i = names.iter().position(|n| **n == current).map_or(0, |i| (i + 1) % names.len());
+        self.opts.profile = Some(names[i].clone());
+        self.opts.clis.clear();
+        self.request_plan();
+    }
+
+    fn cycle_cli(&mut self) {
+        let (Some(p), Ok(cat)) = (&self.planned, &self.catalog) else { return };
+        let rows = crate::screens::roles::rows(self);
+        let Some(row) = rows.get(self.cursor[Tab::Roles.index()]) else { return };
+        let mut clis = p.recommendation.clis.clone();
+        let slot = cat.profile(&p.recommendation.profile).and_then(|pr| pr.roles.get(&row.role).copied()).unwrap_or(1);
+        let Some(current) = clis.get(slot - 1).cloned() else { return };
+        let start = PROVIDER_IDS.iter().position(|id| *id == current).unwrap_or(0);
+        let next = (1..=PROVIDER_IDS.len())
+            .map(|k| PROVIDER_IDS[(start + k) % PROVIDER_IDS.len()])
+            .find(|id| !clis.iter().any(|c| c == id));
+        let Some(next) = next else { return };
+        clis[slot - 1] = next.to_string();
+        self.opts.profile = Some(p.recommendation.profile.clone());
+        self.opts.clis = clis;
+        self.request_plan();
     }
 
     fn toggle_opt_in(&mut self) {

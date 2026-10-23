@@ -2,7 +2,7 @@
 source: crates/aurora-tui/tests/skills_tab.rs
 expression: s
 ---
-"Aurora · [tmp]/project · bugfix · pair                                               "
+"Aurora · [tmp]/project · bugfix · pair (claude + codex)                              "
 " 1 Skills │ 2 Roles │ 3 Install │ 4 Runs                                                                      "
 "┌▶ Skills × CLIs────────────────────────────────────────────┐┌  Skill────────────────────────────────────────┐"
 "│  skill                           claude       codex       ││house-rules                                    │"

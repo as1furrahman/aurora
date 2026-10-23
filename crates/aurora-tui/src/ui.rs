@@ -55,7 +55,11 @@ pub fn render(f: &mut Frame, app: &App) {
         "Aurora · {} · {} · {}",
         app.opts.project.display(),
         app.opts.preset,
-        app.opts.profile.as_deref().unwrap_or("pair")
+        crate::screens::roles::profile_summary(app).unwrap_or_else(|| app
+            .opts
+            .profile
+            .clone()
+            .unwrap_or_else(|| "pair".into()))
     );
     let status = if app.loading {
         const SPIN: [&str; 4] = ["⠋", "⠙", "⠸", "⠴"];
@@ -130,7 +134,10 @@ fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
     }
     match app.tab {
         Tab::Skills if app.planned.is_some() => crate::screens::skills::render_list(f, app, area, theme),
-        Tab::Skills => f.render_widget(Paragraph::new(Span::styled("Planning the install…", theme.dim())), area),
+        Tab::Roles if app.planned.is_some() => crate::screens::roles::render_list(f, app, area, theme),
+        Tab::Skills | Tab::Roles => {
+            f.render_widget(Paragraph::new(Span::styled("Planning the install…", theme.dim())), area)
+        }
         _ => f.render_widget(Paragraph::new(Span::styled("Nothing loaded yet.", theme.dim())), area),
     }
 }
@@ -138,6 +145,7 @@ fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
 fn render_detail(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
     match app.tab {
         Tab::Skills => crate::screens::skills::render_detail(f, app, area, theme),
+        Tab::Roles => crate::screens::roles::render_detail(f, app, area, theme),
         _ => f.render_widget(Paragraph::new(Span::styled("Nothing loaded yet.", theme.dim())), area),
     }
 }
@@ -178,10 +186,17 @@ pub fn centered(area: Rect, w: u16, h: u16) -> Rect {
     Rect { x: area.x + (area.width - w) / 2, y: area.y + (area.height - h) / 2, width: w, height: h }
 }
 
-fn render_help(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
-    let mut lines: Vec<Line> = Vec::new();
-    for ctx in [app.tab.ctx(), Ctx::Normal, Ctx::Filter, Ctx::Help, Ctx::Global] {
-        lines.push(Line::from(Span::styled(ctx.title(), theme.accent())));
+/// The help overlay's lines: every binding, the current tab's first, grouped by context.
+pub fn help_lines(app: &App) -> Vec<(Option<&'static str>, String)> {
+    let mut order = vec![app.tab.ctx(), Ctx::Normal, Ctx::Filter, Ctx::Help, Ctx::Global];
+    for tab in Tab::ALL {
+        if !order.contains(&tab.ctx()) {
+            order.push(tab.ctx());
+        }
+    }
+    let mut out = Vec::new();
+    for ctx in order {
+        out.push((Some(ctx.title()), String::new()));
         let mut seen: Vec<&str> = Vec::new();
         for b in bindings().iter().filter(|b| b.ctx == ctx) {
             if seen.contains(&b.help) {
@@ -193,10 +208,21 @@ fn render_help(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
                 .filter(|o| o.ctx == ctx && o.help == b.help)
                 .flat_map(|o| o.keys.iter().map(|(code, mods)| key_name(*code, *mods)))
                 .collect();
-            lines.push(Line::from(vec![Span::raw(format!("  {:<18} ", keys.join(" "))), Span::raw(b.help)]));
+            out.push((None, format!("  {:<18} {}", keys.join(" "), b.help)));
         }
-        lines.push(Line::raw(""));
+        out.push((None, String::new()));
     }
+    out
+}
+
+fn render_help(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
+    let lines: Vec<Line> = help_lines(app)
+        .into_iter()
+        .map(|(title, text)| match title {
+            Some(t) => Line::from(Span::styled(t, theme.accent())),
+            None => Line::raw(text),
+        })
+        .collect();
     let rect = centered(area, area.width.saturating_sub(4).min(100), area.height.saturating_sub(2));
     f.render_widget(Clear, rect);
     f.render_widget(

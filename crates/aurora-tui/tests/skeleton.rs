@@ -67,10 +67,13 @@ fn help_overlay_lists_every_binding_and_esc_closes_it() {
     let mut a = app();
     press(&mut a, &[KeyCode::Char('?')]);
     assert!(a.help_open());
-    let s = screen(&a, 100, 40);
+    let text: String =
+        aurora_tui::ui::help_lines(&a).into_iter().map(|(t, l)| format!("{}{l}\n", t.unwrap_or(""))).collect();
     for b in bindings() {
-        assert!(s.contains(b.help), "help is missing {:?}:\n{s}", b.help);
+        assert!(text.contains(b.help), "help is missing {:?}:\n{text}", b.help);
     }
+    let s = screen(&a, 100, 40);
+    assert!(s.contains("Skills tab"), "the current tab's keys come first:\n{s}");
     insta::assert_snapshot!("help", s);
     press(&mut a, &[KeyCode::Char('q')]);
     assert!(!a.help_open() && !a.quit, "q closes a popup instead of quitting");
