@@ -14,7 +14,7 @@ from awb.registry.parser import load_registry
 from awb.workflow import load_workflow, parse_workflow_string
 from awb.workflow.planner import PlanError, build_plan
 
-from tests.workflow_helpers import EXAMPLE, MINIMAL, REGISTRY
+from tests.workflow_helpers import EXAMPLE, FIXTURES, MINIMAL, REGISTRY
 
 # checker may use antigravity, which cannot load skill 'beta' (Codex/Claude only).
 MINIMAL_AG_CHECKER = MINIMAL.replace(
@@ -95,6 +95,10 @@ class TestMultiProviderRouting(unittest.TestCase):
         wf = parse_workflow_string(reordered, registry=REGISTRY)
         self.assertEqual([s.id for s in wf.stages], ["check", "build"])
         self.assertEqual(build_plan(wf, registry=REGISTRY)["order"], ["build", "check"])
+
+    def test_parallel_ready_stages_follow_declaration_order(self):
+        wf = load_workflow(FIXTURES / "parallel.toml", registry=REGISTRY)
+        self.assertEqual(build_plan(wf, registry=REGISTRY)["order"], ["build", "zeta-docs", "alpha-lint", "merge"])
 
     def test_plan_is_deterministic(self):
         a = build_plan(self.wf, registry=self.registry, routes={"implement": "codex"})

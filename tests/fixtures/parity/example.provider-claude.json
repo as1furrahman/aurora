@@ -1,0 +1,287 @@
+{
+  "blocked": false,
+  "detection": null,
+  "mode": "single",
+  "order": [
+    "plan",
+    "implement",
+    "test",
+    "review",
+    "remediate",
+    "final-verify"
+  ],
+  "plan_schema_version": 1,
+  "provider_override": "claude",
+  "routes": {},
+  "stages": [
+    {
+      "acceptance": [
+        {
+          "description": "plan.md states scope, non-goals, risks and the test strategy.",
+          "evidence": [
+            "artifacts/plan/plan.md"
+          ],
+          "id": "plan-written"
+        }
+      ],
+      "assignment_source": "override",
+      "blocked_reasons": [],
+      "depends_on": [],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/plan.md",
+      "id": "plan",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/plan/plan.md"
+      ],
+      "provider": "claude",
+      "recommended_skills": [
+        "task-router"
+      ],
+      "required_skills": [
+        "principles"
+      ],
+      "requires_approval": false,
+      "responsibility": "Turn the task into a scoped implementation plan with risks, non-goals and a test strategy.",
+      "role": "planner",
+      "status": "assignable",
+      "warnings": []
+    },
+    {
+      "acceptance": [
+        {
+          "description": "change-summary.md lists every file changed and why, traced to the plan.",
+          "evidence": [
+            "artifacts/implement/change-summary.md"
+          ],
+          "id": "change-described"
+        }
+      ],
+      "assignment_source": "override",
+      "blocked_reasons": [],
+      "depends_on": [
+        "plan"
+      ],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/implement.md",
+      "id": "implement",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [
+        "artifacts/plan/plan.md"
+      ],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/implement/change-summary.md"
+      ],
+      "provider": "claude",
+      "recommended_skills": [],
+      "required_skills": [
+        "principles"
+      ],
+      "requires_approval": false,
+      "responsibility": "Make the planned change in small, reviewable steps without expanding scope.",
+      "role": "implementer",
+      "status": "assignable",
+      "warnings": []
+    },
+    {
+      "acceptance": [
+        {
+          "description": "test-report.md records the exact test command and a run with zero failures and errors.",
+          "evidence": [
+            "artifacts/test/test-report.md"
+          ],
+          "id": "suite-green"
+        }
+      ],
+      "assignment_source": "override",
+      "blocked_reasons": [],
+      "depends_on": [
+        "implement"
+      ],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/test.md",
+      "id": "test",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [
+        "artifacts/implement/change-summary.md"
+      ],
+      "max_attempts": 3,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/test/test-report.md"
+      ],
+      "provider": "claude",
+      "recommended_skills": [],
+      "required_skills": [
+        "verification-guard"
+      ],
+      "requires_approval": false,
+      "responsibility": "Run and extend the test suite; report exact commands, counts and failures.",
+      "role": "tester",
+      "status": "assignable",
+      "warnings": []
+    },
+    {
+      "acceptance": [
+        {
+          "description": "review.md lists findings by severity, or states that none were found.",
+          "evidence": [
+            "artifacts/review/review.md"
+          ],
+          "id": "review-complete"
+        }
+      ],
+      "assignment_source": "override",
+      "blocked_reasons": [],
+      "depends_on": [
+        "test"
+      ],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/review.md",
+      "id": "review",
+      "incompatibilities": [],
+      "independence": [
+        {
+          "of": "implement",
+          "other_provider": "claude",
+          "stage_provider": "claude",
+          "status": "same-provider"
+        }
+      ],
+      "inputs": [
+        "artifacts/plan/plan.md",
+        "artifacts/implement/change-summary.md",
+        "artifacts/test/test-report.md"
+      ],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/review/review.md"
+      ],
+      "provider": "claude",
+      "recommended_skills": [],
+      "required_skills": [
+        "verification-guard",
+        "principles"
+      ],
+      "requires_approval": false,
+      "responsibility": "Independently review the change against the plan for correctness, safety and scope.",
+      "role": "reviewer",
+      "status": "assignable",
+      "warnings": []
+    },
+    {
+      "acceptance": [
+        {
+          "description": "remediation.md maps each review finding to a fix or a justified deferral.",
+          "evidence": [
+            "artifacts/remediate/remediation.md"
+          ],
+          "id": "findings-addressed"
+        }
+      ],
+      "assignment_source": "override",
+      "blocked_reasons": [],
+      "depends_on": [
+        "review"
+      ],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/remediate.md",
+      "id": "remediate",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [
+        "artifacts/review/review.md"
+      ],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": true,
+      "outputs": [
+        "artifacts/remediate/remediation.md"
+      ],
+      "provider": "claude",
+      "recommended_skills": [],
+      "required_skills": [
+        "principles"
+      ],
+      "requires_approval": false,
+      "responsibility": "Make the planned change in small, reviewable steps without expanding scope.",
+      "role": "implementer",
+      "status": "assignable",
+      "warnings": []
+    },
+    {
+      "acceptance": [
+        {
+          "description": "final-report.md records a full test run after remediation with zero failures.",
+          "evidence": [
+            "artifacts/final-verify/final-report.md"
+          ],
+          "id": "final-suite-green"
+        }
+      ],
+      "assignment_source": "override",
+      "blocked_reasons": [],
+      "depends_on": [
+        "remediate"
+      ],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/final-verify.md",
+      "id": "final-verify",
+      "incompatibilities": [],
+      "independence": [
+        {
+          "of": "implement",
+          "other_provider": "claude",
+          "stage_provider": "claude",
+          "status": "same-provider"
+        }
+      ],
+      "inputs": [
+        "artifacts/test/test-report.md"
+      ],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/final-verify/final-report.md"
+      ],
+      "provider": "claude",
+      "recommended_skills": [],
+      "required_skills": [
+        "verification-guard"
+      ],
+      "requires_approval": true,
+      "responsibility": "Run and extend the test suite; report exact commands, counts and failures.",
+      "role": "tester",
+      "status": "assignable",
+      "warnings": []
+    }
+  ],
+  "warnings": [
+    "Stages declaring independent_of share a provider with the stage they should be independent of: reduced independence. Do not treat these reviews as independent verification. Running them in a fresh-session context is a weaker control and is not verified by Aurora."
+  ],
+  "workflow": {
+    "id": "plan-implement-review",
+    "sha256": "cab4526ead1b8150dbaca61bef7fb9c1d52504ca70afd543ee32fb774c36b2ff",
+    "version": "1.0.0"
+  }
+}
