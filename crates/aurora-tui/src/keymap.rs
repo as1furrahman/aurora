@@ -157,6 +157,14 @@ static BINDINGS: &[Binding] = &[
     // Tasks page
     b(
         Ctx::Runs,
+        &[(KeyCode::Char('n'), NONE)],
+        "n new task",
+        "Start a new task with the current task type and AI tools (Aurora asks first)",
+        Action::NewTask,
+        true,
+    ),
+    b(
+        Ctx::Runs,
         &[(KeyCode::Enter, NONE)],
         "Enter open",
         "Open a task; on a step, show its instructions",

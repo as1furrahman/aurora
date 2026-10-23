@@ -56,6 +56,7 @@ pub fn execute(cmd: Command) -> Msg {
         Command::Resume { run_dir } => Msg::Resumed(Box::new(aurora_app::runs::resume(&run_dir))),
         // The event loop writes the clipboard sequence itself; here there is no terminal.
         Command::Copy { text } => Msg::Notice(format!("Copied: {text}")),
+        Command::StartTask(req) => Msg::TaskStarted(aurora_app::runs::start_task(&req)),
     }
 }
 

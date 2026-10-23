@@ -66,6 +66,7 @@ fn runs_app(f: &common::Fixture, root: &Path) -> App {
     let mut app = App::new(aurora_tui::app::TuiOptions { run_root: Some(root.to_path_buf()), ..f.options() });
     drain(&mut app);
     press(&mut app, &[KeyCode::Char('4')]);
+    drain(&mut app); // opening the Tasks page reads the task list
     assert_eq!(app.tab, Tab::Runs);
     app
 }
@@ -77,12 +78,49 @@ fn runs_root() -> (tempfile::TempDir, PathBuf) {
 }
 
 #[test]
-fn without_a_run_root_the_tab_says_how_to_set_one() {
+fn without_a_run_root_tasks_live_in_the_project() {
     let f = fixture();
     let mut app = App::new(f.options());
     drain(&mut app);
     press(&mut app, &[KeyCode::Char('4')]);
-    assert!(screen(&app, 120, 24).contains("--run-root"), "{}", screen(&app, 120, 24));
+    let s = screen(&app, 120, 24);
+    assert!(s.contains("No tasks yet") && s.contains("Press n"), "{s}");
+    assert!(!f.project.join(".aurora").exists(), "looking writes nothing");
+}
+
+#[test]
+fn n_starts_a_task_after_a_yes_and_opens_it() {
+    let f = fixture();
+    let mut app = App::new(f.options());
+    drain(&mut app);
+    press(&mut app, &[KeyCode::Char('4'), KeyCode::Char('n')]);
+    let s = screen(&app, 120, 30);
+    assert!(s.contains("Start a new task") && s.contains("Fix a bug") && s.contains("Claude Code"), "{s}");
+    assert!(!f.project.join(".aurora").exists(), "nothing before the yes");
+
+    press(&mut app, &[KeyCode::Char('y')]);
+    drain(&mut app);
+    assert!(aurora_app::runs::task_workflow(&f.project, "bugfix").is_file(), "the workflow is kept in the project");
+    let runs = aurora_app::runs::list_runs(&aurora_app::runs::default_run_root(&f.project)).expect("runs");
+    assert_eq!(runs.len(), 1);
+    let report = runs[0].status.as_ref().expect("a readable run");
+    let tool = |id: &str| report.stages.iter().find(|s| s.id == id).map(|s| s.provider.clone());
+    assert_eq!(tool("fix").as_deref(), Some("claude"), "the builder slot");
+    assert_eq!(tool("review").as_deref(), Some("codex"), "the reviewer slot: a real second opinion");
+    assert_eq!(app.run_open, Some(0), "the new task opens");
+    let s = screen(&app, 120, 30);
+    assert!(s.contains("1. Reproduce") && s.contains("in progress"), "{s}");
+}
+
+#[test]
+fn n_then_no_writes_nothing() {
+    let f = fixture();
+    let mut app = App::new(f.options());
+    drain(&mut app);
+    press(&mut app, &[KeyCode::Char('4'), KeyCode::Char('n'), KeyCode::Char('n')]);
+    drain(&mut app);
+    assert!(app.popup().is_none());
+    assert!(!f.project.join(".aurora").exists());
 }
 
 #[test]

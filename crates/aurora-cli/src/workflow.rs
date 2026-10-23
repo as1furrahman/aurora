@@ -191,21 +191,10 @@ pub fn plan_options<'a>(
         return Ok(opts);
     }
     let catalog = aurora_core::catalog::builtin_catalog().map_err(|e| e.to_string())?;
-    let profile = routing.profile.clone().unwrap_or_else(|| {
-        match routing.clis.len() {
-            1 => "solo",
-            3 => "trio",
-            _ => "pair",
-        }
-        .to_string()
-    });
-    let req =
-        aurora_core::catalog::RecommendRequest { profile, clis: routing.clis.clone(), with: routing.with.clone() };
-    let rec = catalog.recommend(wf, &req).map_err(|e| e.to_string())?;
-    for s in rec.stages {
-        opts.routes.insert(s.stage.clone(), s.provider);
-        opts.stage_skills.insert(s.stage, s.skills);
-    }
+    let profile =
+        aurora_app::runs::profile_routes(&catalog, wf, routing.profile.as_deref(), &routing.clis, &routing.with)?;
+    opts.routes.extend(profile.routes);
+    opts.stage_skills = profile.stage_skills;
     Ok(opts)
 }
 

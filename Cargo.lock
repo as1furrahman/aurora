@@ -130,6 +130,8 @@ dependencies = [
  "aurora-core",
  "aurora-fs",
  "aurora-skills",
+ "indexmap",
+ "tempfile",
  "which",
 ]
 

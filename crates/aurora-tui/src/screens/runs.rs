@@ -138,12 +138,21 @@ pub fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
         theme,
     );
     if app.runs.is_empty() {
-        let text = format!(
-            "No tasks yet in {}.\n\nStart one with:\n  aurora workflow init bugfix\n  aurora workflow start bugfix.toml --profile pair --run-root {}",
-            root.display(),
-            root.display()
-        );
-        f.render_widget(Paragraph::new(text).wrap(Wrap { trim: true }), body);
+        let tools = crate::screens::roles::profile_summary(app).unwrap_or_else(|| "your AI tools".into());
+        let lines = vec![
+            Line::raw("No tasks yet."),
+            Line::raw(""),
+            Line::from(vec![
+                Span::styled("Press n", theme.accent()),
+                Span::raw(format!(
+                    " to start one: “{}” with {tools}. Aurora asks before it saves anything.",
+                    words::task_type(&app.opts.preset)
+                )),
+            ]),
+            Line::raw(""),
+            Line::from(Span::styled(format!("Tasks are kept in {}", root.display()), theme.dim())),
+        ];
+        f.render_widget(Paragraph::new(lines).wrap(Wrap { trim: true }), body);
         return;
     }
     let rows: Vec<TableRow> = app

@@ -88,6 +88,8 @@ pub enum Action {
     Resume,
     /// Runs: copy the selected stage's handoff path to the clipboard (OSC 52).
     CopyPath,
+    /// Tasks: ask to start a new task with the current task type and tools.
+    NewTask,
     InputChar(char),
     InputBackspace,
     InputAccept,
@@ -137,6 +139,7 @@ pub enum Command {
     Copy {
         text: String,
     },
+    StartTask(aurora_app::runs::TaskRequest),
 }
 
 /// Results coming back from the event loop.
@@ -150,6 +153,8 @@ pub enum Msg {
     /// A one-line outcome, or why nothing was applied.
     Applied(Result<String, String>),
     Undone(Result<UndoReport, String>),
+    /// A new task's run directory, or why it could not start.
+    TaskStarted(Result<PathBuf, String>),
     Runs(Result<Vec<RunSummary>, String>),
     Text {
         title: String,
@@ -218,6 +223,7 @@ pub enum Focus {
 pub enum ConfirmOp {
     Apply,
     Undo,
+    StartTask,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -326,6 +332,8 @@ pub struct App {
     pub busy: Option<&'static str>,
     /// The outcome of the last apply or undo, kept after its toast fades.
     pub last_result: Option<String>,
+    /// A new task's run directory, opened once the task list reloads.
+    open_after_load: Option<PathBuf>,
     /// Runs under the run root.
     pub runs: Vec<RunSummary>,
     pub runs_error: Option<String>,
@@ -343,6 +351,11 @@ pub struct App {
 
 impl App {
     pub fn new(opts: TuiOptions) -> App {
+        let mut opts = opts;
+        // Tasks live in the project unless another folder was asked for.
+        if opts.run_root.is_none() {
+            opts.run_root = Some(aurora_app::runs::default_run_root(&opts.project));
+        }
         let catalog = aurora_app::fetch::load_catalog(opts.catalog.as_deref());
         let workflow = load_workflow(&WorkflowSource::Preset(opts.preset.clone()));
         let mut app = App {
@@ -361,6 +374,7 @@ impl App {
             reviewed: Vec::new(),
             busy: None,
             last_result: None,
+            open_after_load: None,
             runs: Vec::new(),
             runs_error: None,
             run_open: None,
@@ -376,7 +390,6 @@ impl App {
             app.open_setup();
         }
         app.request_plan();
-        app.load_runs();
         app
     }
 
@@ -466,6 +479,27 @@ impl App {
             Msg::Runs(Ok(list)) => {
                 self.runs = list;
                 self.runs_error = None;
+                if let Some(dir) = self.open_after_load.take()
+                    && let Some(i) = self.runs.iter().position(|r| r.dir == dir)
+                {
+                    self.tab = Tab::Runs;
+                    self.cursor[Tab::Runs.index()] = i;
+                    self.run_open = Some(i);
+                    self.stage_cursor = 0;
+                    self.focus = Focus::List;
+                }
+            }
+            Msg::TaskStarted(result) => {
+                self.busy = None;
+                match result {
+                    Ok(dir) => {
+                        let name = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                        self.notify(format!("Task {name} is ready: open step 1 with Enter"));
+                        self.open_after_load = Some(dir);
+                    }
+                    Err(e) => self.notify(format!("The task couldn't start: {e}")),
+                }
+                self.load_runs();
             }
             Msg::Runs(Err(e)) => self.runs_error = Some(e),
             Msg::Text { title, result } => match result {
@@ -629,6 +663,7 @@ impl App {
 
     pub fn update(&mut self, action: Action) {
         let tabs = Tab::ALL.len();
+        let before = self.tab;
         match action {
             Action::Quit => self.quit = true,
             Action::GoTab(i) => self.tab = Tab::ALL[i.min(tabs - 1)],
@@ -683,6 +718,7 @@ impl App {
             Action::StartApply => self.start_apply(),
             Action::StartUndo => self.start_undo(),
             Action::OpenSetup => self.open_setup(),
+            Action::NewTask => self.start_new_task(),
             Action::SetupToggle => {
                 if let Some(Popup::Setup(s)) = self.popups.last_mut() {
                     s.toggle();
@@ -754,6 +790,10 @@ impl App {
                     None => self.notify("This step has no instructions yet"),
                 }
             }
+        }
+        // The task list is read when you open the Tasks page, so it is always current.
+        if self.tab == Tab::Runs && before != Tab::Runs {
+            self.load_runs();
         }
         self.clamp();
     }
@@ -951,7 +991,46 @@ impl App {
                 self.busy = Some("undoing");
                 self.commands.push_back(Command::Undo { project: self.opts.project.clone() });
             }
+            ConfirmOp::StartTask => {
+                let (Some(clis), Some(run_root)) = (self.current_clis(), self.opts.run_root.clone()) else { return };
+                self.busy = Some("setting up the task");
+                self.commands.push_back(Command::StartTask(aurora_app::runs::TaskRequest {
+                    project: self.opts.project.clone(),
+                    run_root,
+                    preset: self.opts.preset.clone(),
+                    profile: Some(self.current_profile()),
+                    clis,
+                    with: self.with.clone(),
+                    catalog: self.opts.catalog.clone(),
+                }));
+            }
         }
+    }
+
+    /// Ask to start a task: the steps and who does them, then yes or no.
+    fn start_new_task(&mut self) {
+        if let Some(b) = self.busy {
+            return self.notify(format!("Please wait: {b}…"));
+        }
+        let Some(p) = self.planned.as_ref().filter(|_| !self.loading) else {
+            return self.notify("One moment: still working out your last change");
+        };
+        let kind = crate::words::task_type(&self.opts.preset).to_string();
+        let mut lines = vec!["Aurora sets up these steps, each done by one AI tool:".to_string()];
+        for (i, s) in p.recommendation.stages.iter().enumerate() {
+            lines.push(format!(
+                "  {}. {:<16} the {}, {}",
+                i + 1,
+                crate::words::step(&s.stage),
+                crate::words::job(&s.role),
+                crate::words::tool(&s.provider)
+            ));
+        }
+        lines.push(String::new());
+        lines.push("They are saved in the .aurora folder in your project. The first step's".into());
+        lines.push("instructions will be ready to copy into its AI tool.".into());
+        let title = format!(" Start a new task: {kind}? ");
+        self.popups.push(Popup::Confirm { op: ConfirmOp::StartTask, title, lines });
     }
 
     /// Open the guided setup, ticking the tools in use (else those asked for or installed).
