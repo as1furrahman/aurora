@@ -84,6 +84,7 @@ dependencies = [
  "anstyle",
  "assert_cmd",
  "aurora-core",
+ "aurora-fs",
  "clap",
  "indexmap",
  "predicates",
@@ -112,6 +113,7 @@ version = "0.2.0"
 dependencies = [
  "aurora-core",
  "rustix",
+ "serde",
  "serde_json",
  "sha2",
  "tempfile",

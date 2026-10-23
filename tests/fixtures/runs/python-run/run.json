@@ -23,7 +23,7 @@
       "at": "2026-10-23T12:00:00Z",
       "detail": {
         "path": "handoff/plan.md",
-        "sha256": "898b94e3414aaac3e6ae7cf6a8cb60f9ff48cf17223dc323af8d78d871a5eb3f"
+        "sha256": "5e5c3d592346dafc7c55199e6f1155b69ede087c34c076ab877905d1ff8f3afc"
       },
       "event": "handoff-issued",
       "seq": 3,
@@ -65,7 +65,7 @@
       "at": "2026-10-23T12:00:00Z",
       "detail": {
         "path": "handoff/implement.md",
-        "sha256": "e791f2ecbffcd46849b9537d039ad520cf28d5478f85eeacfdb94343536c450c"
+        "sha256": "4a1233057d5cbe47ced1eb80dd757c04546b016033112ae0642d82a2cdd075c0"
       },
       "event": "handoff-issued",
       "seq": 7,
@@ -384,10 +384,10 @@
       "escalated": false,
       "evidence": {},
       "handoff": {
-        "on_disk_sha256": "e791f2ecbffcd46849b9537d039ad520cf28d5478f85eeacfdb94343536c450c",
+        "on_disk_sha256": "4a1233057d5cbe47ced1eb80dd757c04546b016033112ae0642d82a2cdd075c0",
         "path": "handoff/implement.md",
         "preserved_existing": false,
-        "sha256": "e791f2ecbffcd46849b9537d039ad520cf28d5478f85eeacfdb94343536c450c"
+        "sha256": "4a1233057d5cbe47ced1eb80dd757c04546b016033112ae0642d82a2cdd075c0"
       },
       "missing": [],
       "not_applicable_reason": null,
@@ -407,10 +407,10 @@
         "artifacts/plan/plan.md": "653d7f9d9f2e3275388e8bdba5d682eb2b6cb2a172542be13d631f8dd31fa1ba"
       },
       "handoff": {
-        "on_disk_sha256": "898b94e3414aaac3e6ae7cf6a8cb60f9ff48cf17223dc323af8d78d871a5eb3f",
+        "on_disk_sha256": "5e5c3d592346dafc7c55199e6f1155b69ede087c34c076ab877905d1ff8f3afc",
         "path": "handoff/plan.md",
         "preserved_existing": false,
-        "sha256": "898b94e3414aaac3e6ae7cf6a8cb60f9ff48cf17223dc323af8d78d871a5eb3f"
+        "sha256": "5e5c3d592346dafc7c55199e6f1155b69ede087c34c076ab877905d1ff8f3afc"
       },
       "missing": [],
       "not_applicable_reason": null,

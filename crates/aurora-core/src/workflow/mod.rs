@@ -1,6 +1,7 @@
 //! Role-based workflow definitions (schema v1): model, strict parser and deterministic planner.
 
 pub mod describe;
+pub mod handoff;
 pub mod model;
 pub mod parser;
 pub mod planner;

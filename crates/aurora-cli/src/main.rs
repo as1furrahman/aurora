@@ -4,6 +4,7 @@
 
 mod providers;
 mod registry;
+mod runs;
 mod style;
 mod workflow;
 
@@ -28,7 +29,7 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
-    /// Validate and plan role-based workflows (manual handoff)
+    /// Validate, plan and track role-based workflows (manual handoff)
     Workflow {
         #[command(subcommand)]
         command: WorkflowCommand,
@@ -47,6 +48,48 @@ enum WorkflowCommand {
         definition: DefinitionArgs,
         #[command(flatten)]
         routing: RoutingArgs,
+    },
+    /// Create a run, pin the definition, and issue handoff bundles
+    Start {
+        #[command(flatten)]
+        definition: DefinitionArgs,
+        #[command(flatten)]
+        routing: RoutingArgs,
+        /// Existing directory that will contain the run directory
+        #[arg(long)]
+        run_root: PathBuf,
+        /// Run directory name (default: <workflow-id>-<UTC time>)
+        #[arg(long)]
+        run_id: Option<String>,
+    },
+    /// Show run state, completion, escalations and evidence drift
+    Status(runs::RunArgs),
+    /// Verify integrity and re-issue missing handoffs (never re-runs PASSED stages)
+    Resume(runs::RunArgs),
+    /// Submit a stage's evidence and evaluate its acceptance gate
+    Submit {
+        #[command(flatten)]
+        run: runs::RunArgs,
+        /// Stage id
+        #[arg(long)]
+        stage: String,
+        /// Claim an acceptance criterion as met (repeatable)
+        #[arg(long, value_name = "CRITERION")]
+        met: Vec<String>,
+        /// Mark an optional stage NOT_APPLICABLE (requires NOT_APPLICABLE.md)
+        #[arg(long)]
+        not_applicable: bool,
+    },
+    /// Record human approval for a stage awaiting approval
+    Approve {
+        #[command(flatten)]
+        run: runs::RunArgs,
+        /// Stage id
+        #[arg(long)]
+        stage: String,
+        /// Name of the approving person
+        #[arg(long)]
+        by: String,
     },
 }
 
@@ -89,6 +132,15 @@ fn main() -> ExitCode {
             WorkflowCommand::Validate(def) => workflow::validate(&def),
             WorkflowCommand::Show(def) => workflow::show(&def),
             WorkflowCommand::Plan { definition, routing } => workflow::plan(&definition, &routing),
+            WorkflowCommand::Start { definition, routing, run_root, run_id } => {
+                runs::start(&definition, &routing, &run_root, run_id.as_deref())
+            }
+            WorkflowCommand::Status(args) => runs::status(&args),
+            WorkflowCommand::Resume(args) => runs::resume(&args),
+            WorkflowCommand::Submit { run, stage, met, not_applicable } => {
+                runs::submit(&run, &stage, &met, not_applicable)
+            }
+            WorkflowCommand::Approve { run, stage, by } => runs::approve(&run, &stage, &by),
         },
     };
     ExitCode::from(code)

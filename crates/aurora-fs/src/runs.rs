@@ -31,6 +31,12 @@ pub enum RunError {
     /// The pinned workflow or accepted evidence no longer matches its recorded hash.
     #[error("{0}")]
     Integrity(String),
+    /// The workflow definition failed schema validation.
+    #[error(transparent)]
+    Definition(#[from] aurora_core::workflow::WorkflowValidationError),
+    /// Invalid planning options (unknown or ineligible provider, forbidden override).
+    #[error(transparent)]
+    Plan(#[from] aurora_core::workflow::PlanError),
     #[error(transparent)]
     Fs(#[from] FsError),
 }
