@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/aurora-core", "crates/aurora-fs", "crates/aurora-cli"]
+members = ["crates/aurora-core", "crates/aurora-fs", "crates/aurora-skills", "crates/aurora-cli"]
 
 [workspace.package]
 version = "0.2.0"
@@ -13,6 +13,7 @@ description = "Aurora: role-based agent skill manager and evidence-gated workflo
 [workspace.dependencies]
 aurora-core = { path = "crates/aurora-core", version = "0.2.0" }
 aurora-fs = { path = "crates/aurora-fs", version = "0.2.0" }
+aurora-skills = { path = "crates/aurora-skills", version = "0.2.0" }
 clap = { version = "4.6", features = ["derive"] }
 
 [workspace.lints.rust]

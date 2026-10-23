@@ -16,6 +16,7 @@ anstream = "1"
 anstyle = "1"
 aurora-core.workspace = true
 aurora-fs.workspace = true
+aurora-skills.workspace = true
 clap.workspace = true
 indexmap = "2"
 serde = "1"

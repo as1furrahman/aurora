@@ -2,8 +2,8 @@
 #
 # Aurora vendors NO third-party skill content. Every entry points at an upstream repository pinned
 # to a full commit SHA. Revs, paths, description lengths and flags were measured from the pinned trees on
-# `verified_on`. `description_chars` is the length of the SKILL.md frontmatter description, which is
-# what each CLI injects into its always-loaded skill listing.
+# `verified_on`. `description_chars` is the parsed SKILL.md description (whitespace collapsed, as
+# `aurora skills inspect` reports it): what each CLI injects into its always-loaded skill listing.
 #
 # kind:  skill     SKILL.md installed into a CLI's skill directory (counts against its listing budget)
 #        rules     always-on instructions projected into CLAUDE.md / AGENTS.md (not a triggered skill)
@@ -238,7 +238,7 @@ path = "skills/engineering/to-spec"
 tier = "stage"
 roles = ["analyst"]
 stages = ["intake"]
-description_chars = 151
+description_chars = 149
 flags = ["manual-only"]
 why = "Turns the clarified request into a testable specification."
 
@@ -306,7 +306,7 @@ path = "skills/ponytail"
 tier = "stage"
 roles = ["implementer"]
 stages = ["implement", "fix", "remediate"]
-description_chars = 378
+description_chars = 366
 flags = ["popularity-unverified"]
 why = "A 7-step 'do we need this code at all' ladder before writing code. Kept off intake and design, where it fights thorough specs."
 
@@ -385,7 +385,7 @@ path = "skills/ponytail-review"
 tier = "stage"
 roles = ["reviewer"]
 stages = ["review"]
-description_chars = 382
+description_chars = 370
 flags = ["popularity-unverified"]
 why = "Reads untouched callers outside the diff and flags over-engineering."
 
@@ -397,7 +397,7 @@ path = "plugins/differential-review/skills/differential-review"
 tier = "stage"
 roles = ["reviewer"]
 stages = ["second-look"]
-description_chars = 479
+description_chars = 477
 flags = ["allowed-tools", "share-alike"]
 why = "Security-focused review of what changed, for the independent second look."
 
@@ -420,7 +420,7 @@ path = "plugins/sharp-edges/skills/sharp-edges"
 tier = "stage"
 roles = ["security"]
 stages = ["assess"]
-description_chars = 378
+description_chars = 376
 flags = ["allowed-tools", "share-alike"]
 why = "Finds dangerous API and configuration defaults across languages."
 
@@ -443,7 +443,7 @@ source = "caveman"
 path = "skills/caveman"
 tier = "opt-in"
 roles = ["implementer"]
-description_chars = 211
+description_chars = 203
 why = "Terse output on implementation stages. Its own README reports about 3% median gain over a plain 'be concise'."
 
 [[entries]]
@@ -453,7 +453,7 @@ source = "planning-with-files"
 path = "skills/planning-with-files"
 tier = "opt-in"
 roles = ["architect", "implementer"]
-description_chars = 608
+description_chars = 606
 flags = ["hooks", "scripts", "allowed-tools"]
 why = "Plans on disk that survive compaction in long sessions. Declares UserPromptSubmit, PreToolUse, PostToolUse, Stop and PreCompact hooks."
 
@@ -464,7 +464,7 @@ source = "trailofbits"
 path = "plugins/property-based-testing/skills/property-based-testing"
 tier = "opt-in"
 roles = ["tester"]
-description_chars = 847
+description_chars = 845
 flags = ["share-alike"]
 why = "Property-based tests for parsers, serializers and other invariant-heavy code."
 
@@ -499,7 +499,7 @@ path = "plugins/post-patch-validation/skills/post-patch-validation"
 tier = "opt-in"
 roles = ["tester"]
 stages = ["accept"]
-description_chars = 455
+description_chars = 443
 flags = ["scripts", "allowed-tools", "share-alike"]
 why = "Evidence model for proving a patch fixed the issue without regressions."
 
@@ -522,7 +522,7 @@ path = "plugins/static-analysis/skills/semgrep"
 tier = "opt-in"
 roles = ["security"]
 stages = ["assess"]
-description_chars = 730
+description_chars = 707
 flags = ["scripts", "allowed-tools", "share-alike"]
 why = "Static analysis with Semgrep rulesets and merged SARIF output."
 
@@ -534,7 +534,7 @@ path = "plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor"
 tier = "opt-in"
 roles = ["security"]
 stages = ["assess"]
-description_chars = 369
+description_chars = 367
 flags = ["scripts", "allowed-tools", "share-alike"]
 why = "Dependency risk audit."
 
@@ -546,7 +546,7 @@ path = "skills/gha-security-review"
 tier = "opt-in"
 roles = ["security"]
 stages = ["assess"]
-description_chars = 365
+description_chars = 363
 flags = ["allowed-tools"]
 why = "GitHub Actions workflow security (pwn requests, expression injection, credential escalation)."
 
@@ -558,7 +558,7 @@ path = "skills/skill-scanner"
 tier = "opt-in"
 roles = ["security"]
 stages = ["assess"]
-description_chars = 335
+description_chars = 329
 flags = ["scripts", "allowed-tools"]
 why = "Audits agent skills themselves for prompt injection and dangerous code."
 

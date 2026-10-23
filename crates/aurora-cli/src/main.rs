@@ -6,6 +6,7 @@ mod catalog;
 mod providers;
 mod registry;
 mod runs;
+mod skills;
 mod style;
 mod workflow;
 
@@ -39,6 +40,23 @@ enum Command {
     Catalog {
         #[command(subcommand)]
         command: CatalogCommand,
+    },
+    /// Inspect agent skills (SKILL.md) for spec compliance and per-CLI portability
+    Skills {
+        #[command(subcommand)]
+        command: SkillsCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum SkillsCommand {
+    /// Check one skill directory: spec issues, per-CLI support, listing cost, shell injections
+    Inspect {
+        /// Directory containing SKILL.md
+        dir: PathBuf,
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
     },
 }
 
@@ -182,6 +200,7 @@ fn main() -> ExitCode {
             0
         }
         Some(Command::Providers { json }) => providers::run(json),
+        Some(Command::Skills { command: SkillsCommand::Inspect { dir, json } }) => skills::inspect(&dir, json),
         Some(Command::Catalog { command }) => match command {
             CatalogCommand::List { json } => catalog::list(json),
             CatalogCommand::Show { id, json } => catalog::show(&id, json),

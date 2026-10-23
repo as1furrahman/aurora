@@ -1,0 +1,17 @@
+[package]
+name = "aurora-skills"
+description = "Aurora skill core: SKILL.md parsing, portability, fetching, scanning and install planning."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde-saphyr = "2"
+serde_json = "1"
+thiserror = "2"
+
+[lints]
+workspace = true

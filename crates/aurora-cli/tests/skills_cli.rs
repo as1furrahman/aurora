@@ -1,0 +1,82 @@
+//! CLI tests for `aurora skills inspect <dir>` (R2 Step 1): read-only SKILL.md checks.
+
+use std::fs;
+use std::path::Path;
+
+use assert_cmd::Command;
+use serde_json::Value;
+
+fn inspect(dir: &Path, json: bool) -> (i32, String, String) {
+    let mut cmd = Command::cargo_bin("aurora").expect("binary builds");
+    cmd.env("NO_COLOR", "1").args(["skills", "inspect"]).arg(dir);
+    if json {
+        cmd.arg("--json");
+    }
+    let out = cmd.output().expect("runs");
+    (
+        out.status.code().unwrap_or(-1),
+        String::from_utf8_lossy(&out.stdout).into_owned(),
+        String::from_utf8_lossy(&out.stderr).into_owned(),
+    )
+}
+
+fn write_skill(root: &Path, name: &str, text: &str) -> std::path::PathBuf {
+    let dir = root.join(name);
+    fs::create_dir(&dir).expect("mkdir");
+    fs::write(dir.join("SKILL.md"), text).expect("write");
+    dir
+}
+
+const CLAUDE_HEAVY: &str = "---\nname: heavy\ndescription: Plans on disk. Use for long tasks.\n\
+hooks:\n  Stop:\n    - hooks: [{type: command, command: echo}]\n---\nState: !`git status --short`\n";
+
+#[test]
+fn inspect_reports_support_per_cli_and_listing_cost() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let dir = write_skill(tmp.path(), "heavy", CLAUDE_HEAVY);
+    let (code, out, err) = inspect(&dir, false);
+    assert_eq!(code, 0, "{err}");
+    for needle in ["heavy", "claude", "native", "codex", "degraded", "hooks", "git status", "listing"] {
+        assert!(out.contains(needle), "missing {needle}:\n{out}");
+    }
+
+    let (code, out, _) = inspect(&dir, true);
+    assert_eq!(code, 0);
+    let v: Value = serde_json::from_str(&out).expect("json");
+    assert_eq!(v["name"], "heavy");
+    assert_eq!(v["support"]["claude"]["support"], "native");
+    assert_eq!(v["support"]["codex"]["support"], "degraded");
+    assert_eq!(v["injections"][0]["line"], 1);
+    assert!(v["listing_chars"]["codex"].as_u64().expect("number") > 0);
+}
+
+#[test]
+fn spec_errors_exit_one_but_still_report() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let dir = write_skill(tmp.path(), "wrong-dir", "---\nname: right\ndescription: d\n---\n");
+    let (code, out, _) = inspect(&dir, false);
+    assert_eq!(code, 1);
+    assert!(out.contains("does not match its directory"), "{out}");
+}
+
+#[test]
+fn unreadable_or_unsafe_skills_fail_clearly() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let (code, _, err) = inspect(&tmp.path().join("missing"), false);
+    assert_eq!(code, 1);
+    assert!(err.contains("SKILL.md"), "{err}");
+
+    let dir = tmp.path().join("linked");
+    fs::create_dir(&dir).expect("mkdir");
+    fs::write(tmp.path().join("elsewhere.md"), CLAUDE_HEAVY).expect("write");
+    std::os::unix::fs::symlink(tmp.path().join("elsewhere.md"), dir.join("SKILL.md")).expect("symlink");
+    let (code, _, err) = inspect(&dir, false);
+    assert_eq!(code, 1, "a symlinked SKILL.md is refused");
+    // Refused by the path guard (it resolves outside the skill dir) or by the no-follow open.
+    assert!(err.to_lowercase().contains("symlink") || err.contains("outside allowed boundaries"), "{err}");
+
+    let bad = write_skill(tmp.path(), "bad", "no frontmatter here\n");
+    let (code, _, err) = inspect(&bad, false);
+    assert_eq!(code, 1);
+    assert!(err.contains("frontmatter"), "{err}");
+}
