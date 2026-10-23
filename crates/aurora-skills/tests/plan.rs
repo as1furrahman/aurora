@@ -271,3 +271,19 @@ fn the_lock_round_trips_and_is_deterministic() {
     bad["version"] = 99.into();
     assert!(Lock::from_json(&bad.to_string()).is_err());
 }
+
+#[test]
+fn rules_files_are_rendered_without_touching_other_text() {
+    use aurora_skills::plan::{render_rules_file, rule_block};
+    let block = rule_block("k", "Rule one.\n");
+    assert_eq!(render_rules_file(None, "k", &block).expect("new"), block);
+    assert_eq!(render_rules_file(Some("# Notes\n"), "k", &block).expect("append"), format!("# Notes\n\n{block}"));
+    assert_eq!(render_rules_file(Some("# Notes"), "k", &block).expect("append"), format!("# Notes\n\n{block}"));
+    let old = rule_block("k", "Old rule.\n");
+    let current = format!("# Notes\n\n{old}\n## More\n");
+    assert_eq!(
+        render_rules_file(Some(&current), "k", &block).expect("replace"),
+        format!("# Notes\n\n{block}\n## More\n")
+    );
+    assert!(render_rules_file(Some("<!-- aurora:begin k -->\nno end"), "k", &block).is_err());
+}

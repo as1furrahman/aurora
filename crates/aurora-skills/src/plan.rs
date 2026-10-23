@@ -503,3 +503,22 @@ pub fn plan(input: &PlanInput<'_>) -> InstallPlan {
 fn short(rev: &str) -> &str {
     &rev[..rev.len().min(12)]
 }
+
+/// `current` rules-file content with `entry`'s managed block replaced, or appended after a blank
+/// line when absent. Text outside the block is never changed.
+pub fn render_rules_file(current: Option<&str>, entry: &str, block: &str) -> Result<String, String> {
+    let Some(content) = current else { return Ok(block.to_string()) };
+    match find_block(content, entry)? {
+        Some(found) => Ok(content.replacen(found, block, 1)),
+        None => {
+            let sep = if content.is_empty() || content.ends_with("\n\n") {
+                ""
+            } else if content.ends_with('\n') {
+                "\n"
+            } else {
+                "\n\n"
+            };
+            Ok(format!("{content}{sep}{block}"))
+        }
+    }
+}
