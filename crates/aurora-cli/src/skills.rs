@@ -8,20 +8,20 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anstream::{eprintln, println};
-use aurora_core::catalog::{Kind, Trust, builtin_catalog};
+use aurora_core::catalog::{Catalog, Kind, Trust, builtin_catalog};
 use aurora_core::providers::PROVIDER_IDS;
 use aurora_skills::fetch::{FetchOptions, FetchRequest, fetch as fetch_skill};
-use aurora_skills::scan::{Finding, Level, Readiness, ReviewState, Verdict, readiness, scan as scan_tree};
+use aurora_skills::scan::{Finding, Level, Readiness, ReviewState, ScanReport, Verdict, readiness, scan as scan_tree};
 use aurora_skills::skill::{
     MAX_SKILL_MD_BYTES, Severity, Support, check_spec, listing_chars, parse_skill, shell_injections, support,
 };
-use aurora_skills::tree::{Limits, collect};
+use aurora_skills::tree::{Limits, SkillTree, collect};
 use clap::Args;
 use serde_json::json;
 
 use crate::style::{BAD, DIM, HEAD, OK, WARN, paint};
 
-fn error(message: impl std::fmt::Display) -> u8 {
+pub(crate) fn error(message: impl std::fmt::Display) -> u8 {
     eprintln!("{} {message}", paint(BAD, "Error:"));
     1
 }
@@ -158,7 +158,7 @@ pub fn scan(dir: &Path, as_json: bool) -> u8 {
     code
 }
 
-fn print_findings(findings: &[Finding]) {
+pub(crate) fn print_findings(findings: &[Finding]) {
     for f in findings {
         let tag = match f.level {
             Level::Block => paint(BAD, "block "),
@@ -213,62 +213,99 @@ fn cache_dir(explicit: Option<&Path>) -> Result<PathBuf, String> {
         .ok_or_else(|| "cannot find a cache directory; pass --cache".into())
 }
 
+/// Where a catalog entry is pinned, and what review covers it.
+pub(crate) struct Pin {
+    pub repo: String,
+    pub rev: String,
+    pub path: String,
+    pub expected: Option<String>,
+    pub review: ReviewState,
+}
+
+/// Resolve an installable catalog entry to its pin.
+pub(crate) fn pin_for_entry(catalog: &Catalog, id: &str) -> Result<Pin, String> {
+    let e = catalog.get(id).ok_or_else(|| format!("unknown catalog entry '{id}' (see `aurora catalog list`)"))?;
+    let src = catalog.source(&e.source).ok_or_else(|| format!("entry '{id}' has no source"))?;
+    if matches!(e.kind, Kind::Framework | Kind::Infra) {
+        return Err(format!("'{id}' is a {} and is not installed by Aurora; see {}", e.kind, src.repo));
+    }
+    let review = match (src.trust, &e.reviewed) {
+        (Trust::Community, _) => ReviewState::Community,
+        (_, Some(note)) => ReviewState::Catalog(note.clone()),
+        (_, None) => ReviewState::None,
+    };
+    Ok(Pin {
+        repo: src.repo.clone(),
+        rev: src.rev.clone(),
+        path: e.path.clone().unwrap_or_default(),
+        expected: e.sha256.clone(),
+        review,
+    })
+}
+
+/// A fetched skill with its scan and readiness.
+pub(crate) struct Fetched {
+    pub dir: PathBuf,
+    pub tree: SkillTree,
+    pub report: ScanReport,
+    pub readiness: Readiness,
+}
+
+/// Fetch `pin` (through `mirror` if given), collect it without following symlinks, scan it and
+/// decide readiness against the pinned hash.
+pub(crate) fn fetch_checked(pin: &Pin, cache: &Path, mirror: Option<&Path>) -> Result<Fetched, String> {
+    let mut opts = FetchOptions::default();
+    let mut url = pin.repo.clone();
+    if let Some(m) = mirror {
+        let rest = pin
+            .repo
+            .strip_prefix("https://github.com/")
+            .ok_or_else(|| format!("--mirror only maps https://github.com repositories, not '{}'", pin.repo))?;
+        url = format!("file://{}/{rest}", aurora_fs::paths::absolute(m).display());
+        opts.allow_file_urls = true;
+    }
+    let req = FetchRequest { repo: &url, rev: &pin.rev, path: &pin.path, cache_root: cache };
+    let dir =
+        fetch_skill(&req, &opts).map_err(|e| format!("cannot fetch {}@{} {}: {e}", pin.repo, pin.rev, pin.path))?;
+    let tree = collect(&dir, &Limits::default()).map_err(|e| e.to_string())?;
+    let report = scan_tree(&tree);
+    let readiness = readiness(&tree, &report, pin.expected.as_deref(), pin.review.clone());
+    Ok(Fetched { dir, tree, report, readiness })
+}
+
+/// The cache directory from `--cache` or the environment.
+pub(crate) fn resolve_cache(explicit: Option<&Path>) -> Result<PathBuf, String> {
+    cache_dir(explicit)
+}
+
 pub fn fetch(args: &FetchArgs) -> u8 {
     let catalog = match builtin_catalog() {
         Ok(cat) => cat,
         Err(e) => return error(e),
     };
-    let (repo, rev, path, expected, review) = match &args.entry {
-        Some(id) => {
-            let Some(e) = catalog.get(id) else {
-                return error(format!("unknown catalog entry '{id}' (see `aurora catalog list`)"));
-            };
-            let Some(src) = catalog.source(&e.source) else {
-                return error(format!("entry '{id}' has no source"));
-            };
-            if matches!(e.kind, Kind::Framework | Kind::Infra) {
-                return error(format!("'{id}' is a {} and is not installed by Aurora; see {}", e.kind, src.repo));
-            }
-            let review = match (src.trust, &e.reviewed) {
-                (Trust::Community, _) => ReviewState::Community,
-                (_, Some(note)) => ReviewState::Catalog(note.clone()),
-                (_, None) => ReviewState::None,
-            };
-            (src.repo.clone(), src.rev.clone(), e.path.clone().unwrap_or_default(), e.sha256.clone(), review)
-        }
-        None => (
-            args.repo.clone().unwrap_or_default(),
-            args.rev.clone().unwrap_or_default(),
-            args.path.clone().unwrap_or_default(),
-            None,
-            ReviewState::None,
-        ),
+    let pin = match &args.entry {
+        Some(id) => match pin_for_entry(&catalog, id) {
+            Ok(pin) => pin,
+            Err(e) => return error(e),
+        },
+        None => Pin {
+            repo: args.repo.clone().unwrap_or_default(),
+            rev: args.rev.clone().unwrap_or_default(),
+            path: args.path.clone().unwrap_or_default(),
+            expected: None,
+            review: ReviewState::None,
+        },
     };
     let cache = match cache_dir(args.cache.as_deref()) {
         Ok(dir) => dir,
         Err(e) => return error(e),
     };
-    let mut opts = FetchOptions::default();
-    let mut url = repo.clone();
-    if let Some(m) = &args.mirror {
-        let Some(rest) = repo.strip_prefix("https://github.com/") else {
-            return error(format!("--mirror only maps https://github.com repositories, not '{repo}'"));
-        };
-        url = format!("file://{}/{rest}", aurora_fs::paths::absolute(m).display());
-        opts.allow_file_urls = true;
-    }
-    let req = FetchRequest { repo: &url, rev: &rev, path: &path, cache_root: &cache };
-    let dir = match fetch_skill(&req, &opts) {
-        Ok(dir) => dir,
-        Err(e) => return error(format!("cannot fetch {repo}@{rev} {path}: {e}")),
-    };
-    let tree = match collect(&dir, &Limits::default()) {
-        Ok(tree) => tree,
+    let Fetched { dir, tree, report, readiness: ready } = match fetch_checked(&pin, &cache, args.mirror.as_deref()) {
+        Ok(f) => f,
         Err(e) => return error(e),
     };
-    let report = scan_tree(&tree);
+    let Pin { repo, rev, path, expected, .. } = pin;
     let hash = tree.content_hash();
-    let ready = readiness(&tree, &report, expected.as_deref(), review);
     let code = match &ready {
         Readiness::Ready | Readiness::Reviewed(_) => 0,
         Readiness::NeedsReview(_) => EXIT_SCAN_REVIEW,
