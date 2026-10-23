@@ -14,7 +14,7 @@ pub mod ui;
 use std::sync::mpsc::{Sender, channel};
 use std::time::Duration;
 
-use ratatui::crossterm::event::{self, Event, KeyEventKind};
+use ratatui::crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyEventKind};
 
 use crate::app::{Command, Msg};
 
@@ -91,6 +91,8 @@ pub fn run(mut opts: TuiOptions) -> std::io::Result<()> {
         opts.project = abs;
     }
     let mut terminal = ratatui::init();
+    // Mouse: wheel, tab and row clicks. Hold Shift to select text in most terminals.
+    let _ = ratatui::crossterm::execute!(std::io::stdout(), EnableMouseCapture);
     let result = (|| -> std::io::Result<()> {
         let mut app = app::App::new(opts);
         let (tx, rx) = channel();
@@ -110,15 +112,20 @@ pub fn run(mut opts: TuiOptions) -> std::io::Result<()> {
             }
             app.tick();
             terminal.draw(|f| ui::render(f, &app))?;
-            if event::poll(Duration::from_millis(100))?
-                && let Event::Key(key) = event::read()?
-                && key.kind == KeyEventKind::Press
-            {
-                app.press(key);
+            if event::poll(Duration::from_millis(100))? {
+                match event::read()? {
+                    Event::Key(key) if key.kind == KeyEventKind::Press => app.press(key),
+                    Event::Mouse(m) => {
+                        let size = terminal.size()?;
+                        app.mouse(m, ratatui::layout::Rect::new(0, 0, size.width, size.height));
+                    }
+                    _ => {}
+                }
             }
         }
         Ok(())
     })();
+    let _ = ratatui::crossterm::execute!(std::io::stdout(), DisableMouseCapture);
     ratatui::restore();
     result
 }

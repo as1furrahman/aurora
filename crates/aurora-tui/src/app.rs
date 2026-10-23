@@ -16,7 +16,8 @@ use aurora_core::workflow::WorkflowDefinition;
 use aurora_fs::engine::{ApproveResult, StatusReport, SubmitResult};
 use aurora_skills::apply::UndoReport;
 use aurora_skills::plan::ActionKind;
-use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
+use ratatui::layout::Rect;
 
 use crate::keymap::{Ctx, resolve};
 
@@ -260,6 +261,8 @@ pub struct TuiOptions {
     pub mirror: Option<PathBuf>,
     /// Glyphs and emphasis only, no colour (`NO_COLOR`).
     pub no_color: bool,
+    /// Bright, bold colours without dimming (`AURORA_THEME=high-contrast`).
+    pub high_contrast: bool,
 }
 
 impl Default for TuiOptions {
@@ -274,6 +277,7 @@ impl Default for TuiOptions {
             cache: None,
             mirror: None,
             no_color: std::env::var_os("NO_COLOR").is_some_and(|v| !v.is_empty()),
+            high_contrast: std::env::var("AURORA_THEME").is_ok_and(|v| v == "high-contrast"),
         }
     }
 }
@@ -733,6 +737,65 @@ impl App {
                 self.commands.push_back(Command::ReadText { title, run_dir, rel });
             }
             None => self.notify(format!("{stage} has no handoff yet (it waits for earlier stages)")),
+        }
+    }
+
+    /// Handle a mouse event in a terminal of size `area`: the wheel scrolls (the popup when one
+    /// is open), a click on the tab bar switches tab, a click in a pane focuses it, and a click on
+    /// a visible list row selects it. Clicks are ignored while a popup is open.
+    pub fn mouse(&mut self, ev: MouseEvent, area: Rect) {
+        match ev.kind {
+            MouseEventKind::ScrollDown => self.update(Action::Down),
+            MouseEventKind::ScrollUp => self.update(Action::Up),
+            MouseEventKind::Down(MouseButton::Left) if self.popups.is_empty() && self.filter_edit.is_none() => {
+                self.click(ev.column, ev.row, area);
+            }
+            _ => {}
+        }
+    }
+
+    fn click(&mut self, col: u16, row: u16, area: Rect) {
+        // Layout as in `ui::render`: header row, tab row, body, footer row.
+        if row == area.y + 1 {
+            // Tabs render as " title " separated by a one-column divider.
+            let mut x = area.x;
+            for (i, tab) in Tab::ALL.iter().enumerate() {
+                let width = format!("{} {}", i + 1, tab.title()).chars().count() as u16 + 2;
+                if col >= x && col < x + width {
+                    self.update(Action::GoTab(i));
+                    return;
+                }
+                x += width + 1;
+            }
+            return;
+        }
+        let body_top = area.y + 2;
+        let body_bottom = area.y + area.height.saturating_sub(1);
+        if row < body_top || row >= body_bottom {
+            return;
+        }
+        if area.width >= crate::ui::SPLIT_WIDTH && col >= area.x + area.width * 55 / 100 {
+            self.focus = Focus::Detail;
+            return;
+        }
+        self.focus = Focus::List;
+        // Inside the pane border: a table header row, plus the run header in a pipeline.
+        let head = if self.tab == Tab::Runs && self.run_open.is_some() { 4 } else { 2 };
+        let Some(index) = row.checked_sub(body_top + head).map(usize::from) else { return };
+        let visible = usize::from(body_bottom.saturating_sub(body_top + head + 1));
+        let current = if self.tab == Tab::Runs && self.run_open.is_some() {
+            self.stage_cursor
+        } else {
+            self.cursor[self.tab.index()]
+        };
+        // Only while the list is not scrolled, so the row on screen is the row in the list.
+        if index < visible && current < visible {
+            if self.tab == Tab::Runs && self.run_open.is_some() {
+                self.stage_cursor = index;
+            } else {
+                self.cursor[self.tab.index()] = index;
+            }
+            self.clamp();
         }
     }
 

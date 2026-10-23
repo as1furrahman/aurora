@@ -19,26 +19,32 @@ pub const SPLIT_WIDTH: u16 = 100;
 #[derive(Debug, Clone, Copy)]
 pub struct Theme {
     pub no_color: bool,
+    pub high_contrast: bool,
 }
 
 impl Theme {
     fn pick(self, colored: Style) -> Style {
         if self.no_color { Style::default() } else { colored }
     }
+    fn hue(self) -> Color {
+        if self.high_contrast { Color::Yellow } else { Color::Cyan }
+    }
     pub fn accent(self) -> Style {
-        self.pick(Style::default().fg(Color::Cyan)).add_modifier(Modifier::BOLD)
+        self.pick(Style::default().fg(self.hue())).add_modifier(Modifier::BOLD)
     }
     pub fn dim(self) -> Style {
-        self.pick(Style::default().add_modifier(Modifier::DIM))
+        // Dimmed text is hard to read in high contrast; keep it plain there.
+        if self.high_contrast { Style::default() } else { self.pick(Style::default().add_modifier(Modifier::DIM)) }
     }
     pub fn focused(self) -> Style {
-        self.pick(Style::default().fg(Color::Cyan))
+        let s = self.pick(Style::default().fg(self.hue()));
+        if self.high_contrast { s.add_modifier(Modifier::BOLD) } else { s }
     }
 }
 
 pub fn render(f: &mut Frame, app: &App) {
     let area = f.area();
-    let theme = Theme { no_color: app.opts.no_color };
+    let theme = Theme { no_color: app.opts.no_color, high_contrast: app.opts.high_contrast };
     if area.width < MIN_WIDTH || area.height < MIN_HEIGHT {
         let msg = format!(
             "Terminal too small: {}×{} (Aurora needs at least {MIN_WIDTH}×{MIN_HEIGHT}). Resize, or press q to quit.",
