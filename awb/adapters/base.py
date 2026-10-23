@@ -21,7 +21,7 @@ class ConformanceReport:
 
 
 class BaseAdapter(ABC):
-    """Abstract base class for all Agent Workbench adapters."""
+    """Skill-storage adapter contract (exported as SkillStorageAdapter); no execution concerns (ADR-0002)."""
 
     @property
     @abstractmethod

@@ -46,7 +46,10 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(code, 0)
         data = json.loads(f.getvalue())
         self.assertIsInstance(data, list)
-        self.assertEqual(len(data), 4)
+        self.assertEqual(
+            sorted(d["id"] for d in data),
+            ["antigravity-cli", "antigravity-ide", "antigravity-workspace", "claude-code", "codex-cli"],
+        )
 
     def test_cmd_list(self):
         """awb list displays canonical skills from registry/skills.toml."""

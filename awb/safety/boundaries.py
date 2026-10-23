@@ -24,11 +24,15 @@ PROTECTED_PROJECT_PATHS = [
     Path("/home/asif/projects/dwl-native-bar-lab"),
 ]
 
-# Real global agent skill directories blocked in Phase 4
+# Real global agent skill directories blocked in Phase 4.
+# ~/.claude/skills: Claude Code personal skills; ~/.agents/skills: Codex user skills
+# (see docs/architecture/provider-adapter-contract.md, accessed 2026-10-23).
 GLOBAL_AGENT_SKILL_PATHS = [
     Path.home() / ".codex" / "skills",
     Path.home() / ".gemini" / "antigravity-cli" / "skills",
     Path.home() / ".gemini" / "config" / "skills",
+    Path.home() / ".claude" / "skills",
+    Path.home() / ".agents" / "skills",
 ]
 
 # Sensitive system locations that must never be targeted

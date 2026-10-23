@@ -49,6 +49,10 @@ def build_parser(prog: Optional[str] = None) -> argparse.ArgumentParser:
     # awb doctor
     doc_parser = subparsers.add_parser("doctor", help="Run system diagnostics and adapter readiness checks")
 
+    # aurora providers
+    prov_parser = subparsers.add_parser("providers", help="List execution providers (coding CLIs) and PATH detection")
+    prov_parser.add_argument("--json", action="store_true", help="Output results in JSON format")
+
     # awb install
     install_parser = subparsers.add_parser("install", help="Install a skill transactionally under ProcessLock")
     install_parser.add_argument("skill_id", type=str, help="Canonical skill ID from registry")
@@ -111,6 +115,46 @@ def cmd_detect(config: Config, as_json: bool = False) -> int:
         print(f" {status:<15} {r['name']} [{r['id']}]")
         print(f"   Discovery Path: {r['path']}")
         print(f"   Installed Skills: {r['installed_count']} ({', '.join(r['installed_skills']) if r['installed_skills'] else 'none'})")
+        print()
+    return 0
+
+
+def cmd_providers(as_json: bool = False) -> int:
+    """List execution providers. Detection is a PATH lookup only; no binary is run."""
+    from awb.providers import PROVIDERS
+
+    results = []
+    for pid in sorted(PROVIDERS):
+        provider = PROVIDERS[pid]
+        detection = provider.detect()
+        spec = provider.spec
+        results.append({
+            "id": spec.id,
+            "name": spec.display_name,
+            "binary": spec.binary,
+            "installed": detection.installed,
+            "path": detection.path,
+            "skill_adapters": list(spec.skill_adapters),
+            "invocation_modes": list(spec.invocation_modes),
+            "headless_enabled": spec.headless_enabled,
+            "documented_headless": spec.documented_headless,
+            "forbidden_flags": list(spec.forbidden_flags),
+            "docs_urls": list(spec.docs_urls),
+            "verified_on": spec.verified_on,
+        })
+
+    if as_json:
+        import json
+        print(json.dumps(results, indent=2))
+        return 0
+
+    print("Aurora — Execution Providers (manual handoff only; no process is launched):")
+    print("-" * 65)
+    for r in results:
+        status = "[INSTALLED]" if r["installed"] else "[NOT FOUND]"
+        print(f" {status:<12} {r['name']} [{r['id']}] (binary: {r['binary']})")
+        print(f"   Skill adapters:   {', '.join(r['skill_adapters'])}")
+        print(f"   Invocation modes: {', '.join(r['invocation_modes'])} (headless: disabled)")
         print()
     return 0
 
@@ -489,6 +533,8 @@ def main(argv: Optional[List[str]] = None, prog: Optional[str] = None) -> int:
         return cmd_validate(config, custom_registry=args.registry)
     elif args.command == "doctor":
         return cmd_doctor(config)
+    elif args.command == "providers":
+        return cmd_providers(as_json=args.json)
     elif args.command in ("install", "update"):
         return cmd_install(
             config,
