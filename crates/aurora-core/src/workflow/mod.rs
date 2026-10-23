@@ -1,9 +1,11 @@
 //! Role-based workflow definitions (schema v1): model, strict parser and deterministic planner.
 
+pub mod describe;
 pub mod model;
 pub mod parser;
 pub mod planner;
 
+pub use describe::{Description, describe};
 pub use model::{
     AcceptanceCriterion, FallbackRule, Role, RoleRouting, RoutingPolicy, Stage, StageState, WorkflowDefinition,
     WorkflowValidationError,

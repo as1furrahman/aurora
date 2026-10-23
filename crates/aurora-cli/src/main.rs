@@ -1,12 +1,95 @@
 //! `aurora` — role-based agent skill manager and workflow orchestrator.
+//!
+//! Exit codes: 0 ok, 1 error, 2 usage error (clap), 3 plan/run has blocked stages.
 
-use clap::Parser;
+mod providers;
+mod registry;
+mod style;
+mod workflow;
+
+use std::path::PathBuf;
+use std::process::ExitCode;
+
+use clap::{Args, CommandFactory, Parser, Subcommand};
 
 /// Aurora: assign skills and roles to coding CLIs and track evidence-gated workflows.
 #[derive(Debug, Parser)]
 #[command(name = "aurora", version = aurora_core::VERSION, about, long_about = None)]
-struct Cli {}
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Command>,
+}
 
-fn main() {
-    let _cli = Cli::parse();
+#[derive(Debug, Subcommand)]
+enum Command {
+    /// List execution providers (coding CLIs) and PATH detection; no binary is run
+    Providers {
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Validate and plan role-based workflows (manual handoff)
+    Workflow {
+        #[command(subcommand)]
+        command: WorkflowCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum WorkflowCommand {
+    /// Validate a workflow definition
+    Validate(DefinitionArgs),
+    /// Show roles, stages, skills, routing and acceptance gates
+    Show(DefinitionArgs),
+    /// Produce a deterministic execution plan (writes nothing)
+    Plan {
+        #[command(flatten)]
+        definition: DefinitionArgs,
+        #[command(flatten)]
+        routing: RoutingArgs,
+    },
+}
+
+#[derive(Debug, Args)]
+struct DefinitionArgs {
+    /// Workflow definition (.toml)
+    file: PathBuf,
+    /// Path to a custom skills.toml (default: $AURORA_REGISTRY_PATH, else the built-in registry)
+    #[arg(long)]
+    registry: Option<PathBuf>,
+    /// Output in JSON format
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Args)]
+struct RoutingArgs {
+    /// Single-provider mode: run every eligible stage through this provider
+    #[arg(long, conflicts_with = "route")]
+    provider: Option<String>,
+    /// Route one stage to a provider (repeatable)
+    #[arg(long, value_name = "STAGE=PROVIDER")]
+    route: Vec<String>,
+    /// Skip PATH detection of provider binaries
+    #[arg(long)]
+    no_detect: bool,
+}
+
+fn main() -> ExitCode {
+    let cli = Cli::parse();
+    let code = match cli.command {
+        // The TUI will launch here (docs/design/tui-vision.md); until then, show help.
+        None => {
+            let _ = Cli::command().print_help();
+            println!();
+            0
+        }
+        Some(Command::Providers { json }) => providers::run(json),
+        Some(Command::Workflow { command }) => match command {
+            WorkflowCommand::Validate(def) => workflow::validate(&def),
+            WorkflowCommand::Show(def) => workflow::show(&def),
+            WorkflowCommand::Plan { definition, routing } => workflow::plan(&definition, &routing),
+        },
+    };
+    ExitCode::from(code)
 }
