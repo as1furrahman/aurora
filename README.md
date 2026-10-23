@@ -4,7 +4,7 @@ Aurora (canonical CLI: `aurora`, compatibility alias: `awb`) is a universal, cen
 
 ---
 
-## Rust implementation (Milestone R1: workflow engine)
+## Rust implementation (Milestones R1 and R2)
 
 Aurora is being rewritten in Rust (ADR-0006). The Python package below is the reference
 implementation until parity. In R1 the Rust `aurora` binary covers the **workflow engine**. It
@@ -35,6 +35,35 @@ explicitly claimed. Exit codes never count. Reviewer verdicts (`pass | concerns 
 the stage, and concerns are carried into later handoffs. Dev checks: `cargo test`,
 `scripts/parity.sh` and `scripts/parity-runs.sh`, which compare the Rust and Python
 implementations. Design notes for the upcoming TUI and skill manager are in `docs/design/`.
+
+### Skills (Milestone R2: curated catalog and safe installs)
+
+Aurora recommends popular, maintained agent skills per workflow stage for the CLIs you actually use.
+It installs them into a project with safeguards. The catalog pins every skill to a commit and a
+content hash, and ships no third-party skill text (ADR-0007,
+`docs/research/agent-skills-landscape-2026-10.md`).
+
+```bash
+aurora catalog list                                   # skills, rules, frameworks, infra; trust and roles
+aurora catalog recommend --preset bugfix              # pair (claude + codex) by default
+aurora catalog recommend --preset bugfix --clis claude          # solo: reduced independence reported
+aurora skills fetch code-review                       # fetch at the pinned commit, verify, scan
+aurora skills plan  --preset bugfix --project .       # dry run: what would change, what each CLI loads
+aurora skills apply --preset bugfix --project .       # asks first; --reviewed ENTRY for flagged skills
+aurora skills undo  --project .                       # restores; nothing is ever deleted
+aurora workflow start bugfix.toml --profile pair --run-root ~/aurora-runs   # handoffs name the skills
+```
+
+Safeguards:
+
+- **Integrity:** fetched content must match the pin.
+- **Scanning:** the scanner blocks symlinks, binaries, archives and padding, and flags scripts,
+  hooks and `!`cmd`` for review.
+- **No pre-approved tools:** `allowed-tools` and `hooks` are removed from installed copies.
+- **Ownership:** Aurora only changes what `aurora.lock` says it installed and that is unchanged.
+- **Undo:** every apply is journaled under `.aurora/ops/` and can be undone.
+
+Commit `aurora.lock`; ignore `.aurora/`.
 
 ## Command Line Interface
 
