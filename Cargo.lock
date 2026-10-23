@@ -125,7 +125,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-app"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "aurora-core",
  "aurora-fs",
@@ -137,7 +137,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anstream",
  "anstyle",
@@ -157,7 +157,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "indexmap",
  "semver",
@@ -170,7 +170,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-fs"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "aurora-core",
  "rustix",
@@ -183,7 +183,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-skills"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "aurora-fs",
  "rustix",
@@ -197,7 +197,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-tui"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "aurora-app",
  "aurora-core",

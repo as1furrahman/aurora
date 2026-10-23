@@ -1,10 +1,92 @@
-# Aurora — Universal Agent Skill Manager
+# Aurora
 
-Aurora (canonical CLI: `aurora`, compatibility alias: `awb`) is a universal, centralized manager for discovering, installing, validating, updating, removing, benchmarking, and rolling back reusable coding-agent skills and workflows across supported coding CLIs.
+**Aurora helps AI coding tools do better work.** It gives tools like Claude Code, Codex,
+Antigravity and Hermes ready-made *skills*: instructions that teach them one kind of work well,
+such as finding the real cause of a bug or writing tests first. It can also split your work into
+steps, each done by one tool, with a quick check before moving on.
+
+It's built for people starting out with AI coding ("vibe coding") as well as experienced
+developers. Aurora never changes your project without asking first, and every change can be
+undone.
+
+## Quick start
+
+**1. Install** (macOS and Linux). Paste this into a terminal:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/as1furrahman/aurora/releases/latest/download/aurora-cli-installer.sh | sh
+```
+
+Then **close the terminal and open a new one**, so it can find the `aurora` command.
+
+**2. Open your project.** Go to your project's folder and start Aurora:
+
+```sh
+cd path/to/your-project
+aurora
+```
+
+**3. Answer three questions.** Aurora asks which AI tools you use and what you're working on,
+then shows exactly what it would add. Nothing is saved until you press `y`.
+
+After that, Aurora has four pages (press `1` to `4`, or click them):
+
+| Page | What it's for |
+|---|---|
+| **Skills** | The skills that fit your task, and which AI tool gets each one |
+| **Who does what** | Which tool does each job. Using two tools means one checks the other's work |
+| **Add to project** | Exactly what will be added. Read anything marked "check first", then press `a` |
+| **Tasks** | Your work split into steps. Press `n` for a new task, `Enter` to see a step's instructions, `s` to tick its checklist |
+
+Press `?` at any time for help and a short glossary, `t` to run the setup again, or `q` to
+quit.
+
+### Good to know
+
+- **Undo:** on the *Add to project* page, `u` puts your project back the way it was before
+  Aurora's last change. Files you edited yourself are left alone.
+- **Where things go:** skills are copied into your project (for example `.claude/skills/` and
+  `.agents/skills/`), with always-on rules in `CLAUDE.md` or `AGENTS.md`. `aurora.lock` records
+  what Aurora added, and `.aurora/` holds its backups and your tasks. Commit the skills and
+  `aurora.lock`; most people add `.aurora/` to `.gitignore`.
+- **Community skills** are marked *check first*. Have a quick read (press `Enter`) before
+  adding them.
+- **Aurora never runs your AI tools for you.** It prepares the instructions, and you paste them
+  into the tool you already use.
+
+### Prefer to read the install script first?
+
+That's a good habit. Download it, read it, then run it:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf -o aurora-installer.sh https://github.com/as1furrahman/aurora/releases/latest/download/aurora-cli-installer.sh
+less aurora-installer.sh
+sh aurora-installer.sh
+```
+
+The installer downloads the `aurora` program for your computer from this project's GitHub
+releases and checks its SHA-256 checksum. You can also download the archive from the
+[releases page](https://github.com/as1furrahman/aurora/releases) yourself, or build from source
+with `cargo install --git https://github.com/as1furrahman/aurora aurora-cli`.
+
+### Uninstall
+
+```sh
+rm "$(command -v aurora)"
+```
+
+Any skills Aurora added to a project stay there until you remove them: run `aurora`, go to
+*Add to project* and press `u`, or delete the files.
+
+**Windows** isn't supported yet. On Windows, use WSL (Ubuntu) and follow the Linux steps.
 
 ---
 
-## Rust implementation (Milestones R1–R3)
+## For developers
+
+Aurora (canonical CLI: `aurora`, compatibility alias: `awb`) is a universal, centralized manager for discovering, installing, validating, updating, removing, benchmarking, and rolling back reusable coding-agent skills and workflows across supported coding CLIs.
+
+### Rust implementation (Milestones R1–R3)
 
 Aurora is being rewritten in Rust (ADR-0006). The Python package below is the reference
 implementation until parity. In R1 the Rust `aurora` binary covers the **workflow engine**. It
@@ -36,7 +118,7 @@ the stage, and concerns are carried into later handoffs. Dev checks: `cargo test
 `scripts/parity.sh` and `scripts/parity-runs.sh`, which compare the Rust and Python
 implementations. Design notes for the upcoming TUI and skill manager are in `docs/design/`.
 
-### Skills (Milestone R2: curated catalog and safe installs)
+#### Skills (Milestone R2: curated catalog and safe installs)
 
 Aurora recommends popular, maintained agent skills per workflow stage for the CLIs you actually use.
 It installs them into a project with safeguards. The catalog pins every skill to a commit and a
@@ -65,34 +147,50 @@ Safeguards:
 
 Commit `aurora.lock`; ignore `.aurora/`.
 
-### Terminal UI (Milestone R3)
+#### Terminal UI (Milestones R3 and R3.1)
 
 `aurora` with no arguments opens the TUI in a terminal, and so does `aurora tui`. In scripts and
-pipes it prints help instead.
+pipes it prints help instead. On first launch in a project (no `aurora.lock`) a guided setup asks
+which AI tools you use (detected on PATH) and what you're working on; `t` reopens it.
 
 ```bash
 aurora tui --project . --run-root ~/aurora-runs      # --preset bugfix (default), --clis claude,codex
 ```
 
-| Tab | What it shows | Keys |
+Without `--run-root`, tasks live in the project's `.aurora/runs`.
+
+| Page | What it shows | Keys |
 |---|---|---|
-| **1 Skills** | Each skill × each CLI: `✓` installed, `+` create, `?` after review, `↑` update, `≠` modified, `!` foreign, `◐` via a shared dir, `·` not wanted; budget bars | `i` opt-in, `r` re-plan |
-| **2 Roles** | Stage → role → CLI → skills; enforcement strength for read-only roles | `p` another CLI for this role, `P` profile, `w` workflow |
-| **3 Install** | The plan's actions, review state, warnings | `Enter` read flagged files, `r` reviewed, `a` apply (asks; only `y` confirms), `u` undo |
-| **4 Runs** | Runs and their stage pipelines | `Enter` open / read handoff, `s` checkbox submit, `A` approve, `R` resume, `y` copy path |
+| **1 Skills** | Each skill × each AI tool: `✓` added, `+` will add, `?` check first, `↑` will update, `≠` you changed it, `!` yours (left alone), `◐` shared folder, `·` not used; room left in each tool's skill list | `i` add/remove optional, `r` refresh |
+| **2 Who does what** | Step → job → AI tool → skills, and how strongly each tool can be kept read-only | `p` another tool for this job, `P` 1, 2 or 3 tools, `w` task type |
+| **3 Add to project** | Exactly what will change, what to check first, warnings | `Enter` read it, `r` mark as checked, `a` add (asks; only `y` confirms), `u` undo |
+| **4 Tasks** | Tasks and their steps | `n` new task (asks), `Enter` open / show a step's instructions, `s` checklist, `A` give your OK, `R` check task, `y` copy path |
 
 Keys that work everywhere:
 
-- `1`–`4` switch tabs, and `Tab` moves focus between the list and the detail pane.
-- `/` filters the list.
-- `?` shows help for every key; it is generated from the same table as the footer.
-- `Esc` backs out one level, and `q` quits.
+- `1`–`4` switch pages, and `Tab` moves focus between the list and the details pane.
+- `/` searches the list.
+- `?` shows how Aurora works, a glossary and every key; the keys come from the same table as the
+  footer.
+- `Esc` goes back one level, and `q` quits.
 
 The mouse wheel and clicks also work. `NO_COLOR` turns colour off, and
-`AURORA_THEME=high-contrast` switches to a high-contrast theme. Each detail pane shows the
-equivalent CLI command. Real-terminal check: `scripts/tui-smoke.sh`.
+`AURORA_THEME=high-contrast` switches to a high-contrast theme. The TUI uses plain words (AI
+tool, job, step, task, checklist); the engine's terms, source links and the equivalent CLI
+commands are under **More details** in each details pane. Real-terminal check:
+`scripts/tui-smoke.sh`.
 
-## Command Line Interface
+#### Releases
+
+Releases are built by [cargo-dist](https://github.com/axodotdev/cargo-dist) (MIT OR
+Apache-2.0) from `dist-workspace.toml`: macOS (Apple Silicon and Intel) and Linux (x86_64 and
+arm64 glibc, plus x86_64 static musl, which the installer uses on older distributions), each
+with a SHA-256 checksum, and a shell installer. Pushing a tag `vX.Y.Z` that matches the
+workspace version runs `.github/workflows/release.yml`, which builds every target on its own
+runner and publishes a GitHub release. `scripts/test-installer.sh` tests the installer end to
+end against a local stand-in for GitHub releases (run `dist build` first).
+
+### Command Line Interface
 
 Aurora provides both the canonical `aurora` command and the legacy `awb` compatibility alias:
 
@@ -123,7 +221,7 @@ aurora remove principles --target /path/to/sandbox --root /path/to/sandbox
 
 ---
 
-## Role-Based Workflows (manual handoff)
+### Role-Based Workflows (manual handoff)
 
 Aurora plans and tracks workflows whose stages are owned by provider-neutral **roles** and routed to
 coding CLIs (`claude`, `codex`, `antigravity`). Milestone 1 never launches a CLI. It writes a handoff
@@ -149,7 +247,7 @@ See `docs/product-vision.md`, `docs/architecture/` and `docs/adr/` for the model
 
 ---
 
-## Architecture & Layers
+### Architecture & Layers
 
 - **Layer A — Manager Core:** Registry parser, version solver, capability discovery, operation planning, audit history, and transaction rollback engine.
 - **Layer B — Canonical Registry:** Authoritative index of skill metadata, versions, triggers, and compatibility contracts (`registry/skills.toml`).
@@ -159,7 +257,7 @@ See `docs/product-vision.md`, `docs/architecture/` and `docs/adr/` for the model
 
 ---
 
-## Safety-First Invariants
+### Safety-First Invariants
 
 1. **Deterministic Path Boundaries:** Traversal outside declared roots is rejected; ancestor symlinks fail closed.
 2. **Non-Blocking Descriptor Inspection:** Sensitive file operations use `O_NONBLOCK | O_NOFOLLOW` with descriptor `fstat` validation to eliminate FIFO and named-pipe blocking hazards.
@@ -170,7 +268,7 @@ See `docs/product-vision.md`, `docs/architecture/` and `docs/adr/` for the model
 
 ---
 
-## Running Safety & Reliability Tests
+### Running Safety & Reliability Tests
 
 ```bash
 python3 -m unittest discover -s tests -v
