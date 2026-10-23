@@ -85,8 +85,9 @@ If `allow_override = false`, `--provider` and `--route` are plan errors.
   manual handoff can be carried out on another machine.
 
 **Fallback.** When a check fails and fallback is allowed, the first `[[routing.fallback]]` rule with
-a matching `role`, `from` and reason is applied. Fallbacks can chain, but no provider is visited
-twice. Each step is recorded in `fallback_trail` as `{from, to, reason}`. If an incompatibility
+a matching `role`, `from` and reason is applied, **but only if the target provider does not have the
+same problem** (for example, falling back from one uninstalled CLI to another uninstalled CLI is
+skipped). Fallbacks can chain, but no provider is visited twice. Each step is recorded in `fallback_trail` as `{from, to, reason}`. If an incompatibility
 remains after fallback, the stage is `BLOCKED`. **There is no implicit fallback.**
 
 **Independence.** For each stage S that lists T in `independent_of`, the plan records

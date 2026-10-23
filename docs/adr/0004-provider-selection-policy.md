@@ -16,7 +16,8 @@ invisible.
   whose role does not permit that provider becomes `BLOCKED (not-eligible)`. Its role is not
   rewritten and no other provider is substituted. An ineligible `--route` is a hard error.
 - **Fallback:** only through `[[routing.fallback]]` rules with an explicit trigger (`incompatible`,
-  `unavailable`). Rules are evaluated in declaration order and every step is recorded. Fallback is
+  `unavailable`). Rules are evaluated in declaration order, a step is taken only if the target does
+  not share the triggering problem, and every step is recorded. Fallback is
   disabled for stages assigned by `--provider` or `--route`, so an explicit user choice is never
   overridden.
 - **Independence:** stages declare `independent_of`. A pair with the same provider is reported as

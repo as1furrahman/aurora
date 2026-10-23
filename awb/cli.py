@@ -53,6 +53,10 @@ def build_parser(prog: Optional[str] = None) -> argparse.ArgumentParser:
     prov_parser = subparsers.add_parser("providers", help="List execution providers (coding CLIs) and PATH detection")
     prov_parser.add_argument("--json", action="store_true", help="Output results in JSON format")
 
+    # aurora workflow ...
+    from awb.workflow.commands import add_workflow_parser
+    add_workflow_parser(subparsers)
+
     # awb install
     install_parser = subparsers.add_parser("install", help="Install a skill transactionally under ProcessLock")
     install_parser.add_argument("skill_id", type=str, help="Canonical skill ID from registry")
@@ -535,6 +539,9 @@ def main(argv: Optional[List[str]] = None, prog: Optional[str] = None) -> int:
         return cmd_doctor(config)
     elif args.command == "providers":
         return cmd_providers(as_json=args.json)
+    elif args.command == "workflow":
+        from awb.workflow.commands import run_workflow_command
+        return run_workflow_command(args, config)
     elif args.command in ("install", "update"):
         return cmd_install(
             config,
