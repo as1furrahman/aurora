@@ -10,6 +10,7 @@
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use sha2::{Digest, Sha256};
@@ -120,15 +121,21 @@ pub fn fetch(req: &FetchRequest<'_>, opts: &FetchOptions) -> Result<PathBuf, Fet
     if !final_dir.exists() {
         std::fs::create_dir_all(&parent)
             .map_err(|e| FetchError::Io(format!("cannot create {}: {e}", parent.display())))?;
-        let staging = parent.join(format!("{}.tmp-{}", path_key(req.path), std::process::id()));
+        // Unique per call, not just per process: the TUI fetches on several threads at once.
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        let n = NEXT.fetch_add(1, Ordering::Relaxed);
+        let staging = parent.join(format!("{}.tmp-{}-{n}", path_key(req.path), std::process::id()));
+        std::fs::create_dir(&staging)
+            .map_err(|e| FetchError::Io(format!("cannot create {}: {e}", staging.display())))?;
         let result = checkout(req, opts, &staging).and_then(|()| match std::fs::rename(&staging, &final_dir) {
             Ok(()) => Ok(()),
-            // Another process finished the same revision first; theirs is equivalent.
+            // Another thread or process finished the same revision first; theirs is equivalent.
             Err(_) if final_dir.exists() => Ok(()),
             Err(e) => Err(FetchError::Io(format!("cannot move checkout into the cache: {e}"))),
         });
         if staging.exists() {
-            // Our own staging directory, created above; never anything else.
+            // Our own staging directory: created by this call just above, under a name no other
+            // call uses.
             let _ = std::fs::remove_dir_all(&staging);
         }
         result?;
@@ -145,8 +152,8 @@ pub fn fetch(req: &FetchRequest<'_>, opts: &FetchOptions) -> Result<PathBuf, Fet
     Ok(dir)
 }
 
+/// Check out `req` into the empty directory `dir`.
 fn checkout(req: &FetchRequest<'_>, opts: &FetchOptions, dir: &Path) -> Result<(), FetchError> {
-    std::fs::create_dir(dir).map_err(|e| FetchError::Io(format!("cannot create {}: {e}", dir.display())))?;
     git(dir, &["init", "-q"], "init", opts)?;
     git(dir, &["sparse-checkout", "set", "--no-cone", &format!("/{}/", req.path)], "sparse-checkout", opts)?;
     git(

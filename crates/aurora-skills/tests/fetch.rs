@@ -171,3 +171,43 @@ fn two_skills_from_the_same_commit_share_a_cache_without_clobbering() {
     assert!(demo.join("SKILL.md").is_file() && other.join("SKILL.md").is_file());
     assert_ne!(demo.parent(), other.parent());
 }
+
+#[test]
+fn concurrent_fetches_of_the_same_skill_all_succeed() {
+    // Regression (R3.1): the TUI plans on worker threads, so two plans in one process fetch the
+    // same skill at once. Staging was named by process id only: the second thread failed with
+    // "File exists" and its cleanup removed the first thread's checkout mid-fetch.
+    let tmp = tempfile::tempdir().expect("tmp");
+    let (repo, first, _) = upstream(tmp.path());
+    let cache = tmp.path().join("cache");
+    let u = url(&repo);
+    let results: Vec<Result<PathBuf, FetchError>> = std::thread::scope(|s| {
+        let handles: Vec<_> = (0..6)
+            .map(|_| {
+                s.spawn(|| {
+                    fetch(&FetchRequest { repo: &u, rev: &first, path: "skills/demo", cache_root: &cache }, &opts())
+                })
+            })
+            .collect();
+        handles.into_iter().map(|h| h.join().expect("thread")).collect()
+    });
+    for r in &results {
+        let dir = r.as_ref().expect("every concurrent fetch succeeds");
+        assert!(dir.join("SKILL.md").is_file());
+    }
+    let parent = cache.join(fs::read_dir(&cache).expect("cache").next().expect("key").expect("entry").file_name());
+    let leftovers: Vec<_> = walk(&parent).into_iter().filter(|p| p.to_string_lossy().contains(".tmp-")).collect();
+    assert!(leftovers.is_empty(), "no staging directories left behind: {leftovers:?}");
+}
+
+fn walk(dir: &Path) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    for e in fs::read_dir(dir).into_iter().flatten().flatten() {
+        let p = e.path();
+        out.push(p.clone());
+        if p.is_dir() && !p.ends_with(".git") && out.len() < 200 {
+            out.extend(walk(&p).into_iter().filter(|q| !q.components().any(|c| c.as_os_str() == ".git")));
+        }
+    }
+    out
+}
