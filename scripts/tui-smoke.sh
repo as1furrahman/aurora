@@ -42,7 +42,10 @@ echo "a failing test" >"$WORK/runs/fresh/artifacts/reproduce/repro-test.md"
 tmux new-session -d -s "$S" -x 140 -y 34 \
   "cd '$WORK/project' && '$AURORA' tui --run-root '$WORK/runs'; echo AURORA_EXIT=\$?; sleep 120"
 
-step "1. Launch: header, tabs, the plan loads"
+step "1. Launch: the guided setup, then header, tabs, the plan loads"
+check "first launch opens the guided setup" 'wait_for "Which AI tools do you use?" && shows "step 1 of 3"'
+key Escape
+check "Esc means not now" 'gone "Which AI tools do you use?"'
 check "header and tabs" 'wait_for "Aurora · project · Fix a bug" && shows "1 Skills" && shows "4 Tasks"'
 check "the skills matrix appears" 'wait_for "verification-before-completion" && shows "Room left in each tool"'
 

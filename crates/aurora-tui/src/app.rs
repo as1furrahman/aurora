@@ -62,6 +62,14 @@ pub enum Action {
     StartApply,
     /// Ask to undo the last operation.
     StartUndo,
+    /// Open the guided setup.
+    OpenSetup,
+    /// Setup: tick or untick the highlighted tool.
+    SetupToggle,
+    /// Setup: the next step (or finish).
+    SetupNext,
+    /// Setup: the previous step.
+    SetupBack,
     /// Confirm the open dialog.
     ConfirmYes,
     /// Runs: open the selected run's pipeline, or the selected stage's handoff.
@@ -236,6 +244,8 @@ pub enum Popup {
         items: Vec<(String, String, bool)>,
         cursor: usize,
     },
+    /// The guided setup (first launch, or `t`).
+    Setup(crate::setup::Setup),
     /// A one-line text prompt (the approver's name).
     Input {
         prompt: String,
@@ -263,6 +273,10 @@ pub struct TuiOptions {
     pub no_color: bool,
     /// Bright, bold colours without dimming (`AURORA_THEME=high-contrast`).
     pub high_contrast: bool,
+    /// Open the guided setup on start (first launch in a project).
+    pub setup: bool,
+    /// AI tools found on PATH (provider ids), to pre-tick in the setup.
+    pub installed: Vec<String>,
 }
 
 impl Default for TuiOptions {
@@ -278,6 +292,8 @@ impl Default for TuiOptions {
             mirror: None,
             no_color: std::env::var_os("NO_COLOR").is_some_and(|v| !v.is_empty()),
             high_contrast: std::env::var("AURORA_THEME").is_ok_and(|v| v == "high-contrast"),
+            setup: false,
+            installed: Vec::new(),
         }
     }
 }
@@ -356,6 +372,9 @@ impl App {
             filter: String::new(),
             filter_edit: None,
         };
+        if app.opts.setup {
+            app.open_setup();
+        }
         app.request_plan();
         app.load_runs();
         app
@@ -583,6 +602,7 @@ impl App {
                 Some(Popup::Viewer { .. }) => Ctx::Viewer,
                 Some(Popup::Submit { .. }) => Ctx::Form,
                 Some(Popup::Input { .. }) => Ctx::Input,
+                Some(Popup::Setup(_)) => Ctx::Setup,
                 None => Ctx::Normal,
             }
         }
@@ -662,6 +682,18 @@ impl App {
             Action::OpenReview => self.open_review(),
             Action::StartApply => self.start_apply(),
             Action::StartUndo => self.start_undo(),
+            Action::OpenSetup => self.open_setup(),
+            Action::SetupToggle => {
+                if let Some(Popup::Setup(s)) = self.popups.last_mut() {
+                    s.toggle();
+                }
+            }
+            Action::SetupBack => {
+                if let Some(Popup::Setup(s)) = self.popups.last_mut() {
+                    s.back();
+                }
+            }
+            Action::SetupNext => self.setup_next(),
             Action::ConfirmYes => self.confirm_yes(),
             Action::OpenRun => self.open_run(),
             Action::ReloadRuns => self.load_runs(),
@@ -922,6 +954,39 @@ impl App {
         }
     }
 
+    /// Open the guided setup, ticking the tools in use (else those asked for or installed).
+    fn open_setup(&mut self) {
+        let current = match &self.planned {
+            Some(p) => p.recommendation.clis.clone(),
+            None => self.opts.clis.clone(),
+        };
+        let setup = crate::setup::Setup::new(&self.opts.installed, &current, &self.opts.preset);
+        self.popups.push(Popup::Setup(setup));
+    }
+
+    fn setup_next(&mut self) {
+        let Some(Popup::Setup(s)) = self.popups.last_mut() else { return };
+        match s.advance() {
+            crate::setup::Next::Stay => {}
+            crate::setup::Next::Plan { clis, preset } => {
+                self.opts.profile = None;
+                self.opts.clis = clis;
+                self.opts.preset = preset;
+                self.workflow = load_workflow(&WorkflowSource::Preset(self.opts.preset.clone()));
+                self.cursor = [0; 4];
+                self.request_plan();
+            }
+            crate::setup::Next::Finish => {
+                if self.planned.is_none() || self.loading {
+                    return;
+                }
+                self.popups.pop();
+                self.tab = Tab::Install;
+                self.focus = Focus::List;
+            }
+        }
+    }
+
     fn cycle_preset(&mut self) {
         let i = PRESETS.iter().position(|p| p.name == self.opts.preset).map_or(0, |i| (i + 1) % PRESETS.len());
         self.opts.preset = PRESETS[i].name.to_string();
@@ -930,11 +995,22 @@ impl App {
         self.request_plan();
     }
 
-    /// The profile in effect: the planned one, else the requested one.
+    /// The profile in effect: the planned one, or the requested one while a plan is on its way
+    /// (so a second key press builds on the first, not on the stale plan).
     fn current_profile(&self) -> String {
         match &self.planned {
-            Some(p) => p.recommendation.profile.clone(),
-            None => aurora_app::install::default_profile(self.opts.profile.as_deref(), self.opts.clis.len()),
+            Some(p) if !self.loading => p.recommendation.profile.clone(),
+            _ => aurora_app::install::default_profile(self.opts.profile.as_deref(), self.opts.clis.len()),
+        }
+    }
+
+    /// The tools in effect, by the same rule; `None` while a plan is on its way and the request
+    /// left the tools to the profile.
+    fn current_clis(&self) -> Option<Vec<String>> {
+        match &self.planned {
+            Some(p) if !self.loading => Some(p.recommendation.clis.clone()),
+            _ if !self.opts.clis.is_empty() => Some(self.opts.clis.clone()),
+            _ => None,
         }
     }
 
@@ -952,11 +1028,14 @@ impl App {
     }
 
     fn cycle_cli(&mut self) {
-        let (Some(p), Ok(cat)) = (&self.planned, &self.catalog) else { return };
+        let Some(mut clis) = self.current_clis() else {
+            return self.notify("One moment: still working out your last change");
+        };
+        let profile = self.current_profile();
+        let Ok(cat) = &self.catalog else { return };
         let rows = crate::screens::roles::rows(self);
         let Some(row) = rows.get(self.cursor[Tab::Roles.index()]) else { return };
-        let mut clis = p.recommendation.clis.clone();
-        let slot = cat.profile(&p.recommendation.profile).and_then(|pr| pr.roles.get(&row.role).copied()).unwrap_or(1);
+        let slot = cat.profile(&profile).and_then(|pr| pr.roles.get(&row.role).copied()).unwrap_or(1);
         let Some(current) = clis.get(slot - 1).cloned() else { return };
         let start = PROVIDER_IDS.iter().position(|id| *id == current).unwrap_or(0);
         let next = (1..=PROVIDER_IDS.len())
@@ -964,7 +1043,7 @@ impl App {
             .find(|id| !clis.iter().any(|c| c == id));
         let Some(next) = next else { return };
         clis[slot - 1] = next.to_string();
-        self.opts.profile = Some(p.recommendation.profile.clone());
+        self.opts.profile = Some(profile);
         self.opts.clis = clis;
         self.request_plan();
     }
@@ -994,6 +1073,14 @@ impl App {
                 Action::Top => 0,
                 _ => *scroll,
             };
+            return;
+        }
+        if let Some(Popup::Setup(s)) = self.popups.last_mut() {
+            match action {
+                Action::Down => s.move_by(true),
+                Action::Up => s.move_by(false),
+                _ => {}
+            }
             return;
         }
         if let Some(Popup::Submit { cursor, .. }) = self.popups.last_mut() {

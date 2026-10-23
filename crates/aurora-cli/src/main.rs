@@ -235,7 +235,13 @@ struct RoutingArgs {
     with: Vec<String>,
 }
 
-fn tui(opts: TuiOptions) -> u8 {
+fn tui(mut opts: TuiOptions) -> u8 {
+    // Show the folder's own name, not ".", and offer the setup until Aurora has added something.
+    if let Ok(p) = std::fs::canonicalize(&opts.project) {
+        opts.project = p;
+    }
+    opts.setup = !opts.project.join(aurora_app::install::LOCK_FILE).exists();
+    opts.installed = aurora_app::tools::installed();
     match aurora_tui::run(opts) {
         Ok(()) => 0,
         Err(e) => {

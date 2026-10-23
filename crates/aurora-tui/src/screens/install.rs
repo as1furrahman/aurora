@@ -38,13 +38,13 @@ pub fn kind_label(kind: ActionKind) -> &'static str {
     }
 }
 
-fn check_note(app: &App, a: &PlanAction) -> &'static str {
-    if !a.needs_review {
-        ""
-    } else if app.reviewed.contains(&a.entry) {
-        "checked ✓"
+/// What happens to one item, with "check first" taking the place of "will add" until you've
+/// marked a flagged skill as checked.
+fn happens(app: &App, a: &PlanAction) -> &'static str {
+    if a.needs_review && !app.reviewed.contains(&a.entry) && matches!(a.kind, ActionKind::Create | ActionKind::Update) {
+        "? check first"
     } else {
-        "check first"
+        kind_label(a.kind)
     }
 }
 
@@ -79,20 +79,12 @@ pub fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
     );
     let body: Vec<TableRow> = rows
         .iter()
-        .map(|a| {
-            TableRow::new(vec![
-                kind_label(a.kind).to_string(),
-                a.entry.clone(),
-                for_whom(app, a),
-                check_note(app, a).to_string(),
-            ])
-        })
+        .map(|a| TableRow::new(vec![happens(app, a).to_string(), a.entry.clone(), for_whom(app, a)]))
         .collect();
-    let table =
-        Table::new(body, [Constraint::Length(16), Constraint::Min(18), Constraint::Length(22), Constraint::Length(12)])
-            .header(TableRow::new(vec!["What happens", "Skill", "For", ""]).style(theme.accent()))
-            .row_highlight_style(theme.focused().add_modifier(Modifier::REVERSED))
-            .highlight_symbol("▶ ");
+    let table = Table::new(body, [Constraint::Length(15), Constraint::Fill(3), Constraint::Fill(2)])
+        .header(TableRow::new(vec!["What happens", "Skill", "For"]).style(theme.accent()))
+        .row_highlight_style(theme.focused().add_modifier(Modifier::REVERSED))
+        .highlight_symbol("▶ ");
     let mut state = TableState::default().with_selected(Some(app.cursor[Tab::Install.index()]));
     f.render_stateful_widget(table, table_area, &mut state);
 

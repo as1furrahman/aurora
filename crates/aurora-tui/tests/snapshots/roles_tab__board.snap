@@ -31,4 +31,4 @@ expression: s
 "│                                                                      ││                                                        │"
 "│                                                                      ││                                                        │"
 "└──────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────────────────┘"
-"p change tool  P how many tools  w task type  1-4 pages  ↑↓ move  / search  ? help  q quit                                        "
+"p change tool  P how many tools  w task type  1-4 pages  ↑↓ move  / search  t set up  ? help  q quit                              "

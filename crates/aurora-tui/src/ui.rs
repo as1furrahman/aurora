@@ -93,6 +93,7 @@ pub fn render(f: &mut Frame, app: &App) {
         Some(Popup::Viewer { title, text, scroll }) => render_viewer(f, area, title, text, *scroll, theme),
         Some(Popup::Submit { stage, items, cursor, .. }) => render_submit(f, area, stage, items, *cursor, theme),
         Some(Popup::Input { prompt, text, .. }) => render_input(f, area, prompt, text, theme),
+        Some(Popup::Setup(s)) => crate::setup::render(f, app, s, area, theme),
         None => {}
     }
 }
@@ -298,6 +299,7 @@ pub fn help_lines(app: &App) -> Vec<(Option<&'static str>, String)> {
         Ctx::Viewer,
         Ctx::Form,
         Ctx::Input,
+        Ctx::Setup,
         Ctx::Global,
     ];
     for tab in Tab::ALL {
@@ -393,6 +395,7 @@ fn key_name(code: ratatui::crossterm::event::KeyCode, mods: ratatui::crossterm::
         KeyCode::PageUp => "PgUp".into(),
         KeyCode::Esc => "Esc".into(),
         KeyCode::Enter => "Enter".into(),
+        KeyCode::Backspace => "Backspace".into(),
         other => format!("{other:?}"),
     };
     if mods.contains(KeyModifiers::CONTROL) { format!("^{}", base.to_uppercase()) } else { base }

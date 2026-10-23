@@ -11,6 +11,7 @@ repository.workspace = true
 aurora-core.workspace = true
 aurora-fs.workspace = true
 aurora-skills.workspace = true
+which = "8"
 
 [lints]
 workspace = true

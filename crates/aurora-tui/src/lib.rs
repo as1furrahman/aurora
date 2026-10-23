@@ -9,6 +9,7 @@
 pub mod app;
 pub mod keymap;
 pub mod screens;
+pub mod setup;
 pub mod ui;
 pub mod words;
 

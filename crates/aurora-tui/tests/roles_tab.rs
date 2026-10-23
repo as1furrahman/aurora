@@ -108,3 +108,17 @@ fn role_keys_do_nothing_on_other_tabs() {
     press(&mut app, &[KeyCode::Char('p'), KeyCode::Char('w')]);
     assert!(app.take_command().is_none(), "p and w belong to the Roles tab");
 }
+
+#[test]
+fn quick_presses_build_on_the_previous_press_not_the_last_plan() {
+    // Each P or p asks for a new plan; pressing again before it arrives must not repeat the
+    // same step (the smoke test caught P P P landing on the wrong profile).
+    let f = fixture();
+    let mut app = on_roles(&f);
+    press(&mut app, &[KeyCode::Char('P'), KeyCode::Char('P')]);
+    assert_eq!(app.opts.profile.as_deref(), Some("pair"), "pair -> solo -> pair, with no plan in between");
+    let mut app = on_roles(&f);
+    app.cursor[Tab::Roles.index()] = 3; // the reviewer slot, on codex
+    press(&mut app, &[KeyCode::Char('p'), KeyCode::Char('p')]);
+    assert_eq!(app.opts.clis, ["claude", "antigravity"], "codex -> hermes -> antigravity (claude is taken)");
+}

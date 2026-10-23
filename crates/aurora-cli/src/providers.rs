@@ -1,22 +1,13 @@
 //! `aurora providers` and PATH detection. Detection is a lookup only: no binary is ever run.
 
-use std::collections::BTreeMap;
-
 use anstream::println;
-use aurora_core::providers::{PROVIDERS, ProviderSpec};
+use aurora_app::tools::locate;
+use aurora_core::providers::PROVIDERS;
 use serde_json::json;
 
 use crate::style::{DIM, OK, paint};
 
-/// Path of `spec.binary` on PATH, if any.
-pub fn locate(spec: &ProviderSpec) -> Option<String> {
-    which::which(spec.binary).ok().map(|p| p.display().to_string())
-}
-
-/// Provider id → installed flag, sorted by id (the planner's `detected` input).
-pub fn detect_all() -> BTreeMap<String, bool> {
-    PROVIDERS.iter().map(|p| (p.id.to_string(), locate(p).is_some())).collect()
-}
+pub use aurora_app::tools::detect_all;
 
 pub fn run(as_json: bool) -> u8 {
     let rows: Vec<serde_json::Value> = PROVIDERS

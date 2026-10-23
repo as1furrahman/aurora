@@ -130,6 +130,7 @@ dependencies = [
  "aurora-core",
  "aurora-fs",
  "aurora-skills",
+ "which",
 ]
 
 [[package]]
@@ -150,7 +151,6 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
- "which",
 ]
 
 [[package]]
