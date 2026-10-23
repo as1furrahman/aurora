@@ -1,0 +1,23 @@
+[package]
+name = "aurora-cli"
+description = "The `aurora` command-line interface."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "aurora"
+path = "src/main.rs"
+
+[dependencies]
+aurora-core.workspace = true
+clap.workspace = true
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+
+[lints]
+workspace = true

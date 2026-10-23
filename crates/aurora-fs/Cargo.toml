@@ -1,0 +1,13 @@
+[package]
+name = "aurora-fs"
+description = "Aurora filesystem safety primitives: boundary checks, no-follow reads, atomic writes, locking, run store."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

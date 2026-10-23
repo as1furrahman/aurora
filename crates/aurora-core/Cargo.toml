@@ -1,0 +1,13 @@
+[package]
+name = "aurora-core"
+description = "Aurora domain logic: workflow model, parser, planner and stage engine. No terminal or filesystem side effects."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true
