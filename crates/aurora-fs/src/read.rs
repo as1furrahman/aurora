@@ -12,7 +12,7 @@ use rustix::fs::{FileType, Mode, OFlags};
 use sha2::{Digest, Sha256};
 
 use crate::FsError;
-use crate::paths::validate_path;
+use crate::paths::{open_dir_nofollow, validate_path};
 
 #[derive(Debug, Clone)]
 pub struct ReadInfo {
@@ -31,12 +31,7 @@ pub fn safe_read(target: &Path, allowed_roots: &[&Path], max_size: u64) -> Resul
     let name = canon.file_name().ok_or_else(|| FsError::Descriptor(format!("'{}' has no name", canon.display())))?;
     let uid = rustix::process::getuid().as_raw();
 
-    let dir = rustix::fs::open(
-        parent,
-        OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
-        Mode::empty(),
-    )
-    .map_err(|e| FsError::Descriptor(format!("Cannot open parent directory '{}': {e}", parent.display())))?;
+    let dir = open_dir_nofollow(parent)?;
     let st_dir = rustix::fs::fstat(&dir).map_err(|e| FsError::io("fstat parent", e))?;
     if FileType::from_raw_mode(st_dir.st_mode) != FileType::Directory {
         return Err(FsError::Descriptor(format!("Parent '{}' descriptor is not a directory", parent.display())));

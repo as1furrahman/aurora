@@ -211,3 +211,22 @@ fn presets_list_and_init() {
     assert_eq!(r.code, 1);
     assert!(r.stderr.contains("feature"), "lists known presets: {}", r.stderr);
 }
+
+#[test]
+fn closed_stdout_does_not_panic() {
+    use std::process::{Command as Std, Stdio};
+    let (_t, bin, _root) = setup();
+    for args in [vec!["providers", "--json"], vec!["workflow", "presets"]] {
+        let mut child = Std::new(assert_cmd::cargo::cargo_bin("aurora"))
+            .args(&args)
+            .env("PATH", &bin)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("spawn");
+        drop(child.stdout.take()); // reader goes away before the CLI writes
+        let out = child.wait_with_output().expect("wait");
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(!stderr.contains("panicked"), "{args:?}: {stderr}");
+    }
+}

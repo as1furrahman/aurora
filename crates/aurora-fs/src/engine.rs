@@ -30,6 +30,8 @@ pub enum CrashPoint {
     BeforeRecordSave,
     /// Fail `start_run` after the initial record is saved but before any handoff is issued.
     BeforeStartAdvance,
+    /// Fail `start_run` right after the run directory is created (before any record exists).
+    AfterRunDirCreated,
 }
 
 #[derive(Debug)]
@@ -172,8 +174,20 @@ impl Engine {
         };
 
         let run_dir = self.store.create_run_dir(run_root, &run_id)?;
-        self.store.write_file(&run_dir, WORKFLOW_FILE, &raw)?;
-        let pinned = self.load_pinned(&run_dir, &wf.sha256)?;
+        // Until the first record is saved the directory is not a run; on failure remove what we
+        // created (only our own pinned file, then the directory if it is empty) so the id is reusable.
+        let pinned = match self
+            .crash_at(CrashPoint::AfterRunDirCreated)
+            .and_then(|()| self.store.write_file(&run_dir, WORKFLOW_FILE, &raw))
+            .and_then(|()| self.load_pinned(&run_dir, &wf.sha256))
+        {
+            Ok(pinned) => pinned,
+            Err(e) => {
+                let _ = std::fs::remove_file(run_dir.join(WORKFLOW_FILE));
+                let _ = std::fs::remove_dir(&run_dir);
+                return Err(e);
+            }
+        };
 
         let mut record = RunRecord {
             schema_version: RUN_SCHEMA_VERSION,
@@ -229,7 +243,7 @@ impl Engine {
                 "{WORKFLOW_FILE} in '{}' no longer matches the pinned sha256 ({} != {}); refusing to continue",
                 run_dir.display(),
                 &info.sha256[..12],
-                &expected_sha[..expected_sha.len().min(12)]
+                expected_sha.chars().take(12).collect::<String>()
             )));
         }
         Ok(parse_workflow_bytes(&info.content, None, &run_dir.join(WORKFLOW_FILE).display().to_string())?)
@@ -262,13 +276,15 @@ impl Engine {
         for sid in record.plan.order.clone() {
             let Some(stage) = wf.stage(&sid) else { continue };
             let deps_done = stage.depends_on.iter().all(|d| record.stages.get(d).is_some_and(|s| is_done(s.state)));
-            if record.stages[&sid].state == StageState::Pending && deps_done {
+            let Some(state) = record.stages.get(&sid).map(|s| s.state) else { continue };
+            if state == StageState::Pending && deps_done {
                 if let Some(st) = record.stages.get_mut(&sid) {
                     st.state = StageState::Ready;
                 }
                 record.add_event(now, Some(&sid), "ready", json!({}));
             }
-            if matches!(record.stages[&sid].state, StageState::Ready | StageState::Running | StageState::Failed) {
+            let state = record.stages.get(&sid).map_or(state, |s| s.state);
+            if matches!(state, StageState::Ready | StageState::Running | StageState::Failed) {
                 if let Some(warning) = self.issue_handoff(wf, record, run_dir, &sid, now)? {
                     warnings.push(warning);
                 }
@@ -305,7 +321,7 @@ impl Engine {
             preserved_existing: preserved,
             on_disk_sha256: Some(on_disk.to_string()),
         };
-        let had_handoff = record.stages[sid].handoff.clone();
+        let had_handoff = record.stages.get(sid).and_then(|s| s.handoff.clone());
 
         if run_dir.join(&rel).symlink_metadata().is_ok() {
             let existing = match self.store.read_file(run_dir, &rel, RECORD_MAX_BYTES) {
@@ -490,11 +506,15 @@ impl Engine {
                     ("passed", json!({"attempt": attempt, "evidence": evidence}))
                 }
             } else if attempt >= stage.max_attempts {
+                st.evidence.clear();
+                st.criteria_met.clear();
                 st.state = StageState::Blocked;
                 st.escalated = stage.on_exhausted == "escalate";
                 st.blocked_reasons = vec![format!("max_attempts ({}) exhausted", stage.max_attempts)];
                 (if st.escalated { "escalated" } else { "blocked" }, json!({"attempt": attempt, "missing": missing}))
             } else {
+                st.evidence.clear();
+                st.criteria_met.clear();
                 st.state = StageState::Failed;
                 ("failed", json!({"attempt": attempt, "missing": missing}))
             };
@@ -606,6 +626,24 @@ impl Engine {
                 st.state
             )));
         }
+        let pending: Vec<&str> = wf
+            .stage(stage_id)
+            .map(|s| s.depends_on.iter().map(String::as_str).collect::<Vec<_>>())
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|d| !record.stages.get(*d).is_some_and(|s| is_done(s.state)))
+            .collect();
+        if !pending.is_empty() {
+            return Err(RunError::Run(format!(
+                "Stage '{stage_id}' cannot be waived before its dependencies are done: {}",
+                py_list(&pending)
+            )));
+        }
+        let Some(st) = record.stages.get_mut(stage_id) else {
+            return Err(RunError::Run(format!("Unknown stage '{stage_id}'")));
+        };
+        st.evidence.clear();
+        st.criteria_met.clear();
         st.state = StageState::Passed;
         st.escalated = false;
         st.awaiting_approval = false;

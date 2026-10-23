@@ -19,6 +19,21 @@ pub const RUN_KIND: &str = "aurora.workflow-run";
 pub const RECORD_FILE: &str = "run.json";
 pub const WORKFLOW_FILE: &str = "workflow.toml";
 
+const STAGE_KEYS: [&str; 12] = [
+    "state",
+    "provider",
+    "attempts",
+    "awaiting_approval",
+    "escalated",
+    "handoff",
+    "evidence",
+    "criteria_met",
+    "missing",
+    "blocked_reasons",
+    "approval",
+    "not_applicable_reason",
+];
+
 const RECORD_KEYS: [&str; 9] =
     ["schema_version", "kind", "run_id", "created_at", "updated_at", "workflow", "plan", "stages", "events"];
 
@@ -191,12 +206,31 @@ impl RunRecord {
         if !missing.is_empty() {
             return Err(RecordError(format!("missing keys {missing:?}")));
         }
+        // Stage records must carry exactly the v1 keys, as in Python (serde alone would accept a
+        // missing optional key as null).
+        if let Some(stages) = obj.get("stages").and_then(Value::as_object) {
+            for (sid, st) in stages {
+                let keys: BTreeSet<&str> =
+                    st.as_object().map(|o| o.keys().map(String::as_str).collect()).unwrap_or_default();
+                if keys != STAGE_KEYS.into_iter().collect::<BTreeSet<_>>() {
+                    return Err(RecordError(format!("stage '{sid}' has an invalid shape")));
+                }
+            }
+        }
         let record: RunRecord =
             serde_json::from_value(value).map_err(|e| RecordError(format!("invalid record shape: {e}")))?;
+        let is_sha = |s: &str| s.len() == 64 && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b));
+        if !is_sha(&record.workflow.sha256) {
+            return Err(RecordError("workflow.sha256 must be 64 lowercase hex characters".into()));
+        }
         let plan_ids: BTreeSet<&str> = record.plan.stages.iter().map(|s| s.id.as_str()).collect();
         let stage_ids: BTreeSet<&str> = record.stages.keys().map(String::as_str).collect();
         if plan_ids != stage_ids {
             return Err(RecordError("stage set does not match the pinned plan".into()));
+        }
+        let order: BTreeSet<&str> = record.plan.order.iter().map(String::as_str).collect();
+        if order != stage_ids || record.plan.order.len() != stage_ids.len() {
+            return Err(RecordError("plan.order must list every stage exactly once".into()));
         }
         Ok(record)
     }

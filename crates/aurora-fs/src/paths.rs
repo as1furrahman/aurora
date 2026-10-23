@@ -109,6 +109,33 @@ pub fn validate_path(target: &Path, allowed_roots: &[&Path], allow_symlinks: boo
     Ok(canon_target)
 }
 
+/// Open an absolute directory by walking it from `/` one component at a time with
+/// `O_DIRECTORY|O_NOFOLLOW`, so no component — intermediate or final — can be a symlink, even
+/// one swapped in after validation. Operations then run relative to the returned descriptor.
+pub fn open_dir_nofollow(dir: &Path) -> Result<rustix::fd::OwnedFd, FsError> {
+    use rustix::fs::{Mode, OFlags};
+    let flags = OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC;
+    let refuse = |e: rustix::io::Errno| {
+        if e == rustix::io::Errno::LOOP || e == rustix::io::Errno::NOTDIR {
+            FsError::SymlinkAncestor(format!("'{}' has a symlinked or non-directory component: {e}", dir.display()))
+        } else {
+            FsError::Descriptor(format!("Cannot open directory '{}': {e}", dir.display()))
+        }
+    };
+    if !dir.is_absolute() {
+        return Err(FsError::Descriptor(format!("'{}' must be absolute", dir.display())));
+    }
+    let mut fd = rustix::fs::open("/", flags, Mode::empty()).map_err(refuse)?;
+    for comp in dir.components() {
+        match comp {
+            Component::Normal(part) => fd = rustix::fs::openat(&fd, part, flags, Mode::empty()).map_err(refuse)?,
+            Component::RootDir => {}
+            _ => return Err(FsError::Descriptor(format!("'{}' is not normalised", dir.display()))),
+        }
+    }
+    Ok(fd)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

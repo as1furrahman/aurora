@@ -4,6 +4,38 @@ Aurora (canonical CLI: `aurora`, compatibility alias: `awb`) is a universal, cen
 
 ---
 
+## Rust implementation (Milestone R1: workflow engine)
+
+Aurora is being rewritten in Rust (ADR-0006). The Python package below is the reference
+implementation until parity. In R1 the Rust `aurora` binary covers the **workflow engine**. It
+runs in **manual-handoff** mode: Aurora never launches a coding CLI; it writes a handoff prompt
+for each role and checks the evidence you submit.
+
+```bash
+cargo build --release                       # binary: target/release/aurora (MSRV 1.89)
+
+aurora providers                            # claude / codex / antigravity (agy): PATH detection only
+aurora workflow presets                     # feature, bugfix, refactor, docs, security-review, spike
+aurora workflow init feature                # writes ./feature.toml (never overwrites)
+aurora workflow plan feature.toml           # roles -> CLIs (preferred, with declared fallback)
+aurora workflow plan feature.toml --provider codex          # every role on one CLI (reduced independence reported)
+aurora workflow plan feature.toml --route implement=claude  # move one stage to another CLI
+
+mkdir -p ~/aurora-runs
+aurora workflow start feature.toml --run-root ~/aurora-runs --run-id my-feature
+#   -> paste ~/aurora-runs/my-feature/handoff/intake.md into the assigned CLI, save its outputs, then:
+aurora workflow submit --run ~/aurora-runs/my-feature --stage intake --met criteria-testable
+aurora workflow status --run ~/aurora-runs/my-feature
+aurora workflow waive  --run ... --stage S --reason "..." --by NAME   # recorded human decision
+aurora workflow approve --run ... --stage accept --by NAME
+```
+
+A stage passes only when every declared output exists and every acceptance criterion is
+explicitly claimed. Exit codes never count. Reviewer verdicts (`pass | concerns | fail`) gate
+the stage, and concerns are carried into later handoffs. Dev checks: `cargo test`,
+`scripts/parity.sh` and `scripts/parity-runs.sh`, which compare the Rust and Python
+implementations. Design notes for the upcoming TUI and skill manager are in `docs/design/`.
+
 ## Command Line Interface
 
 Aurora provides both the canonical `aurora` command and the legacy `awb` compatibility alias:
