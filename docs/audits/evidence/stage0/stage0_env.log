@@ -1,0 +1,21 @@
+# env precedence
+$ env -u AURORA_REGISTRY_PATH -u AWB_REGISTRY_PATH AURORA_REGISTRY_PATH=/a AWB_REGISTRY_PATH=/b -> registry_path:
+/a
+$ env -u AURORA_REGISTRY_PATH -u AWB_REGISTRY_PATH AWB_REGISTRY_PATH=/b -> registry_path:
+/b
+$ env -u AURORA_REGISTRY_PATH -u AWB_REGISTRY_PATH AURORA_REGISTRY_PATH= AWB_REGISTRY_PATH=/b -> registry_path:
+/b
+$ env -u AURORA_REGISTRY_PATH -u AWB_REGISTRY_PATH AURORA_REGISTRY_PATH= -> registry_path:
+/home/thesriz/Development/aurora/registry/skills.toml
+# allowed roots precedence
+[PosixPath('/tmp/x')]
+[PosixPath('/tmp/y')]
+# prog parity via argv[0]
+Aurora (awb) 0.1.0
+Aurora (aurora) 0.1.0
+# packaging
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import setuptools; print("setuptools", setuptools.__version__)
+    ^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'setuptools'

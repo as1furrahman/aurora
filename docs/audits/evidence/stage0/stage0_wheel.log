@@ -1,0 +1,13 @@
+$ aurora --version
+Aurora (aurora) 0.1.0
+[exit=0]
+$ awb --version
+Aurora (awb) 0.1.0
+[exit=0]
+$ aurora list
+Error loading registry: Registry file does not exist: '/tmp/claude-1000/-home-thesriz-Development/f52d709a-6457-418d-a51e-0398bf251a89/scratchpad/venv/lib/python3.14/site-packages/registry/skills.toml'
+[exit=1]
+$ aurora validate
+VALIDATION FAILED: Registry file does not exist: '/tmp/claude-1000/-home-thesriz-Development/f52d709a-6457-418d-a51e-0398bf251a89/scratchpad/venv/lib/python3.14/site-packages/registry/skills.toml'
+Validating registry: /tmp/claude-1000/-home-thesriz-Development/f52d709a-6457-418d-a51e-0398bf251a89/scratchpad/venv/lib/python3.14/site-packages/registry/skills.toml
+[exit=1]
