@@ -6,25 +6,19 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anstream::println;
-use aurora_core::catalog::{Catalog, RecommendRequest, Recommendation, builtin_catalog, parse_catalog_str};
-use aurora_core::presets::{PRESETS, get_preset};
-use aurora_core::workflow::{WorkflowDefinition, parse_workflow_bytes, parse_workflow_str};
-use aurora_skills::apply::{ApplyError, ApplyInput, apply, undo};
-use aurora_skills::overlay::strip_frontmatter_keys;
-use aurora_skills::plan::{
-    ActionKind, Gate, InstallPlan, Lock, Observed, PlanInput, PreparedRules, PreparedSkill, SourcePin, plan,
+use aurora_app::install::{
+    InstallRequest, Planned, WorkflowSource, apply_planned, check_project, new_op_id, plan_install, undo_project,
 };
-use aurora_skills::scan::{Readiness, readiness, scan};
-use aurora_skills::skill::{listing_chars, parse_skill};
-use aurora_skills::tree::{Limits, SkillTree, collect};
+use aurora_core::catalog::Recommendation;
+use aurora_skills::apply::ApplyError;
+use aurora_skills::plan::{ActionKind, InstallPlan};
 use clap::Args;
 use serde_json::json;
 
-use crate::skills::{Pin, error, fetch_checked, pin_for_entry, resolve_cache};
+use crate::skills::error;
 use crate::style::{BAD, DIM, HEAD, OK, WARN, paint};
 
-pub const LOCK_FILE: &str = "aurora.lock";
-const MAX_RULES_FILE_BYTES: u64 = 1 << 20;
+pub use aurora_app::install::LOCK_FILE;
 
 #[derive(Debug, Args)]
 pub struct PlanArgs {
@@ -66,253 +60,34 @@ pub struct PlanArgs {
     json: bool,
 }
 
-/// Everything a plan was computed from, so `apply` can execute exactly it.
-pub(crate) struct Planned {
-    pub project: PathBuf,
-    pub recommendation: Recommendation,
-    pub plan: InstallPlan,
-    /// Entry -> the tree to install (overlays applied).
-    pub contents: BTreeMap<String, SkillTree>,
-    /// Entry -> files a human must read before it is installed.
-    pub review_files: BTreeMap<String, Vec<String>>,
-    pub warnings: Vec<String>,
-}
-
-fn load_catalog(path: Option<&Path>) -> Result<Catalog, String> {
-    match path {
-        None => builtin_catalog().map_err(|e| e.to_string()),
-        Some(p) => {
-            let text = std::fs::read_to_string(p).map_err(|e| format!("cannot read {}: {e}", p.display()))?;
-            parse_catalog_str(&text).map_err(|e| format!("{}: {e}", p.display()))
-        }
-    }
-}
-
-fn load_workflow(args: &PlanArgs) -> Result<WorkflowDefinition, String> {
-    if let Some(name) = &args.preset {
-        let names: Vec<&str> = PRESETS.iter().map(|p| p.name).collect();
-        let preset = get_preset(name)
-            .ok_or_else(|| format!("unknown preset '{name}'; expected one of: {}", names.join(", ")))?;
-        return parse_workflow_str(preset.toml, None, preset.name).map_err(|e| e.to_string());
-    }
-    let file = args.file.as_ref().ok_or("a workflow file or --preset is required")?;
-    let raw = std::fs::read(file).map_err(|e| format!("cannot read {}: {e}", file.display()))?;
-    parse_workflow_bytes(&raw, None, &file.display().to_string()).map_err(|e| e.to_string())
-}
-
-fn observe_dir(project: &Path, target: &str) -> Observed {
-    let path = project.join(target);
-    match std::fs::symlink_metadata(&path) {
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Observed::Absent,
-        Ok(m) if m.is_dir() => match collect(&path, &Limits::default()) {
-            Ok(tree) => Observed::Dir { sha256: tree.content_hash() },
-            Err(_) => Observed::NotADir,
-        },
-        _ => Observed::NotADir,
-    }
-}
-
-fn read_lock(project: &Path) -> Result<Option<Lock>, String> {
-    let path = project.join(LOCK_FILE);
-    match std::fs::symlink_metadata(&path) {
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(format!("cannot read {}: {e}", path.display())),
-        Ok(_) => {
-            let info = aurora_fs::read::safe_read(&path, &[project], MAX_RULES_FILE_BYTES)
-                .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
-            let text = String::from_utf8(info.content).map_err(|_| format!("{} is not UTF-8", path.display()))?;
-            Lock::from_json(&text).map(Some).map_err(|e| format!("{}: {e}", path.display()))
-        }
-    }
-}
-
-/// Replace SKILL.md in `tree` with `text` (an overlay result).
-fn with_skill_md(tree: &SkillTree, text: &str) -> SkillTree {
-    let mut out = tree.clone();
-    if let Some(f) = out.files.iter_mut().find(|f| f.path == "SKILL.md") {
-        f.content = Some(text.as_bytes().to_vec());
-        f.size = text.len() as u64;
-    }
-    out
-}
-
-fn gate(r: &Readiness) -> Gate {
-    match r {
-        Readiness::Ready => Gate::Ready,
-        Readiness::Reviewed(note) => Gate::Reviewed(note.clone()),
-        Readiness::NeedsReview(paths) => Gate::NeedsReview(paths.clone()),
-        Readiness::Blocked(rules) => Gate::Blocked(rules.clone()),
-        Readiness::IntegrityMismatch { .. } => Gate::Blocked(vec!["integrity".into()]),
-    }
-}
-
-fn skill_md(tree: &SkillTree) -> Result<String, String> {
-    let bytes = tree.file("SKILL.md").and_then(|f| f.content.clone()).ok_or("SKILL.md is missing or unreadable")?;
-    String::from_utf8(bytes).map_err(|_| "SKILL.md is not UTF-8".to_string())
-}
-
-/// Compute the plan for `args` (used by `plan` and, in Step 4, `apply`).
-pub(crate) fn compute(args: &PlanArgs) -> Result<Planned, String> {
-    let catalog = load_catalog(args.catalog.as_deref())?;
-    let wf = load_workflow(args)?;
-    let profile = args.profile.clone().unwrap_or_else(|| {
-        match args.clis.len() {
-            1 => "solo",
-            3 => "trio",
-            _ => "pair",
-        }
-        .to_string()
-    });
-    let req = RecommendRequest { profile, clis: args.clis.clone(), with: args.with.clone() };
-    let rec = catalog.recommend(&wf, &req).map_err(|e| e.to_string())?;
-    let cache = resolve_cache(args.cache.as_deref())?;
-    let project =
-        std::fs::canonicalize(&args.project).map_err(|e| format!("project {}: {e}", args.project.display()))?;
-    let mut warnings = rec.warnings.clone();
-
-    // Entry -> CLIs that want it.
-    let mut wanted: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for load in &rec.providers {
-        for id in &load.skills {
-            wanted.entry(id.clone()).or_default().push(load.provider.clone());
-        }
-    }
-
-    let strip: Vec<&str> = if args.keep_hooks { vec!["allowed-tools"] } else { vec!["allowed-tools", "hooks"] };
-    let mut skills = Vec::new();
-    let mut contents = BTreeMap::new();
-    let mut review_files = BTreeMap::new();
-    for (id, providers) in &wanted {
-        let pin: Pin = pin_for_entry(&catalog, id)?;
-        let fetched = fetch_checked(&pin, &cache, args.mirror.as_deref())?;
-        if let Readiness::IntegrityMismatch { expected, got } = &fetched.readiness {
-            return Err(format!(
-                "'{id}': fetched content {got} differs from the catalog pin {expected}; refusing to plan"
-            ));
-        }
-        let original = skill_md(&fetched.tree).map_err(|e| format!("'{id}': {e}"))?;
-        let (text, overlays) = strip_frontmatter_keys(&original, &strip).map_err(|e| format!("'{id}': {e}"))?;
-        let installed = with_skill_md(&fetched.tree, &text);
-        // Integrity was checked on the upstream copy; the review gate judges what is installed,
-        // so findings an overlay removed (allowed-tools, hooks) no longer need review. A catalog
-        // review note covers the verified upstream content, which overlays only reduce.
-        let installed_gate =
-            readiness(&installed, &scan(&installed), Some(&installed.content_hash()), pin.review.clone());
-        if let Readiness::NeedsReview(paths) = &installed_gate {
-            review_files.insert(id.clone(), paths.clone());
-        }
-        let name = pin.path.rsplit('/').next().unwrap_or(id).to_string();
-        let parsed = parse_skill(&text, &name).map_err(|e| format!("'{id}': {e}"))?;
-        let listing = rec
-            .clis
-            .iter()
-            .map(|cli| (cli.clone(), listing_chars(&parsed, cli, catalog.target(cli).and_then(|t| t.per_skill_chars))))
-            .collect();
-        skills.push(PreparedSkill {
-            entry: id.clone(),
-            name,
-            source: SourcePin {
-                repo: pin.repo.clone(),
-                rev: pin.rev.clone(),
-                path: pin.path.clone(),
-                sha256: fetched.tree.content_hash(),
+impl PlanArgs {
+    /// The application-layer request for these arguments.
+    pub(crate) fn request(&self) -> InstallRequest {
+        InstallRequest {
+            workflow: match (&self.preset, &self.file) {
+                (Some(name), _) => WorkflowSource::Preset(name.clone()),
+                (None, file) => WorkflowSource::File(file.clone().unwrap_or_default()),
             },
-            installed_sha256: installed.content_hash(),
-            overlays,
-            gate: gate(&installed_gate),
-            listing_chars: listing,
-            providers: providers.clone(),
-        });
-        contents.insert(id.clone(), installed);
-    }
-
-    let mut rules = Vec::new();
-    let mut observed_files = BTreeMap::new();
-    for r in &rec.rules {
-        let pin = pin_for_entry(&catalog, &r.entry)?;
-        let fetched = fetch_checked(&pin, &cache, args.mirror.as_deref())?;
-        match &fetched.readiness {
-            Readiness::Ready | Readiness::Reviewed(_) => {}
-            other => {
-                warnings.push(format!("rules '{}' are not ready ({other:?}); skipped", r.entry));
-                continue;
-            }
-        }
-        let text = skill_md(&fetched.tree).map_err(|e| format!("'{}': {e}", r.entry))?;
-        let body = parse_skill(&text, &r.entry).map_err(|e| format!("'{}': {e}", r.entry))?.body;
-        let mut files = Vec::new();
-        for file in r.files.values() {
-            if files.contains(file) {
-                continue;
-            }
-            let path = project.join(file);
-            match std::fs::symlink_metadata(&path) {
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                    observed_files.insert(file.clone(), None);
-                    files.push(file.clone());
-                }
-                Ok(m) if m.file_type().is_symlink() => {
-                    warnings.push(format!(
-                        "{file} is a symlink; Aurora does not write through it (add the rules to its target)"
-                    ));
-                }
-                Ok(m) if m.is_file() => {
-                    let info = aurora_fs::read::safe_read(&path, &[project.as_path()], MAX_RULES_FILE_BYTES)
-                        .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
-                    let content = String::from_utf8(info.content).map_err(|_| format!("{file} is not UTF-8"))?;
-                    observed_files.insert(file.clone(), Some(content));
-                    files.push(file.clone());
-                }
-                _ => warnings.push(format!("{file} is not a regular file; skipped")),
-            }
-        }
-        if !files.is_empty() {
-            rules.push(PreparedRules {
-                entry: r.entry.clone(),
-                source: SourcePin { repo: pin.repo, rev: pin.rev, path: pin.path, sha256: fetched.tree.content_hash() },
-                text: body,
-                files,
-            });
+            profile: self.profile.clone(),
+            clis: self.clis.clone(),
+            with: self.with.clone(),
+            project: self.project.clone(),
+            keep_hooks: self.keep_hooks,
+            prune: self.prune,
+            catalog: self.catalog.clone(),
+            cache: self.cache.clone(),
+            mirror: self.mirror.clone(),
         }
     }
-
-    let previous = read_lock(&project)?;
-    let mut observed_dirs = BTreeMap::new();
-    let mut targets: Vec<String> = previous.iter().flat_map(|l| l.skills.keys().cloned()).collect();
-    for s in &skills {
-        for p in &s.providers {
-            if let Some(dir) = aurora_skills::plan::skill_dir(p) {
-                targets.push(format!("{}/{}", dir.rel, s.name));
-            }
-        }
-    }
-    for t in targets {
-        let seen = observe_dir(&project, &t);
-        observed_dirs.insert(t, seen);
-    }
-    let budgets = rec.clis.iter().filter_map(|c| catalog.target(c).map(|t| (c.clone(), t.listing_chars))).collect();
-    let result = plan(&PlanInput {
-        profile: &rec.profile,
-        clis: &rec.clis,
-        skills: &skills,
-        rules: &rules,
-        previous: previous.as_ref(),
-        observed_dirs: &observed_dirs,
-        observed_files: &observed_files,
-        budgets: &budgets,
-        prune: args.prune,
-    });
-    Ok(Planned { project, recommendation: rec, plan: result, contents, review_files, warnings })
 }
 
 pub fn run_plan(args: &PlanArgs) -> u8 {
-    let planned = match compute(args) {
+    let planned = match plan_install(&args.request()) {
         Ok(p) => p,
         Err(e) => return error(e),
     };
-    let Planned { project, recommendation: rec, plan: p, warnings: pre, .. } = &planned;
-    let mut warnings = pre.clone();
-    warnings.extend(p.warnings.iter().cloned());
+    let Planned { project, recommendation: rec, plan: p, .. } = &planned;
+    let warnings = planned.all_warnings();
     if args.json {
         let out = json!({
             "project": project.display().to_string(),
@@ -413,12 +188,6 @@ pub struct ApplyArgs {
     reviewed: Vec<String>,
 }
 
-fn op_id() -> String {
-    let secs =
-        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0);
-    format!("{}-{}", aurora_core::util::format_utc(secs).replace(':', ""), std::process::id())
-}
-
 fn confirm(question: &str) -> bool {
     use std::io::{BufRead, IsTerminal, Write};
     if !std::io::stdin().is_terminal() {
@@ -431,30 +200,19 @@ fn confirm(question: &str) -> bool {
 }
 
 pub fn run_apply(args: &ApplyArgs) -> u8 {
-    let planned = match compute(&args.plan) {
+    let planned = match plan_install(&args.plan.request()) {
         Ok(p) => p,
         Err(e) => return error(e),
     };
-    let Planned { project, recommendation: rec, plan: p, contents, review_files, warnings: pre } = &planned;
-    let policy = aurora_fs::boundaries::BoundaryPolicy::host();
-    if let Err(e) =
-        aurora_fs::boundaries::validate_security_preconditions(project, &[project.as_path()], false, &policy)
-    {
-        return error(format!("refusing to install into {}: {e}", project.display()));
+    let Planned { project, recommendation: rec, plan: p, review_files, .. } = &planned;
+    if let Err(e) = check_project(project) {
+        return error(e);
     }
-    let mut warnings = pre.clone();
-    warnings.extend(p.warnings.iter().cloned());
+    let warnings = planned.all_warnings();
     if !args.plan.json {
         print_plan(project, rec, p, &warnings);
     }
-    let unreviewed: Vec<String> = p
-        .actions
-        .iter()
-        .filter(|a| a.needs_review && !args.reviewed.contains(&a.entry))
-        .map(|a| a.entry.clone())
-        .collect::<std::collections::BTreeSet<_>>()
-        .into_iter()
-        .collect();
+    let unreviewed = planned.unreviewed(&args.reviewed);
     if !unreviewed.is_empty() {
         let list: Vec<String> = unreviewed
             .iter()
@@ -472,17 +230,12 @@ pub fn run_apply(args: &ApplyArgs) -> u8 {
         println!("\nNothing to do: the project already matches the plan.");
         return 0;
     }
-    let changes = p
-        .actions
-        .iter()
-        .filter(|a| matches!(a.kind, ActionKind::Create | ActionKind::Update | ActionKind::Remove))
-        .count();
+    let changes = planned.change_count();
     if !args.yes && !confirm(&format!("\nApply {changes} changes to {}?", project.display())) {
         return error("not applied: confirm in a terminal, or pass --yes");
     }
-    let id = op_id();
-    let input = ApplyInput { project, plan: p, contents, op_id: &id, fault_before_step: None };
-    match apply(&input) {
+    let id = new_op_id();
+    match apply_planned(&planned, &id) {
         Ok(record) => {
             if args.plan.json {
                 println!(
@@ -521,7 +274,7 @@ pub fn run_undo(args: &UndoArgs) -> u8 {
         Ok(p) => p,
         Err(e) => return error(format!("project {}: {e}", args.project.display())),
     };
-    match undo(&project, args.op.as_deref()) {
+    match undo_project(&project, args.op.as_deref()) {
         Ok(report) => {
             if args.json {
                 println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());

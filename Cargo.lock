@@ -94,12 +94,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "aurora-app"
+version = "0.2.0"
+dependencies = [
+ "aurora-core",
+ "aurora-fs",
+ "aurora-skills",
+]
+
+[[package]]
 name = "aurora-cli"
 version = "0.2.0"
 dependencies = [
  "anstream",
  "anstyle",
  "assert_cmd",
+ "aurora-app",
  "aurora-core",
  "aurora-fs",
  "aurora-skills",
