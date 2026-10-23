@@ -1,0 +1,28 @@
+---
+source: crates/aurora-tui/tests/skeleton.rs
+expression: s
+---
+"Aurora · /work/demo · bugfix · pair                                                                 "
+" 1 Skills │ 2 Roles │ 3 Install │ 4 Runs                                                            "
+"┌▶ Skills × CLIs──────────────────────────────────────┐┌  Skill────────────────────────────────────┐"
+"│Nothing loaded yet.                                  ││Nothing loaded yet.                        │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"└─────────────────────────────────────────────────────┘└───────────────────────────────────────────┘"
+"1-4 tabs  Tab focus  j/k move  / filter  ? help  q quit                                             "

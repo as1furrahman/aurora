@@ -15,6 +15,9 @@ mod workflow;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+use std::io::{IsTerminal, Write};
+
+use aurora_tui::TuiOptions;
 use clap::{Args, CommandFactory, Parser, Subcommand};
 
 /// Aurora: assign skills and roles to coding CLIs and track evidence-gated workflows.
@@ -42,6 +45,21 @@ enum Command {
     Catalog {
         #[command(subcommand)]
         command: CatalogCommand,
+    },
+    /// Open the terminal UI (also what `aurora` with no arguments does in a terminal)
+    Tui {
+        /// Project directory to manage skills for (default: the current directory)
+        #[arg(long, default_value = ".")]
+        project: PathBuf,
+        /// Directory holding workflow runs (for the Runs tab)
+        #[arg(long)]
+        run_root: Option<PathBuf>,
+        /// Workflow preset to plan for
+        #[arg(long, default_value = "bugfix")]
+        preset: String,
+        /// CLIs filling the profile slots, comma-separated (default: the profile's own)
+        #[arg(long, value_delimiter = ',')]
+        clis: Vec<String>,
     },
     /// Inspect agent skills (SKILL.md) for spec compliance and per-CLI portability
     Skills {
@@ -217,14 +235,29 @@ struct RoutingArgs {
     with: Vec<String>,
 }
 
+fn tui(opts: TuiOptions) -> u8 {
+    match aurora_tui::run(opts) {
+        Ok(()) => 0,
+        Err(e) => {
+            eprintln!("Error: cannot run the terminal UI: {e}");
+            1
+        }
+    }
+}
+
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let code = match cli.command {
-        // The TUI will launch here (docs/design/tui-vision.md); until then, show help.
+        // In a terminal, no arguments opens the TUI; otherwise (scripts, pipes) print help.
+        None if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() => tui(TuiOptions::default()),
         None => {
-            let _ = Cli::command().print_help();
-            println!();
+            // A closed pipe (`aurora | head`) is not an error worth a panic.
+            let mut out = std::io::stdout();
+            let _ = Cli::command().write_help(&mut out).and_then(|()| writeln!(out));
             0
+        }
+        Some(Command::Tui { project, run_root, preset, clis }) => {
+            tui(TuiOptions { project, run_root, preset, clis, ..TuiOptions::default() })
         }
         Some(Command::Providers { json }) => providers::run(json),
         Some(Command::Skills { command }) => match command {

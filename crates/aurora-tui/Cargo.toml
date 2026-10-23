@@ -1,0 +1,21 @@
+[package]
+name = "aurora-tui"
+description = "Aurora's terminal UI over the workflow engine and the skill catalog."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+aurora-app.workspace = true
+aurora-core.workspace = true
+aurora-skills.workspace = true
+aurora-fs.workspace = true
+ratatui = "0.30"
+
+[dev-dependencies]
+insta = "1"
+
+[lints]
+workspace = true
