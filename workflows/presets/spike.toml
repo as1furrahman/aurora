@@ -1,0 +1,67 @@
+# Aurora built-in preset: spike. Edit freely, then: aurora workflow validate <file>
+# Uses schema v1 extensions (verdict, requires), so it is read by the Rust implementation only.
+schema_version = 1
+
+[workflow]
+id = "spike"
+version = "1.0.0"
+name = "Spike"
+description = "Time-boxed investigation that ends in a go, needs-clarification or kill decision instead of speculative code."
+task_types = ["spike"]
+assurance = "basic"
+
+[roles.analyst]
+responsibility = "Clarify the problem, scope and acceptance criteria; find prior work; ask instead of guessing."
+required_skills = ["principles"]
+recommended_skills = ["task-router"]
+
+[roles.architect]
+responsibility = "Design the smallest change that meets the criteria; record trade-offs and break the work into small tasks."
+required_skills = ["principles"]
+recommended_skills = ["task-router"]
+
+[[stages]]
+id = "question"
+role = "analyst"
+outputs = ["question.md"]
+
+  [[stages.acceptance]]
+  id = "question-bounded"
+  description = "question.md states the decision to be made, the time box and what evidence would settle it."
+  evidence = ["question.md"]
+
+[[stages]]
+id = "explore"
+role = "architect"
+depends_on = ["question"]
+inputs = ["question/question.md"]
+outputs = ["exploration.md"]
+
+  [[stages.acceptance]]
+  id = "evidence-gathered"
+  description = "exploration.md records what was tried, measured or read, within the time box."
+  evidence = ["exploration.md"]
+
+[[stages]]
+id = "decide"
+role = "architect"
+depends_on = ["explore"]
+inputs = ["question/question.md", "explore/exploration.md"]
+outputs = ["decision.md"]
+requires_approval = true
+
+  [[stages.acceptance]]
+  id = "decision-made"
+  description = "decision.md concludes go, needs-clarification or kill, with the rationale and next step."
+  evidence = ["decision.md"]
+
+[routing]
+allow_override = true
+
+[routing.roles.analyst]
+eligible = ["claude", "codex", "antigravity"]
+preferred = "claude"
+
+[routing.roles.architect]
+eligible = ["claude", "codex", "antigravity"]
+preferred = "claude"

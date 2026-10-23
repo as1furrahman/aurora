@@ -4,6 +4,7 @@
 //! This crate is pure: it has no terminal dependencies and performs no direct I/O on run
 //! directories (that is `aurora-fs`). See `docs/adr/0006-rust-rewrite.md`.
 
+pub mod presets;
 pub mod providers;
 pub mod registry;
 pub mod util;

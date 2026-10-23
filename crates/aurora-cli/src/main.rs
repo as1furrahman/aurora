@@ -49,6 +49,20 @@ enum WorkflowCommand {
         #[command(flatten)]
         routing: RoutingArgs,
     },
+    /// List the built-in workflow presets
+    Presets {
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Write a built-in preset to a file you can edit (never overwrites)
+    Init {
+        /// Preset name (see `aurora workflow presets`)
+        preset: String,
+        /// Output file (default: ./<preset>.toml)
+        #[arg(long)]
+        output: Option<PathBuf>,
+    },
     /// Create a run, pin the definition, and issue handoff bundles
     Start {
         #[command(flatten)]
@@ -150,6 +164,8 @@ fn main() -> ExitCode {
                 runs::start(&definition, &routing, &run_root, run_id.as_deref())
             }
             WorkflowCommand::Status(args) => runs::status(&args),
+            WorkflowCommand::Presets { json } => workflow::presets(json),
+            WorkflowCommand::Init { preset, output } => workflow::init(&preset, output.as_deref()),
             WorkflowCommand::Resume(args) => runs::resume(&args),
             WorkflowCommand::Submit { run, stage, met, not_applicable } => {
                 runs::submit(&run, &stage, &met, not_applicable)

@@ -218,3 +218,67 @@ pub fn print_plan(plan: &Plan) {
         println!("  {} {w}", paint(WARN, "[warning]"));
     }
 }
+
+pub fn presets(as_json: bool) -> u8 {
+    use aurora_core::presets::PRESETS;
+    let reg = match registry::load(None) {
+        Ok(reg) => reg,
+        Err(e) => return error(e),
+    };
+    let mut rows = Vec::new();
+    for preset in &PRESETS {
+        let wf = match aurora_core::workflow::parse_workflow_str(preset.toml, Some(&reg), preset.name) {
+            Ok(wf) => wf,
+            Err(e) => return error(e),
+        };
+        rows.push(json!({
+            "name": preset.name,
+            "summary": preset.summary,
+            "assurance": wf.assurance,
+            "roles": wf.roles.iter().map(|r| r.id.clone()).collect::<Vec<_>>(),
+            "stages": wf.stages.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
+        }));
+    }
+    if as_json {
+        print_json(&rows);
+        return 0;
+    }
+    println!("{}", paint(HEAD, "Aurora — Built-in workflow presets"));
+    println!("{}", "-".repeat(65));
+    for row in &rows {
+        let stages: Vec<&str> = row["stages"].as_array().into_iter().flatten().filter_map(|v| v.as_str()).collect();
+        println!("  {:<16} {}", row["name"].as_str().unwrap_or_default(), row["summary"].as_str().unwrap_or_default());
+        println!("  {:<16} stages: {}", "", stages.join(" -> "));
+    }
+    println!("\nCreate an editable copy: aurora workflow init <preset> [--output FILE]");
+    0
+}
+
+pub fn init(name: &str, output: Option<&std::path::Path>) -> u8 {
+    use aurora_core::presets::{PRESETS, get_preset};
+    use std::io::Write;
+    let Some(preset) = get_preset(name) else {
+        let known: Vec<&str> = PRESETS.iter().map(|p| p.name).collect();
+        return error(format!("Unknown preset '{name}'. Known presets: {}", known.join(", ")));
+    };
+    let path = output.map(std::path::Path::to_path_buf).unwrap_or_else(|| format!("{name}.toml").into());
+    // create_new: refuse to overwrite an existing file (and never follow a pre-existing symlink).
+    let file = std::fs::OpenOptions::new().write(true).create_new(true).open(&path);
+    let mut file = match file {
+        Ok(f) => f,
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            return error(format!("'{}' already exists; choose another --output", path.display()));
+        }
+        Err(e) => return error(format!("cannot create '{}': {e}", path.display())),
+    };
+    if let Err(e) = file.write_all(preset.toml.as_bytes()).and_then(|()| file.sync_all()) {
+        return error(format!("cannot write '{}': {e}", path.display()));
+    }
+    println!("{} {} -> {}", paint(OK, "Wrote preset"), preset.name, path.display());
+    println!(
+        "Next: aurora workflow plan {}   (then: aurora workflow start {} --run-root <dir>)",
+        path.display(),
+        path.display()
+    );
+    0
+}

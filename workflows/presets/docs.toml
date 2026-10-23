@@ -1,0 +1,101 @@
+# Aurora built-in preset: docs. Edit freely, then: aurora workflow validate <file>
+# Uses schema v1 extensions (verdict, requires), so it is read by the Rust implementation only.
+schema_version = 1
+
+[workflow]
+id = "docs"
+version = "1.0.0"
+name = "Documentation"
+description = "Outline, draft, verify every claim and sample against the code, and review."
+task_types = ["docs"]
+assurance = "basic"
+
+[roles.documenter]
+responsibility = "Update user-facing docs, changelog and migration notes so they match the change."
+required_skills = ["principles"]
+
+[roles.tester]
+responsibility = "Derive tests from the acceptance criteria, re-run them independently and record exact commands and results."
+required_skills = ["verification-guard"]
+
+[roles.reviewer]
+responsibility = "Review independently: first spec compliance, then code health; label findings by severity."
+required_skills = ["verification-guard", "principles"]
+requires = ["read_only"]
+
+[[stages]]
+id = "outline"
+role = "documenter"
+outputs = ["outline.md"]
+
+  [[stages.acceptance]]
+  id = "audience-and-scope"
+  description = "outline.md names the audience, scope and the questions the docs must answer."
+  evidence = ["outline.md"]
+
+[[stages]]
+id = "draft"
+role = "documenter"
+depends_on = ["outline"]
+inputs = ["outline/outline.md"]
+outputs = ["draft.md"]
+
+  [[stages.acceptance]]
+  id = "draft-complete"
+  description = "draft.md covers every outline item."
+  evidence = ["draft.md"]
+
+[[stages]]
+id = "verify"
+role = "tester"
+depends_on = ["draft"]
+inputs = ["draft/draft.md"]
+outputs = ["verification.md"]
+independent_of = ["draft"]
+
+  [[stages.acceptance]]
+  id = "claims-checked"
+  description = "verification.md records that every code sample ran and every link resolved, and lists claims checked against the code."
+  evidence = ["verification.md"]
+
+[[stages]]
+id = "review"
+role = "reviewer"
+depends_on = ["verify"]
+inputs = ["draft/draft.md", "verify/verification.md"]
+outputs = ["review.md", "review.json"]
+requires_approval = true
+independent_of = ["draft"]
+verdict = "review.json"
+
+  [[stages.acceptance]]
+  id = "reader-ready"
+  description = "review.md checks accuracy and clarity for the named audience; review.json carries the outcome."
+  evidence = ["review.md", "review.json"]
+
+[routing]
+allow_override = true
+
+[routing.roles.documenter]
+eligible = ["claude", "codex", "antigravity"]
+preferred = "claude"
+
+[routing.roles.tester]
+eligible = ["codex", "claude", "antigravity"]
+preferred = "codex"
+
+[routing.roles.reviewer]
+eligible = ["codex", "claude", "antigravity"]
+preferred = "codex"
+
+[[routing.fallback]]
+role = "tester"
+from = "codex"
+to = "claude"
+on = ["unavailable"]
+
+[[routing.fallback]]
+role = "reviewer"
+from = "codex"
+to = "claude"
+on = ["unavailable"]

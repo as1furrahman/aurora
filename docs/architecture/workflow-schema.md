@@ -271,3 +271,24 @@ empty). A soft-only assignment produces a warning that is never silent. The hand
 **Required safeguards** section telling the person how to start the CLI in the restricted mode.
 In manual-handoff mode the person applies the restriction. Aurora never passes these flags itself
 in R1.
+
+### 7.5 Built-in presets
+
+`aurora workflow presets` lists the presets, and `aurora workflow init <preset> [--output FILE]`
+writes an editable copy. `init` never overwrites an existing file. The sources are in
+`workflows/presets/` and are embedded in the binary.
+
+| Preset | Stages | Adopted practice |
+|---|---|---|
+| `feature` | intake → design → implement → verify → review → remediate (optional) → document → accept | testable criteria with no open `[NEEDS CLARIFICATION]`; red→green evidence; trace matrix (V-model); two-pass review with verdict; Definition-of-Done acceptance |
+| `bugfix` | reproduce → root-cause → fix → review → accept | current / expected / **unchanged** behaviour (Kiro); a failing reproduction first; verdict verified / partial / failed |
+| `refactor` | baseline → plan → implement → verify → review | characterization tests; small steps; no behaviour change |
+| `docs` | outline → draft → verify → review | every sample run and link checked against the code |
+| `security-review` | scope → assess (verdict) → second-look (verdict) → report | threat model; fail while any critical or high finding is open; independent second look |
+| `spike` | question → explore → decide | time-boxed; ends in go / needs-clarification / kill (Stage-Gate) |
+
+All presets use the same provider-neutral role taxonomy: analyst, architect, implementer, tester,
+reviewer, security, documenter. Reviewing roles carry `requires = ["read_only"]`. Defaults route
+review and verification to a provider distinct from implementation, which the tests enforce,
+and every preset ends with a human approval gate. `--provider X` still runs every role on one CLI
+and reports the reduced independence.

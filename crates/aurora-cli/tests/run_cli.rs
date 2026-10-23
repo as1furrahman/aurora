@@ -185,3 +185,29 @@ fn waive_via_cli_requires_reason_and_records_it() {
     let text = aurora(&bin, &["workflow", "status", "--run", &run]).stdout;
     assert!(text.contains("[waived] accepted by recorded waiver: plan"), "{text}");
 }
+
+#[test]
+fn presets_list_and_init() {
+    let (t, bin, _root) = setup();
+    let r = aurora(&bin, &["workflow", "presets", "--json"]);
+    assert_eq!(r.code, 0);
+    let list = json(&r.stdout);
+    assert_eq!(list.as_array().expect("array").len(), 6);
+    assert_eq!(list[0]["name"], "feature");
+    assert!(list[0]["stages"].as_array().expect("stages").len() >= 5);
+
+    let out = t.path().join("my-feature.toml");
+    let out_s = out.display().to_string();
+    let r = aurora(&bin, &["workflow", "init", "feature", "--output", &out_s]);
+    assert_eq!(r.code, 0, "{}", r.stderr);
+    assert!(r.stdout.contains("aurora workflow plan"), "{}", r.stdout);
+    let r = aurora(&bin, &["workflow", "validate", &out_s]);
+    assert_eq!(r.code, 0, "{}", r.stdout);
+    let r = aurora(&bin, &["workflow", "init", "feature", "--output", &out_s]);
+    assert_eq!(r.code, 1, "never overwrites");
+    assert!(r.stderr.contains("exists"), "{}", r.stderr);
+    let r =
+        aurora(&bin, &["workflow", "init", "waterfall", "--output", &t.path().join("x.toml").display().to_string()]);
+    assert_eq!(r.code, 1);
+    assert!(r.stderr.contains("feature"), "lists known presets: {}", r.stderr);
+}

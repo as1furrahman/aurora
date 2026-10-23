@@ -1,0 +1,199 @@
+# Aurora built-in preset: feature. Edit freely, then: aurora workflow validate <file>
+# Uses schema v1 extensions (verdict, requires), so it is read by the Rust implementation only.
+schema_version = 1
+
+[workflow]
+id = "feature"
+version = "1.0.0"
+name = "Feature"
+description = "Specify, design, build test-first, verify, review independently, document, and accept."
+task_types = ["feature"]
+assurance = "standard"
+
+[roles.analyst]
+responsibility = "Clarify the problem, scope and acceptance criteria; find prior work; ask instead of guessing."
+required_skills = ["principles"]
+recommended_skills = ["task-router"]
+
+[roles.architect]
+responsibility = "Design the smallest change that meets the criteria; record trade-offs and break the work into small tasks."
+required_skills = ["principles"]
+recommended_skills = ["task-router"]
+
+[roles.implementer]
+responsibility = "Make the change in small, test-first steps without expanding scope."
+required_skills = ["principles"]
+
+[roles.tester]
+responsibility = "Derive tests from the acceptance criteria, re-run them independently and record exact commands and results."
+required_skills = ["verification-guard"]
+
+[roles.reviewer]
+responsibility = "Review independently: first spec compliance, then code health; label findings by severity."
+required_skills = ["verification-guard", "principles"]
+requires = ["read_only"]
+
+[roles.documenter]
+responsibility = "Update user-facing docs, changelog and migration notes so they match the change."
+required_skills = ["principles"]
+
+[[stages]]
+id = "intake"
+role = "analyst"
+outputs = ["spec.md"]
+
+  [[stages.acceptance]]
+  id = "criteria-testable"
+  description = "spec.md states problem, scope, non-goals and acceptance criteria; every criterion is testable and no [NEEDS CLARIFICATION] markers remain."
+  evidence = ["spec.md"]
+
+[[stages]]
+id = "design"
+role = "architect"
+depends_on = ["intake"]
+inputs = ["intake/spec.md"]
+outputs = ["design.md", "tasks.md"]
+
+  [[stages.acceptance]]
+  id = "design-justified"
+  description = "design.md records the approach, rejected alternatives and any complexity that needed justification."
+  evidence = ["design.md"]
+
+  [[stages.acceptance]]
+  id = "tasks-traced"
+  description = "tasks.md breaks the work into small tasks and maps every acceptance criterion to at least one task."
+  evidence = ["tasks.md"]
+
+[[stages]]
+id = "implement"
+role = "implementer"
+depends_on = ["design"]
+inputs = ["intake/spec.md", "design/tasks.md"]
+outputs = ["change-summary.md"]
+max_attempts = 3
+
+  [[stages.acceptance]]
+  id = "red-green"
+  description = "change-summary.md lists the files changed, the failing test run before the change and the passing run after it."
+  evidence = ["change-summary.md"]
+
+[[stages]]
+id = "verify"
+role = "tester"
+depends_on = ["implement"]
+inputs = ["intake/spec.md", "implement/change-summary.md"]
+outputs = ["trace-matrix.md", "test-report.md"]
+independent_of = ["implement"]
+
+  [[stages.acceptance]]
+  id = "criteria-covered"
+  description = "trace-matrix.md maps every acceptance criterion to a test and its recorded result."
+  evidence = ["trace-matrix.md"]
+
+  [[stages.acceptance]]
+  id = "suite-green"
+  description = "test-report.md records the exact command and a full run with zero failures, re-run independently."
+  evidence = ["test-report.md"]
+
+[[stages]]
+id = "review"
+role = "reviewer"
+depends_on = ["verify"]
+inputs = ["intake/spec.md", "design/design.md", "verify/test-report.md"]
+outputs = ["review.md", "review.json"]
+independent_of = ["implement"]
+verdict = "review.json"
+
+  [[stages.acceptance]]
+  id = "spec-compliance"
+  description = "review.md first checks the change against spec.md, criterion by criterion."
+  evidence = ["review.md"]
+
+  [[stages.acceptance]]
+  id = "code-health"
+  description = "review.md then reviews code health; review.json carries the outcome and severity-labelled findings."
+  evidence = ["review.md", "review.json"]
+
+[[stages]]
+id = "remediate"
+role = "implementer"
+depends_on = ["review"]
+inputs = ["review/review.md"]
+outputs = ["remediation.md"]
+optional = true
+
+  [[stages.acceptance]]
+  id = "findings-addressed"
+  description = "remediation.md maps each review finding to a fix or a justified deferral."
+  evidence = ["remediation.md"]
+
+[[stages]]
+id = "document"
+role = "documenter"
+depends_on = ["remediate"]
+inputs = ["intake/spec.md", "implement/change-summary.md"]
+outputs = ["docs-changes.md"]
+
+  [[stages.acceptance]]
+  id = "docs-match"
+  description = "docs-changes.md lists the docs and changelog entries updated to match the change."
+  evidence = ["docs-changes.md"]
+
+[[stages]]
+id = "accept"
+role = "tester"
+depends_on = ["document"]
+inputs = ["verify/trace-matrix.md"]
+outputs = ["final-report.md"]
+requires_approval = true
+independent_of = ["implement"]
+
+  [[stages.acceptance]]
+  id = "definition-of-done"
+  description = "final-report.md confirms a full green run after remediation and that every Definition-of-Done item holds."
+  evidence = ["final-report.md"]
+
+[routing]
+allow_override = true
+
+[routing.roles.analyst]
+eligible = ["claude", "codex", "antigravity"]
+preferred = "claude"
+
+[routing.roles.architect]
+eligible = ["claude", "codex", "antigravity"]
+preferred = "claude"
+
+[routing.roles.implementer]
+eligible = ["claude", "codex", "antigravity"]
+preferred = "claude"
+
+[routing.roles.tester]
+eligible = ["codex", "claude", "antigravity"]
+preferred = "codex"
+
+[routing.roles.reviewer]
+eligible = ["codex", "claude", "antigravity"]
+preferred = "codex"
+
+[routing.roles.documenter]
+eligible = ["claude", "codex", "antigravity"]
+preferred = "claude"
+
+[[routing.fallback]]
+role = "implementer"
+from = "claude"
+to = "codex"
+on = ["unavailable"]
+
+[[routing.fallback]]
+role = "tester"
+from = "codex"
+to = "claude"
+on = ["unavailable"]
+
+[[routing.fallback]]
+role = "reviewer"
+from = "codex"
+to = "claude"
+on = ["unavailable"]

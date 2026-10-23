@@ -1,0 +1,97 @@
+# Aurora built-in preset: security-review. Edit freely, then: aurora workflow validate <file>
+# Uses schema v1 extensions (verdict, requires), so it is read by the Rust implementation only.
+schema_version = 1
+
+[workflow]
+id = "security-review"
+version = "1.0.0"
+name = "Security review"
+description = "Scope and threat-model, assess with severity-labelled findings, and accept only with no unwaived critical or high findings."
+task_types = ["security-review"]
+assurance = "high"
+
+[roles.security]
+responsibility = "Model threats, review for vulnerabilities and supply-chain risk; report findings by severity."
+required_skills = ["verification-guard"]
+requires = ["read_only"]
+
+[roles.reviewer]
+responsibility = "Review independently: first spec compliance, then code health; label findings by severity."
+required_skills = ["verification-guard", "principles"]
+requires = ["read_only"]
+
+[roles.documenter]
+responsibility = "Update user-facing docs, changelog and migration notes so they match the change."
+required_skills = ["principles"]
+
+[[stages]]
+id = "scope"
+role = "security"
+outputs = ["threat-model.md"]
+
+  [[stages.acceptance]]
+  id = "threats-modelled"
+  description = "threat-model.md lists assets, trust boundaries, entry points and the threats considered."
+  evidence = ["threat-model.md"]
+
+[[stages]]
+id = "assess"
+role = "security"
+depends_on = ["scope"]
+inputs = ["scope/threat-model.md"]
+outputs = ["findings.md", "findings.json"]
+max_attempts = 3
+verdict = "findings.json"
+
+  [[stages.acceptance]]
+  id = "findings-recorded"
+  description = "findings.md records scans run, manual checks and every finding with severity; findings.json is fail while any critical or high finding is open."
+  evidence = ["findings.md", "findings.json"]
+
+[[stages]]
+id = "second-look"
+role = "reviewer"
+depends_on = ["assess"]
+inputs = ["scope/threat-model.md", "assess/findings.md"]
+outputs = ["second-look.md", "second-look.json"]
+independent_of = ["assess"]
+verdict = "second-look.json"
+
+  [[stages.acceptance]]
+  id = "independent-check"
+  description = "second-look.md re-checks the highest-risk areas independently of the first assessment."
+  evidence = ["second-look.md", "second-look.json"]
+
+[[stages]]
+id = "report"
+role = "documenter"
+depends_on = ["second-look"]
+inputs = ["assess/findings.md", "second-look/second-look.md"]
+outputs = ["security-report.md"]
+requires_approval = true
+
+  [[stages.acceptance]]
+  id = "report-complete"
+  description = "security-report.md summarises scope, findings, fixes and accepted risks with their owners."
+  evidence = ["security-report.md"]
+
+[routing]
+allow_override = true
+
+[routing.roles.security]
+eligible = ["claude", "codex", "antigravity"]
+preferred = "claude"
+
+[routing.roles.reviewer]
+eligible = ["codex", "claude", "antigravity"]
+preferred = "codex"
+
+[routing.roles.documenter]
+eligible = ["claude", "codex", "antigravity"]
+preferred = "claude"
+
+[[routing.fallback]]
+role = "reviewer"
+from = "codex"
+to = "claude"
+on = ["unavailable"]
