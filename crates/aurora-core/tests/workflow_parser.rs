@@ -66,7 +66,9 @@ fn roles_carry_no_provider_information() {
     // Structural: Role has exactly these fields; providers live only in RoutingPolicy.
     let wf = parse(MINIMAL).expect("valid");
     let role = wf.role("builder").expect("role");
-    let aurora_core::workflow::Role { id, responsibility, required_skills, recommended_skills } = role.clone();
+    let aurora_core::workflow::Role { id, responsibility, required_skills, recommended_skills, requires } =
+        role.clone();
+    assert!(requires.is_empty(), "capability requirements are provider-neutral");
     assert_eq!((id.as_str(), responsibility.as_str()), ("builder", "Build it."));
     assert_eq!(required_skills, vec!["alpha".to_string()]);
     assert!(recommended_skills.is_empty());

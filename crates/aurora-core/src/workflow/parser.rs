@@ -11,13 +11,13 @@ use super::model::{
     ASSURANCE_LEVELS, AcceptanceCriterion, FALLBACK_TRIGGERS, FallbackRule, NOT_APPLICABLE_FILE, ON_EXHAUSTED, Role,
     RoleRouting, RoutingPolicy, SCHEMA_VERSION, Stage, WorkflowDefinition, WorkflowValidationError,
 };
-use crate::providers::{PROVIDER_IDS, is_known_provider};
+use crate::providers::{CAPABILITIES, PROVIDER_IDS, is_known_provider};
 use crate::registry::Registry;
 use crate::util::{is_kebab_id, is_plain_file_name, is_semver, py_list, sha256_hex};
 
 const TOP_KEYS: &[&str] = &["schema_version", "workflow", "roles", "stages", "routing"];
 const WORKFLOW_KEYS: &[&str] = &["id", "version", "name", "description", "task_types", "assurance"];
-const ROLE_KEYS: &[&str] = &["responsibility", "required_skills", "recommended_skills"];
+const ROLE_KEYS: &[&str] = &["responsibility", "required_skills", "recommended_skills", "requires"];
 /// Provider-like keys get a specific message: roles must stay provider-neutral.
 const ROLE_PROVIDER_KEYS: &[&str] =
     &["provider", "providers", "preferred_provider", "eligible_providers", "model", "cli", "eligible", "preferred"];
@@ -243,6 +243,12 @@ fn parse_roles(c: &mut Checker, raw: Option<&Value>, registry: Option<&Registry>
         }
         let required = c.str_list(&loc, &body, "required_skills");
         let recommended = c.str_list(&loc, &body, "recommended_skills");
+        let requires = c.str_list(&loc, &body, "requires");
+        for cap in &requires {
+            if !CAPABILITIES.contains(&cap.as_str()) {
+                c.error(&loc, format!("unknown capability '{cap}'; known: {}", py_list(&CAPABILITIES)));
+            }
+        }
         if let Some(registry) = registry {
             for skill in &required {
                 if registry.get(skill).is_none() {
@@ -261,6 +267,7 @@ fn parse_roles(c: &mut Checker, raw: Option<&Value>, registry: Option<&Registry>
             responsibility,
             required_skills: required,
             recommended_skills: recommended,
+            requires,
         });
     }
     roles

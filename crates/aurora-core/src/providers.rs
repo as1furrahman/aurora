@@ -5,6 +5,8 @@
 //! handoff only; nothing here spawns a process. Facts verified 2026-10-23; sources in
 //! `docs_urls` and `docs/architecture/provider-adapter-contract.md`.
 
+use serde::{Deserialize, Serialize};
+
 use crate::util::py_list;
 
 pub const MANUAL_HANDOFF: &str = "manual-handoff";
@@ -25,6 +27,38 @@ pub struct ProviderSpec {
     pub verified_on: &'static str,
     pub invocation_modes: &'static [&'static str],
     pub headless_enabled: bool,
+    /// How strongly this CLI can enforce each capability a role may require (after the AWS
+    /// CLI Agent Orchestrator tool-restriction table; sources per entry).
+    pub enforcement: &'static [Enforcement],
+}
+
+/// Capabilities a role may require (`requires = [...]`).
+pub const CAPABILITIES: [&str; 2] = ["read_only", "tool_restriction"];
+
+/// `hard`: the CLI itself enforces it. `soft`: only a prompt instruction; Aurora cannot verify it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Strength {
+    Hard,
+    Soft,
+}
+
+impl std::fmt::Display for Strength {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Strength::Hard => "hard",
+            Strength::Soft => "soft",
+        })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Enforcement {
+    pub capability: &'static str,
+    pub strength: Strength,
+    /// Instruction for starting the CLI in the restricted mode (manual handoff).
+    pub how: &'static str,
+    pub source: &'static str,
 }
 
 /// Known providers, sorted by id.
@@ -45,6 +79,20 @@ pub const PROVIDERS: [ProviderSpec; 3] = [
         verified_on: "2026-10-23",
         invocation_modes: &[MANUAL_HANDOFF],
         headless_enabled: false,
+        enforcement: &[
+            Enforcement {
+                capability: "read_only",
+                strength: Strength::Soft,
+                how: "Start `agy --mode plan` and tell it not to modify the workspace; Aurora could not verify that plan mode blocks writes.",
+                source: "https://antigravity.google/docs/cli/reference/",
+            },
+            Enforcement {
+                capability: "tool_restriction",
+                strength: Strength::Soft,
+                how: "Add deny rules for the restricted tools in ~/.gemini/antigravity-cli/settings.json (permissions.deny) and state the restriction in the prompt; Aurora cannot verify them.",
+                source: "https://antigravity.google/docs/cli/commands/permissions/",
+            },
+        ],
     },
     ProviderSpec {
         id: "claude",
@@ -66,6 +114,20 @@ pub const PROVIDERS: [ProviderSpec; 3] = [
         verified_on: "2026-10-23",
         invocation_modes: &[MANUAL_HANDOFF],
         headless_enabled: false,
+        enforcement: &[
+            Enforcement {
+                capability: "read_only",
+                strength: Strength::Hard,
+                how: "Start `claude --permission-mode plan` (plan mode cannot edit files); save its output into the stage's output files yourself.",
+                source: "https://code.claude.com/docs/en/permissions",
+            },
+            Enforcement {
+                capability: "tool_restriction",
+                strength: Strength::Hard,
+                how: "Start `claude --disallowedTools <tools>` to deny the restricted tools.",
+                source: "https://code.claude.com/docs/en/cli-reference",
+            },
+        ],
     },
     ProviderSpec {
         id: "codex",
@@ -88,6 +150,20 @@ pub const PROVIDERS: [ProviderSpec; 3] = [
         verified_on: "2026-10-23",
         invocation_modes: &[MANUAL_HANDOFF],
         headless_enabled: false,
+        enforcement: &[
+            Enforcement {
+                capability: "read_only",
+                strength: Strength::Hard,
+                how: "Start `codex --sandbox read-only` (the sandbox blocks writes); save its output into the stage's output files yourself.",
+                source: "https://learn.chatgpt.com/docs/developer-commands?surface=cli",
+            },
+            Enforcement {
+                capability: "tool_restriction",
+                strength: Strength::Soft,
+                how: "Codex has no per-tool deny flag; state the restriction in the prompt.",
+                source: "https://github.com/awslabs/cli-agent-orchestrator/blob/main/docs/tool-restrictions.md",
+            },
+        ],
     },
 ];
 
@@ -126,6 +202,10 @@ impl ProviderSpec {
             self.display_name,
             self.run_hint
         )
+    }
+
+    pub fn enforcement(&self, capability: &str) -> Option<&'static Enforcement> {
+        self.enforcement.iter().find(|e| e.capability == capability)
     }
 
     /// Direct execution is out of scope for Milestone R1.

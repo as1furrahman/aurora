@@ -31,6 +31,8 @@ pub struct DescribedRole {
     pub responsibility: String,
     pub required_skills: Vec<String>,
     pub recommended_skills: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub requires: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -96,6 +98,7 @@ pub fn describe(wf: &WorkflowDefinition) -> Description {
                     responsibility: r.responsibility.clone(),
                     required_skills: r.required_skills.clone(),
                     recommended_skills: r.recommended_skills.clone(),
+                    requires: r.requires.clone(),
                 };
                 (r.id.clone(), described)
             })

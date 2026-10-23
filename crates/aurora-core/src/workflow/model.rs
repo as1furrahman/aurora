@@ -79,6 +79,8 @@ pub struct Role {
     pub responsibility: String,
     pub required_skills: Vec<String>,
     pub recommended_skills: Vec<String>,
+    /// Capabilities the role needs enforced (e.g. `read_only` for an independent reviewer).
+    pub requires: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

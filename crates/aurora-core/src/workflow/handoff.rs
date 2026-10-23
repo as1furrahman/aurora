@@ -75,6 +75,13 @@ pub fn render_handoff_with_notes(
     lines.push(format!("- Required: {}", or_none(&stage_plan.required_skills)));
     lines.push(format!("- Recommended: {}", or_none(&stage_plan.recommended_skills)));
 
+    if !stage_plan.enforcement.is_empty() {
+        lines.extend(["", "## Required safeguards", ""].map(String::from));
+        for e in &stage_plan.enforcement {
+            lines.push(format!("- {} ({}): {}", e.capability, e.strength, e.how));
+        }
+    }
+
     let task = if stage.description.is_empty() { &stage_plan.responsibility } else { &stage.description };
     lines.extend(["", "## Task", ""].map(String::from));
     lines.push(task.clone());

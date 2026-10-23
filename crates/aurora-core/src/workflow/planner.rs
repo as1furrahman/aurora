@@ -9,7 +9,7 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 use super::model::{Role, Stage, WorkflowDefinition};
-use crate::providers::{PROVIDER_IDS, get_provider, is_known_provider};
+use crate::providers::{PROVIDER_IDS, Strength, get_provider, is_known_provider};
 use crate::registry::Registry;
 use crate::util::py_list;
 
@@ -70,6 +70,10 @@ pub struct PlannedStage {
     pub incompatibilities: Vec<Incompatibility>,
     pub required_skills: Vec<String>,
     pub recommended_skills: Vec<String>,
+    /// Required capabilities and how strongly the assigned provider enforces them (omitted
+    /// when the role requires none, keeping plans identical to the Python plan).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub enforcement: Vec<PlannedEnforcement>,
     pub independence: Vec<Independence>,
     pub handoff_path: String,
     pub inputs: Vec<String>,
@@ -112,6 +116,14 @@ pub struct Independence {
     pub stage_provider: String,
     pub other_provider: String,
     pub status: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlannedEnforcement {
+    pub capability: String,
+    pub strength: Strength,
+    pub how: String,
+    pub source: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -307,6 +319,7 @@ fn plan_stage(
         responsibility: String::new(),
         required_skills: Vec::new(),
         recommended_skills: Vec::new(),
+        requires: Vec::new(),
     });
     let eligible: Vec<String> = wf.routing.role(&stage.role).map(|r| r.eligible.clone()).unwrap_or_default();
     let preferred = wf.routing.role(&stage.role).map(|r| r.preferred.clone()).unwrap_or_default();
@@ -367,6 +380,25 @@ fn plan_stage(
     for item in incompatibilities(&provider, registry, &role.recommended_skills) {
         warnings.push(format!("recommended skill '{}' is not compatible with provider '{provider}'", item.skill));
     }
+    let mut enforcement = Vec::new();
+    if let Ok(spec) = get_provider(&provider) {
+        for cap in &role.requires {
+            let Some(e) = spec.enforcement(cap) else { continue };
+            if e.strength == Strength::Soft {
+                warnings.push(format!(
+                    "provider '{provider}' enforces '{cap}' only softly (a prompt instruction, not a CLI control); \
+                     prefer a provider with hard enforcement for role '{}'",
+                    role.id
+                ));
+            }
+            enforcement.push(PlannedEnforcement {
+                capability: cap.clone(),
+                strength: e.strength,
+                how: e.how.to_string(),
+                source: e.source.to_string(),
+            });
+        }
+    }
     if let Some(detected) = detected
         && !detected.get(&provider).copied().unwrap_or(false)
     {
@@ -391,6 +423,7 @@ fn plan_stage(
         incompatibilities: incompat,
         required_skills: role.required_skills.clone(),
         recommended_skills: role.recommended_skills.clone(),
+        enforcement,
         independence: Vec::new(),
         handoff_path: format!("handoff/{}.md", stage.id),
         inputs: stage

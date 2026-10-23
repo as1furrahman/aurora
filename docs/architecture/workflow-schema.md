@@ -246,3 +246,28 @@ PENDING, RUNNING and PASSED stages cannot be waived.
 - `run.json` may contain `gates: {<stage>: {outcome, findings, waiver?}}`. It is omitted when empty.
 - `status --json` may contain `concerns: [...]` and `waived: [...]`. Both are omitted when empty,
   so status output for runs without gates matches Python exactly.
+
+### 7.4 Capability requirements and enforcement strength
+
+```toml
+[roles.reviewer]
+responsibility = "Independently review the change."
+requires = ["read_only"]        # known: read_only, tool_restriction
+```
+
+A role may require capabilities. That keeps it provider-neutral: it says *what* must hold,
+not *which* CLI. Each provider declares how strongly it enforces each capability, with a cited
+source (`aurora providers --json`). The table follows AWS CLI Agent Orchestrator's documented
+tool-restriction findings.
+
+| Provider | `read_only` | `tool_restriction` |
+|---|---|---|
+| claude | **hard**: `claude --permission-mode plan` | **hard**: `--disallowedTools` |
+| codex | **hard**: `codex --sandbox read-only` | soft: no per-tool deny flag |
+| antigravity | soft: `agy --mode plan` (blocking not verified) | soft: settings deny rules, not verifiable by Aurora |
+
+The plan records `enforcement: [{capability, strength, how, source}]` for each stage (omitted when
+empty). A soft-only assignment produces a warning that is never silent. The handoff gains a
+**Required safeguards** section telling the person how to start the CLI in the restricted mode.
+In manual-handoff mode the person applies the restriction. Aurora never passes these flags itself
+in R1.
