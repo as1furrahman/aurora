@@ -12,6 +12,8 @@ use aurora_core::catalog::{Catalog, Tier};
 use aurora_core::presets::PRESETS;
 use aurora_core::providers::PROVIDER_IDS;
 use aurora_core::workflow::WorkflowDefinition;
+use aurora_skills::apply::UndoReport;
+use aurora_skills::plan::ActionKind;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::keymap::{Ctx, resolve};
@@ -49,18 +51,46 @@ pub enum Action {
     CycleProfile,
     /// Give the selected stage's role slot to the next CLI not already in the profile.
     CycleCli,
+    /// Mark the selected entry reviewed for this session (`--reviewed`).
+    MarkReviewed,
+    /// Read the selected entry's flagged files (or its SKILL.md).
+    OpenReview,
+    /// Ask to apply the plan.
+    StartApply,
+    /// Ask to undo the last operation.
+    StartUndo,
+    /// Confirm the open dialog.
+    ConfirmYes,
 }
 
 /// Work for the event loop to run off the UI thread.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum Command {
-    Plan { generation: u64, request: InstallRequest },
+    Plan {
+        generation: u64,
+        request: InstallRequest,
+    },
+    /// Apply exactly this plan; `reviewed` must cover every entry that needs review.
+    Apply {
+        planned: Box<Planned>,
+        reviewed: Vec<String>,
+    },
+    Undo {
+        project: PathBuf,
+    },
 }
 
 /// Results coming back from the event loop.
 #[derive(Debug)]
 pub enum Msg {
-    Planned { generation: u64, result: Result<Planned, String> },
+    Planned {
+        generation: u64,
+        /// Boxed: a plan is large and the other messages are small.
+        result: Box<Result<Planned, String>>,
+    },
+    /// A one-line outcome, or why nothing was applied.
+    Applied(Result<String, String>),
+    Undone(Result<UndoReport, String>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -104,10 +134,33 @@ pub enum Focus {
     Detail,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum Popup {
-    Help { scroll: u16 },
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConfirmOp {
+    Apply,
+    Undo,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Popup {
+    Help {
+        scroll: u16,
+    },
+    /// A yes/no question; only `y` confirms.
+    Confirm {
+        op: ConfirmOp,
+        title: String,
+        lines: Vec<String>,
+    },
+    /// Read-only text (flagged files, handoffs).
+    Viewer {
+        title: String,
+        text: String,
+        scroll: u16,
+    },
+}
+
+/// Event-loop ticks a toast stays visible (100 ms each).
+const TOAST_TICKS: u64 = 60;
 
 /// What the TUI works on; the same inputs as the `aurora skills` commands.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -162,6 +215,13 @@ pub struct App {
     pub with: Vec<String>,
     /// Event-loop iterations, for the spinner.
     pub ticks: u64,
+    /// Entries the user marked reviewed this session.
+    pub reviewed: Vec<String>,
+    /// An apply or undo is running.
+    pub busy: Option<&'static str>,
+    /// The outcome of the last apply or undo, kept after its toast fades.
+    pub last_result: Option<String>,
+    toast: Option<(String, u64)>,
     generation: u64,
     commands: VecDeque<Command>,
     popups: Vec<Popup>,
@@ -186,6 +246,10 @@ impl App {
             loading: false,
             with: Vec::new(),
             ticks: 0,
+            reviewed: Vec::new(),
+            busy: None,
+            last_result: None,
+            toast: None,
             generation: 0,
             commands: VecDeque::new(),
             popups: Vec::new(),
@@ -232,7 +296,7 @@ impl App {
                     return;
                 }
                 self.loading = false;
-                match result {
+                match *result {
                     Ok(planned) => {
                         self.planned = Some(planned);
                         self.plan_error = None;
@@ -241,7 +305,52 @@ impl App {
                 }
                 self.clamp();
             }
+            Msg::Applied(result) => {
+                self.busy = None;
+                match result {
+                    Ok(msg) => {
+                        self.reviewed.clear();
+                        self.record(msg);
+                    }
+                    Err(e) => self.record(format!("not applied: {e}")),
+                }
+                self.request_plan();
+            }
+            Msg::Undone(result) => {
+                self.busy = None;
+                match result {
+                    Ok(r) => {
+                        let skipped = if r.skipped.is_empty() {
+                            String::new()
+                        } else {
+                            format!("; {} skipped (changed since)", r.skipped.len())
+                        };
+                        self.record(format!("Restored {} items from operation {}{skipped}", r.restored.len(), r.op_id));
+                    }
+                    Err(e) => self.record(format!("not undone: {e}")),
+                }
+                self.request_plan();
+            }
         }
+    }
+
+    fn record(&mut self, msg: String) {
+        self.last_result = Some(msg.clone());
+        self.notify(msg);
+    }
+
+    fn notify(&mut self, msg: impl Into<String>) {
+        self.toast = Some((msg.into(), self.ticks + TOAST_TICKS));
+    }
+
+    /// The current toast, if it has not expired.
+    pub fn toast(&self) -> Option<&str> {
+        self.toast.as_ref().filter(|(_, until)| self.ticks < *until).map(|(m, _)| m.as_str())
+    }
+
+    /// The topmost popup.
+    pub fn popup(&self) -> Option<&Popup> {
+        self.popups.last()
     }
 
     pub fn tick(&mut self) {
@@ -253,6 +362,7 @@ impl App {
         let lens = [
             (Tab::Skills, crate::screens::skills::rows(self).len()),
             (Tab::Roles, crate::screens::roles::rows(self).len()),
+            (Tab::Install, crate::screens::install::rows(self).len()),
         ];
         for (tab, len) in lens {
             let c = &mut self.cursor[tab.index()];
@@ -284,10 +394,13 @@ impl App {
     pub fn ctx(&self) -> Ctx {
         if self.filter_edit.is_some() {
             Ctx::Filter
-        } else if self.help_open() {
-            Ctx::Help
         } else {
-            Ctx::Normal
+            match self.popups.last() {
+                Some(Popup::Help { .. }) => Ctx::Help,
+                Some(Popup::Confirm { .. }) => Ctx::Confirm,
+                Some(Popup::Viewer { .. }) => Ctx::Viewer,
+                None => Ctx::Normal,
+            }
         }
     }
 
@@ -355,8 +468,111 @@ impl App {
             Action::CyclePreset => self.cycle_preset(),
             Action::CycleProfile => self.cycle_profile(),
             Action::CycleCli => self.cycle_cli(),
+            Action::MarkReviewed => self.mark_reviewed(),
+            Action::OpenReview => self.open_review(),
+            Action::StartApply => self.start_apply(),
+            Action::StartUndo => self.start_undo(),
+            Action::ConfirmYes => self.confirm_yes(),
         }
         self.clamp();
+    }
+
+    fn selected_action(&self) -> Option<aurora_skills::plan::Action> {
+        crate::screens::install::rows(self).into_iter().nth(self.cursor[Tab::Install.index()])
+    }
+
+    fn mark_reviewed(&mut self) {
+        let Some(a) = self.selected_action() else { return };
+        if !a.needs_review {
+            self.notify(format!("{} needs no review", a.entry));
+        } else if let Some(i) = self.reviewed.iter().position(|r| *r == a.entry) {
+            self.reviewed.remove(i);
+            self.notify(format!("{} no longer marked reviewed", a.entry));
+        } else {
+            self.reviewed.push(a.entry.clone());
+            self.notify(format!("{} marked reviewed for this session", a.entry));
+        }
+    }
+
+    fn open_review(&mut self) {
+        let (Some(a), Some(p)) = (self.selected_action(), &self.planned) else { return };
+        let Some(tree) = p.contents.get(&a.entry) else {
+            self.notify(format!("{} has no files to read here", a.target));
+            return;
+        };
+        let wanted: Vec<String> = match p.review_files.get(&a.entry) {
+            Some(files) => files.clone(),
+            None => vec!["SKILL.md".to_string()],
+        };
+        let mut text = String::new();
+        for path in &wanted {
+            let body = tree
+                .file(path)
+                .and_then(|f| f.content.as_deref())
+                .map(|b| String::from_utf8_lossy(b).into_owned())
+                .unwrap_or_else(|| "(not readable)".into());
+            text.push_str(&format!("── {path} ──\n{body}\n"));
+        }
+        let title = format!(" {} — {} (verified copy; Esc closes) ", a.entry, wanted.join(", "));
+        self.popups.push(Popup::Viewer { title, text, scroll: 0 });
+    }
+
+    fn start_apply(&mut self) {
+        if let Some(b) = self.busy {
+            return self.notify(format!("busy: {b}…"));
+        }
+        let Some(p) = &self.planned else { return self.notify("no plan yet") };
+        let unreviewed = p.unreviewed(&self.reviewed);
+        if !unreviewed.is_empty() {
+            return self
+                .notify(format!("review {} first (Enter shows the files, r marks reviewed)", unreviewed.join(", ")));
+        }
+        if !p.plan.changed {
+            return self.notify("Nothing to do: the project already matches the plan.");
+        }
+        let changes: Vec<String> = p
+            .plan
+            .actions
+            .iter()
+            .filter(|a| matches!(a.kind, ActionKind::Create | ActionKind::Update | ActionKind::Remove))
+            .map(|a| format!("{} {}", format!("{:?}", a.kind).to_lowercase(), a.target))
+            .collect();
+        let mut lines: Vec<String> = changes.iter().take(14).cloned().collect();
+        if changes.len() > 14 {
+            lines.push(format!("… and {} more", changes.len() - 14));
+        }
+        lines.push(String::new());
+        lines.push("Journaled under .aurora/ops/; undo with u. Nothing is ever deleted.".into());
+        let title = format!(" Apply {} changes to {}? ", p.change_count(), p.project.display());
+        self.popups.push(Popup::Confirm { op: ConfirmOp::Apply, title, lines });
+    }
+
+    fn start_undo(&mut self) {
+        if let Some(b) = self.busy {
+            return self.notify(format!("busy: {b}…"));
+        }
+        let title = format!(" Undo the last Aurora operation in {}? ", self.opts.project.display());
+        let lines = vec![
+            "Restores what the last apply changed, where it is unchanged since.".to_string(),
+            "Removed copies are moved aside under .aurora/ops/, not deleted.".to_string(),
+        ];
+        self.popups.push(Popup::Confirm { op: ConfirmOp::Undo, title, lines });
+    }
+
+    fn confirm_yes(&mut self) {
+        let Some(Popup::Confirm { op, .. }) = self.popups.pop() else { return };
+        match op {
+            ConfirmOp::Apply => {
+                let Some(p) = &self.planned else { return };
+                self.busy = Some("applying");
+                self.commands
+                    .push_back(Command::Apply { planned: Box::new(p.clone()), reviewed: self.reviewed.clone() });
+            }
+            ConfirmOp::Undo => {
+                self.busy = Some("undoing");
+                self.commands.push_back(Command::Undo { project: self.opts.project.clone() });
+            }
+        }
     }
 
     fn cycle_preset(&mut self) {
@@ -422,10 +638,13 @@ impl App {
     }
 
     fn scroll(&mut self, action: Action) {
-        if let Some(Popup::Help { scroll }) = self.popups.last_mut() {
+        if let Some(Popup::Help { scroll } | Popup::Viewer { scroll, .. }) = self.popups.last_mut() {
             *scroll = match action {
                 Action::Down => scroll.saturating_add(1),
                 Action::Up => scroll.saturating_sub(1),
+                Action::PageDown => scroll.saturating_add(15),
+                Action::PageUp => scroll.saturating_sub(15),
+                Action::Top => 0,
                 _ => *scroll,
             };
             return;

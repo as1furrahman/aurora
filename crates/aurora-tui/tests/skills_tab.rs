@@ -12,7 +12,7 @@ fn loaded(f: &common::Fixture) -> App {
     let mut app = App::new(f.options());
     let Some(Command::Plan { generation, request }) = app.take_command() else { panic!("startup queues a plan") };
     assert_eq!(request, f.request(&[]));
-    app.receive(Msg::Planned { generation, result: aurora_app::install::plan_install(&request) });
+    app.receive(Msg::Planned { generation, result: Box::new(aurora_app::install::plan_install(&request)) });
     app
 }
 
@@ -85,7 +85,7 @@ fn toggling_an_opt_in_entry_replans_with_it() {
     press(&mut app, &[KeyCode::Char('i')]);
     let Some(Command::Plan { generation, request }) = app.take_command() else { panic!("re-plan") };
     assert_eq!(request.with, ["extra"]);
-    app.receive(Msg::Planned { generation, result: aurora_app::install::plan_install(&request) });
+    app.receive(Msg::Planned { generation, result: Box::new(aurora_app::install::plan_install(&request)) });
     let extra = rows(&app).into_iter().find(|r| r.id == "extra").expect("extra");
     assert_eq!(extra.cells[1], Cell::Create, "the tester role runs on codex");
 
@@ -93,7 +93,7 @@ fn toggling_an_opt_in_entry_replans_with_it() {
     press(&mut app, &[KeyCode::Char('i')]);
     let Some(Command::Plan { generation: newer, request }) = app.take_command() else { panic!("re-plan") };
     assert!(request.with.is_empty());
-    app.receive(Msg::Planned { generation: newer - 1, result: Err("stale".into()) });
+    app.receive(Msg::Planned { generation: newer - 1, result: Box::new(Err("stale".into())) });
     assert!(!screen(&app, 110, 24).contains("stale"));
 }
 
@@ -122,7 +122,10 @@ fn a_plan_error_is_shown_with_a_retry_key() {
     let f = fixture();
     let mut app = App::new(f.options());
     let Some(Command::Plan { generation, .. }) = app.take_command() else { panic!("plan") };
-    app.receive(Msg::Planned { generation, result: Err("cannot fetch https://github.com/x: offline".into()) });
+    app.receive(Msg::Planned {
+        generation,
+        result: Box::new(Err("cannot fetch https://github.com/x: offline".into())),
+    });
     let s = screen(&app, 110, 24);
     assert!(s.contains("cannot fetch") && s.contains("r retry"), "{s}");
     press(&mut app, &[KeyCode::Char('r')]);
@@ -145,7 +148,7 @@ fn skills_in_a_shared_directory_show_as_leaks() {
     let opts = aurora_tui::app::TuiOptions { clis: vec!["codex".into(), "antigravity".into()], ..f.options() };
     let mut app = App::new(opts);
     let Some(Command::Plan { generation, request }) = app.take_command() else { panic!("plan") };
-    app.receive(Msg::Planned { generation, result: aurora_app::install::plan_install(&request) });
+    app.receive(Msg::Planned { generation, result: Box::new(aurora_app::install::plan_install(&request)) });
     let checker = rows(&app).into_iter().find(|r| r.id == "checker").expect("checker");
     assert_eq!(checker.cells, [Cell::Leak, Cell::Create]);
 }

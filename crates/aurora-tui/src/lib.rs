@@ -18,16 +18,31 @@ use ratatui::crossterm::event::{self, Event, KeyEventKind};
 
 use crate::app::{Command, Msg};
 
+/// Do the work of `cmd` (blocking) and describe the outcome. Apply re-checks the project
+/// boundary and the review gate, as `aurora skills apply` does, before touching anything.
+pub fn execute(cmd: Command) -> Msg {
+    use aurora_app::install::{apply_planned, check_project, new_op_id, plan_install, undo_project};
+    match cmd {
+        Command::Plan { generation, request } => Msg::Planned { generation, result: Box::new(plan_install(&request)) },
+        Command::Apply { planned, reviewed } => Msg::Applied((|| {
+            check_project(&planned.project)?;
+            let unreviewed = planned.unreviewed(&reviewed);
+            if !unreviewed.is_empty() {
+                return Err(format!("{} still need review", unreviewed.join(", ")));
+            }
+            let id = new_op_id();
+            apply_planned(&planned, &id).map_err(|e| e.to_string())?;
+            Ok(format!("Applied {} changes (operation {id}). u undoes.", planned.change_count()))
+        })()),
+        Command::Undo { project } => Msg::Undone(undo_project(&project, None)),
+    }
+}
+
 /// Run `cmd` on a worker thread; its result comes back over `tx`.
 fn spawn(cmd: Command, tx: Sender<Msg>) {
     std::thread::spawn(move || {
-        let msg = match cmd {
-            Command::Plan { generation, request } => {
-                Msg::Planned { generation, result: aurora_app::install::plan_install(&request) }
-            }
-        };
         // The UI may have quit; nothing to report to.
-        let _ = tx.send(msg);
+        let _ = tx.send(execute(cmd));
     });
 }
 

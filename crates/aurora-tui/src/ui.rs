@@ -7,7 +7,7 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Wrap};
 
-use crate::app::{App, Focus, Tab};
+use crate::app::{App, Focus, Popup, Tab};
 use crate::keymap::{Binding, Ctx, bindings, footer_for};
 
 pub const MIN_WIDTH: u16 = 60;
@@ -82,9 +82,43 @@ pub fn render(f: &mut Frame, app: &App) {
 
     render_body(f, app, body, theme);
     render_footer(f, app, foot, theme);
-    if app.help_open() {
-        render_help(f, app, area, theme);
+    match app.popup() {
+        Some(Popup::Help { .. }) => render_help(f, app, area, theme),
+        Some(Popup::Confirm { title, lines, .. }) => render_confirm(f, area, title, lines, theme),
+        Some(Popup::Viewer { title, text, scroll }) => render_viewer(f, area, title, text, *scroll, theme),
+        None => {}
     }
+}
+
+fn render_confirm(f: &mut Frame, area: Rect, title: &str, lines: &[String], theme: Theme) {
+    let mut text: Vec<Line> = lines.iter().map(|l| Line::raw(l.clone())).collect();
+    text.push(Line::raw(""));
+    text.push(Line::from(vec![
+        Span::styled("y", theme.accent()),
+        Span::raw(" apply    "),
+        Span::styled("n", theme.accent()),
+        Span::raw(" / Esc / Enter cancel (the default is No)"),
+    ]));
+    let h = (text.len() as u16 + 2).min(area.height.saturating_sub(2));
+    let rect = centered(area, area.width.saturating_sub(8).min(96), h);
+    f.render_widget(Clear, rect);
+    f.render_widget(
+        Paragraph::new(text)
+            .wrap(Wrap { trim: false })
+            .block(Block::default().borders(Borders::ALL).title(title.to_string()).border_style(theme.focused())),
+        rect,
+    );
+}
+
+fn render_viewer(f: &mut Frame, area: Rect, title: &str, text: &str, scroll: u16, theme: Theme) {
+    let rect = centered(area, area.width.saturating_sub(4), area.height.saturating_sub(2));
+    f.render_widget(Clear, rect);
+    f.render_widget(
+        Paragraph::new(text.to_string())
+            .scroll((scroll, 0))
+            .block(Block::default().borders(Borders::ALL).title(title.to_string()).border_style(theme.focused())),
+        rect,
+    );
 }
 
 fn pane(title: &str, focused: bool, theme: Theme) -> Block<'static> {
@@ -135,7 +169,8 @@ fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
     match app.tab {
         Tab::Skills if app.planned.is_some() => crate::screens::skills::render_list(f, app, area, theme),
         Tab::Roles if app.planned.is_some() => crate::screens::roles::render_list(f, app, area, theme),
-        Tab::Skills | Tab::Roles => {
+        Tab::Install if app.planned.is_some() => crate::screens::install::render_list(f, app, area, theme),
+        Tab::Skills | Tab::Roles | Tab::Install => {
             f.render_widget(Paragraph::new(Span::styled("Planning the install…", theme.dim())), area)
         }
         _ => f.render_widget(Paragraph::new(Span::styled("Nothing loaded yet.", theme.dim())), area),
@@ -146,6 +181,7 @@ fn render_detail(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
     match app.tab {
         Tab::Skills => crate::screens::skills::render_detail(f, app, area, theme),
         Tab::Roles => crate::screens::roles::render_detail(f, app, area, theme),
+        Tab::Install => crate::screens::install::render_detail(f, app, area, theme),
         _ => f.render_widget(Paragraph::new(Span::styled("Nothing loaded yet.", theme.dim())), area),
     }
 }
@@ -166,6 +202,13 @@ fn key_spans(binds: &[&Binding], theme: Theme) -> Vec<Span<'static>> {
 fn render_footer(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
     let ctx = app.ctx();
     let mut spans = Vec::new();
+    if let Some(msg) = app.toast() {
+        spans.push(Span::styled(format!("▌ {msg}"), theme.accent()));
+        spans.push(Span::raw("   "));
+    } else if let Some(b) = app.busy {
+        spans.push(Span::styled(format!("▌ {b}…"), theme.accent()));
+        spans.push(Span::raw("   "));
+    }
     if ctx == Ctx::Filter {
         spans.push(Span::styled(format!("/{}▏", app.filter()), theme.accent()));
         spans.push(Span::raw("   "));
@@ -188,7 +231,7 @@ pub fn centered(area: Rect, w: u16, h: u16) -> Rect {
 
 /// The help overlay's lines: every binding, the current tab's first, grouped by context.
 pub fn help_lines(app: &App) -> Vec<(Option<&'static str>, String)> {
-    let mut order = vec![app.tab.ctx(), Ctx::Normal, Ctx::Filter, Ctx::Help, Ctx::Global];
+    let mut order = vec![app.tab.ctx(), Ctx::Normal, Ctx::Filter, Ctx::Help, Ctx::Confirm, Ctx::Viewer, Ctx::Global];
     for tab in Tab::ALL {
         if !order.contains(&tab.ctx()) {
             order.push(tab.ctx());

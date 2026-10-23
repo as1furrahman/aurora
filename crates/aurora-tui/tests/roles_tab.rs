@@ -10,7 +10,7 @@ use ratatui::crossterm::event::KeyCode;
 
 fn run_plan(app: &mut App) -> aurora_app::install::InstallRequest {
     let Some(Command::Plan { generation, request }) = app.take_command() else { panic!("a plan was queued") };
-    app.receive(Msg::Planned { generation, result: aurora_app::install::plan_install(&request) });
+    app.receive(Msg::Planned { generation, result: Box::new(aurora_app::install::plan_install(&request)) });
     request
 }
 
