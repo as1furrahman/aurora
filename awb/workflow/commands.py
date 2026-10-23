@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 from awb.config import Config
-from awb.errors import AWBError
+from awb.errors import AWBError, SafetyError
 from awb.providers import PROVIDERS
 from awb.registry.parser import load_registry
 from awb.registry.schema import RegistryManifest
@@ -96,7 +96,7 @@ def _cmd_validate(args, config: Config) -> int:
             for err in e.errors:
                 print(f"  - {err}")
         return 1
-    except AWBError as e:
+    except (AWBError, SafetyError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     if args.json:
@@ -140,7 +140,7 @@ def describe(wf: WorkflowDefinition) -> dict:
 def _cmd_show(args, config: Config) -> int:
     try:
         wf, _ = _load(args, config)
-    except AWBError as e:
+    except (AWBError, SafetyError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     data = describe(wf)
@@ -225,7 +225,7 @@ def print_plan(plan: dict) -> None:
 def _cmd_plan(args, config: Config) -> int:
     try:
         _, plan = plan_from_args(args, config)
-    except AWBError as e:
+    except (AWBError, SafetyError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     if args.json:
@@ -245,7 +245,7 @@ def _cmd_start(args, config: Config) -> int:
             args.file, args.run_root, registry=registry, provider_override=args.provider, routes=routes,
             detected=None if args.no_detect else detect_providers(), run_id=args.run_id,
         )
-    except AWBError as e:
+    except (AWBError, SafetyError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     issued = [sid for sid, st in record["stages"].items() if st["handoff"]]
@@ -293,7 +293,7 @@ def print_status(report: dict) -> None:
 def _report(args, fn) -> int:
     try:
         report = fn()
-    except AWBError as e:
+    except (AWBError, SafetyError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     if args.json:
@@ -318,7 +318,7 @@ def _cmd_submit(args, config: Config) -> int:
 
     try:
         result = submit(args.run, args.stage, met=args.met, not_applicable=args.not_applicable)
-    except AWBError as e:
+    except (AWBError, SafetyError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     if args.json:
@@ -340,7 +340,7 @@ def _cmd_approve(args, config: Config) -> int:
 
     try:
         result = approve(args.run, args.stage, by=args.by)
-    except AWBError as e:
+    except (AWBError, SafetyError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     if args.json:

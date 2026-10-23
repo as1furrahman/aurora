@@ -36,7 +36,7 @@ outputs = ["plan.md"]             # bare file names; at least one
 optional = false                  # optional stages may become NOT_APPLICABLE
 max_attempts = 2                  # 1..10; failed submissions allowed before BLOCKED
 on_exhausted = "escalate"         # escalate | block
-requires_approval = false         # human approval required before PASSED
+requires_approval = false         # human approval required before PASSED (not allowed with optional = true)
 independent_of = []               # stage ids whose provider must differ for full independence
 
   [[stages.acceptance]]           # at least one per stage
@@ -145,7 +145,9 @@ RUNNING/FAILED (optional stage) ──submit --not-applicable + justification─
   - otherwise → `FAILED` with an explicit `missing` list, or `BLOCKED` once `max_attempts` is reached
 - **An exit code never appears in this decision.**
 - **Approve** (`aurora workflow approve --run R --stage S --by NAME`) only applies to a stage that is
-  awaiting approval.
+  awaiting approval. It re-hashes the evidence first and refuses if anything changed. Submitting again
+  while awaiting approval re-evaluates the gate (the way out after evidence changes) and never skips
+  approval.
 - `SKIPPED` is reserved in the v1 enum. The v1 engine never produces it.
 - **Run complete** means every non-optional stage is `PASSED`, every optional stage is `PASSED`
   or `NOT_APPLICABLE`, and no accepted evidence has drifted since acceptance.
@@ -159,8 +161,14 @@ RUNNING/FAILED (optional stage) ──submit --not-applicable + justification─
   an existing bundle whose content differs (a warning is recorded instead);
 - re-hash the evidence of `PASSED` stages and report **evidence drift** without changing state.
 
-All writes are atomic, and bundles are written before the record. A crash at any point leaves
-either the old record (the next resume re-issues identical bundles idempotently) or the new record.
+All writes are atomic. `start` saves the initial record before issuing any bundle, and later
+commands write bundles before the record that references them. A crash at any point leaves a valid
+record: either the old one, so the next command or `resume` re-issues identical bundles idempotently,
+or the new one. `start` validates, plans and pins the same definition bytes.
+
+**Known limitation (v1):** a `PASSED` stage whose evidence later drifts makes the run permanently
+incomplete. Drift is reported, but there is no re-open transition yet. Handoff bundles also embed the
+absolute run path, so moving a run directory makes unedited bundles look edited.
 
 ## 6. Run record (`run.json`, `schema_version = 1`)
 

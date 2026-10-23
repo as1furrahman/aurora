@@ -259,8 +259,9 @@ class TestOptionalApprovalAndCompletion(RunTestCase):
         self.assertEqual(result["state"], "RUNNING")
         self.assertTrue(result["awaiting_approval"])
         self.assertFalse(engine.status(run_dir)["complete"])
-        with self.assertRaises(RunError):
-            engine.submit(run_dir, "final-verify", met=["final-suite-green"], now=FROZEN)
+        # Resubmitting while awaiting approval re-evaluates the gate; it never skips approval.
+        again = engine.submit(run_dir, "final-verify", met=["final-suite-green"], now=FROZEN)
+        self.assertEqual((again["state"], again["awaiting_approval"]), ("RUNNING", True))
 
         engine.approve(run_dir, "final-verify", by="reviewer@example", now=FROZEN)
         status = engine.status(run_dir)
@@ -422,3 +423,82 @@ class TestRunCLI(RunTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReviewRegressions(RunTestCase):
+    """Regressions for findings from the independent code review (2026-10-23)."""
+
+    APPROVAL = MINIMAL.replace('independent_of = ["build"]\n', 'independent_of = ["build"]\nrequires_approval = true\n')
+
+    def test_gate_satisfied_after_failure_can_be_approved(self):
+        run_dir, _ = self.minimal(self.APPROVAL)
+        self.pass_stage(run_dir, "build", ["out.md"], ["built"])
+        engine.submit(run_dir, "check", met=[], now=FROZEN)
+        result = self.pass_stage(run_dir, "check", ["check.md"], ["checked"])
+        self.assertEqual((result["state"], result["awaiting_approval"]), ("RUNNING", True))
+        self.assertEqual(engine.approve(run_dir, "check", by="me", now=FROZEN)["state"], "PASSED")
+
+    def test_drift_while_awaiting_approval_can_be_resubmitted(self):
+        run_dir, _ = self.minimal(self.APPROVAL)
+        self.pass_stage(run_dir, "build", ["out.md"], ["built"])
+        path = self.produce(run_dir, "check", "check.md", "v1\n")
+        engine.submit(run_dir, "check", met=["checked"], now=FROZEN)
+        path.write_text("v2\n", encoding="utf-8")
+        with self.assertRaises(RunIntegrityError):
+            engine.approve(run_dir, "check", by="me", now=FROZEN)
+        result = engine.submit(run_dir, "check", met=["checked"], now=FROZEN)
+        self.assertTrue(result["awaiting_approval"])
+        self.assertEqual(engine.approve(run_dir, "check", by="me", now=FROZEN)["state"], "PASSED")
+        stage = runs.load_record(run_dir)["stages"]["check"]
+        self.assertEqual(stage["evidence"]["artifacts/check/check.md"], hashlib.sha256(b"v2\n").hexdigest())
+
+    def test_failed_start_leaves_a_resumable_or_no_run(self):
+        with mock.patch.object(engine, "_advance", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                self.start(run_id="crash")
+        run_dir = self.root / "crash"
+        self.assertEqual(self.states(run_dir)["plan"], "PENDING")
+        engine.resume(run_dir, now=FROZEN)
+        self.assertEqual(self.states(run_dir)["plan"], "RUNNING")
+        self.assertTrue((run_dir / "handoff" / "plan.md").is_file())
+
+    def test_start_pins_exactly_the_bytes_it_validated(self):
+        src = Path(self.tmp.name) / "wf.toml"
+        src.write_bytes(EXAMPLE.read_bytes())
+        real_read = Path.read_bytes
+        calls = {"n": 0}
+
+        def changing_read(path):
+            data = real_read(path)
+            if path == src:
+                calls["n"] += 1
+                if calls["n"] > 1:
+                    return data + b"\n# changed underneath\n"
+            return data
+
+        with mock.patch.object(Path, "read_bytes", changing_read):
+            run_dir, record = self.start(definition=src, run_id="pin")
+        self.assertEqual(hashlib.sha256((run_dir / "workflow.toml").read_bytes()).hexdigest(),
+                         record["workflow"]["sha256"])
+
+    def test_cli_reports_safety_errors_without_traceback(self):
+        fake_global = Path(self.tmp.name) / "fake-global-skills"
+        fake_global.mkdir()
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(boundaries, "GLOBAL_AGENT_SKILL_PATHS", [fake_global]), \
+                redirect_stdout(out), redirect_stderr(err), mock.patch("shutil.which", return_value=None):
+            code = main(["workflow", "start", str(EXAMPLE), "--run-root", str(fake_global), "--run-id", "x"])
+        self.assertEqual(code, 1)
+        self.assertIn("blocked", err.getvalue())
+
+    def test_preserved_handoff_records_on_disk_hash(self):
+        run_dir, _ = self.start()
+        (run_dir / "handoff" / "plan.md").write_text("edited\n", encoding="utf-8")
+        engine.resume(run_dir, now=FROZEN)
+        handoff = runs.load_record(run_dir)["stages"]["plan"]["handoff"]
+        self.assertTrue(handoff["preserved_existing"])
+        self.assertEqual(handoff["on_disk_sha256"], hashlib.sha256(b"edited\n").hexdigest())
+
+    def test_run_id_with_trailing_newline_is_rejected(self):
+        with self.assertRaises(RunError):
+            engine.start_run(EXAMPLE, self.root, registry=self.registry, run_id="x\n")

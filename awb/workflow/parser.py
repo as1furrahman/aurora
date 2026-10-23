@@ -95,7 +95,7 @@ class _Checker:
         return tuple(value)
 
     def ident(self, loc: str, what: str, value: str) -> None:
-        if value and not ID_PATTERN.match(value):
+        if value and not ID_PATTERN.fullmatch(value):
             self.error(loc, f"{what} '{value}' must be lowercase alphanumeric with hyphens")
 
 
@@ -115,11 +115,17 @@ def load_workflow(path: Union[str, Path], registry: Optional[RegistryManifest] =
         raw = p.read_bytes()
     except OSError as e:
         raise WorkflowValidationError([f"cannot read file: {e}"], source=str(p)) from e
+    return parse_workflow_bytes(raw, registry=registry, source=str(p))
+
+
+def parse_workflow_bytes(raw: bytes, registry: Optional[RegistryManifest] = None,
+                         source: str = "<bytes>") -> WorkflowDefinition:
+    """Parse and validate exact definition bytes; sha256 covers these bytes."""
     try:
         text = raw.decode("utf-8")
     except UnicodeDecodeError as e:
-        raise WorkflowValidationError([f"file is not valid UTF-8: {e}"], source=str(p)) from e
-    return _parse(text, hashlib.sha256(raw).hexdigest(), registry, str(p))
+        raise WorkflowValidationError([f"file is not valid UTF-8: {e}"], source=source) from e
+    return _parse(text, hashlib.sha256(raw).hexdigest(), registry, source)
 
 
 def _parse(text: str, sha256: str, registry: Optional[RegistryManifest], source: str) -> WorkflowDefinition:
@@ -140,7 +146,7 @@ def _parse(text: str, sha256: str, registry: Optional[RegistryManifest], source:
     wf_id = c.string("workflow", wf, "id")
     c.ident("workflow", "workflow.id", wf_id)
     wf_version = c.string("workflow", wf, "version")
-    if wf_version and not SEMVER_PATTERN.match(wf_version):
+    if wf_version and not SEMVER_PATTERN.fullmatch(wf_version):
         c.error("workflow", f"version '{wf_version}' is not valid semver")
     wf_name = c.string("workflow", wf, "name")
     wf_description = c.string("workflow", wf, "description", required=False)
@@ -231,7 +237,7 @@ def _parse_stages(c: _Checker, raw: Any, roles: Dict[str, Role]) -> Tuple[Stage,
         if not outputs:
             c.error(loc, "at least one output is required")
         for out in outputs:
-            if not OUTPUT_PATTERN.match(out) or out == NOT_APPLICABLE_FILE:
+            if not OUTPUT_PATTERN.fullmatch(out) or out == NOT_APPLICABLE_FILE:
                 c.error(loc, f"output '{out}' must be a plain file name (no path separators, not hidden, "
                              f"not '{NOT_APPLICABLE_FILE}')")
         if len(set(outputs)) != len(outputs):
@@ -242,6 +248,9 @@ def _parse_stages(c: _Checker, raw: Any, roles: Dict[str, Role]) -> Tuple[Stage,
             c.error(loc, "max_attempts must be an integer between 1 and 10")
             max_attempts = 2
         on_exhausted = c.string(loc, body, "on_exhausted", required=False, default="escalate")
+        if body.get("optional") is True and body.get("requires_approval") is True:
+            c.error(loc, "an optional stage cannot set requires_approval in schema v1 "
+                         "(NOT_APPLICABLE would bypass the approval gate)")
         if on_exhausted not in ON_EXHAUSTED:
             c.error(loc, f"on_exhausted '{on_exhausted}' must be one of {list(ON_EXHAUSTED)}")
 

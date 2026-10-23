@@ -18,7 +18,7 @@ from awb.safety.exceptions import SafetyError
 from . import runs
 from .handoff import render_handoff
 from .model import NOT_APPLICABLE_FILE, StageState, WorkflowDefinition
-from .parser import load_workflow
+from .parser import load_workflow, parse_workflow_bytes
 from .planner import build_plan
 from .runs import RunError, RunIntegrityError
 
@@ -42,13 +42,18 @@ def start_run(
     """Validate, plan, create the run directory, pin the definition, and issue ready handoffs."""
     now = _now(now)
     definition = Path(definition)
-    wf = load_workflow(definition, registry=registry)
+    try:
+        raw = definition.read_bytes()
+    except OSError as e:
+        raise RunError(f"Cannot read workflow definition '{definition}': {e}") from e
+    # Validate, plan and pin the same bytes, so the pinned copy always matches the recorded hash.
+    wf = parse_workflow_bytes(raw, registry=registry, source=str(definition))
     plan = build_plan(wf, registry=registry, provider_override=provider_override, routes=routes, detected=detected)
     if run_id is None:
         run_id = f"{wf.id}-{now.replace('-', '').replace(':', '')}"
 
     run_dir = runs.create_run_dir(Path(run_root), run_id)
-    runs.write_file(run_dir, runs.WORKFLOW_FILE, definition.read_bytes())
+    runs.write_file(run_dir, runs.WORKFLOW_FILE, raw)
     pinned = _load_pinned(run_dir, wf.sha256)
 
     record = {
@@ -72,6 +77,8 @@ def start_run(
             runs.add_event(record, now, s["id"], "blocked-by-plan", {"reasons": s["blocked_reasons"]})
 
     with runs.locked(run_dir):
+        # Persist the record before issuing any handoff: an interruption leaves a resumable run.
+        runs.save_record(run_dir, record)
         warnings = _advance(pinned, record, run_dir, now)
         runs.save_record(run_dir, record)
     record["_warnings"] = warnings
@@ -144,18 +151,18 @@ def _issue_handoff(wf: WorkflowDefinition, record: dict, run_dir: Path, sid: str
         if existing != expected:
             warning = f"handoff bundle for stage '{sid}' differs from the generated one; not overwritten"
             if st["handoff"] is None or st["handoff"].get("preserved_existing") is not True:
-                runs.add_event(record, now, sid, "handoff-preserved", {"path": rel})
-            st["handoff"] = {"path": rel, "sha256": expected, "preserved_existing": True}
+                runs.add_event(record, now, sid, "handoff-preserved", {"path": rel, "on_disk_sha256": existing})
+            st["handoff"] = {"path": rel, "sha256": expected, "preserved_existing": True, "on_disk_sha256": existing}
             return warning
         if st["handoff"] is None:
             runs.add_event(record, now, sid, "handoff-issued", {"path": rel, "sha256": expected})
-        st["handoff"] = {"path": rel, "sha256": expected, "preserved_existing": False}
+        st["handoff"] = {"path": rel, "sha256": expected, "preserved_existing": False, "on_disk_sha256": expected}
         return None
 
     runs.write_file(run_dir, rel, content)
     runs.add_event(record, now, sid, "handoff-reissued" if st["handoff"] else "handoff-issued",
                    {"path": rel, "sha256": expected})
-    st["handoff"] = {"path": rel, "sha256": expected, "preserved_existing": False}
+    st["handoff"] = {"path": rel, "sha256": expected, "preserved_existing": False, "on_disk_sha256": expected}
     return None
 
 
@@ -168,12 +175,14 @@ def _inspect_artifact(run_dir: Path, rel: str) -> Tuple[Optional[str], Optional[
         return None, f"output missing: {rel}"
     if not stat.S_ISREG(st.st_mode):
         return None, f"output not a regular file (symlink or special file): {rel}"
-    if st.st_size == 0:
-        return None, f"output empty: {rel}"
     try:
-        return runs.read_file(run_dir, rel, max_size=runs.EVIDENCE_MAX_BYTES)["sha256"], None
+        info = runs.read_file(run_dir, rel, max_size=runs.EVIDENCE_MAX_BYTES)
     except (SafetyError, OSError) as e:
         return None, f"output unreadable: {rel} ({e})"
+    # Size is taken from the bytes actually hashed, not from the earlier lstat.
+    if info["size"] == 0:
+        return None, f"output empty: {rel}"
+    return info["sha256"], None
 
 
 def submit(
@@ -196,9 +205,6 @@ def submit(
         if st["state"] not in (StageState.RUNNING.value, StageState.FAILED.value):
             raise RunError(f"Stage '{stage_id}' is {st['state']}; submissions are accepted only for RUNNING or "
                            "FAILED stages")
-        if st["awaiting_approval"]:
-            raise RunError(f"Stage '{stage_id}' already satisfied its gate and is awaiting approval; "
-                           "use `aurora workflow approve`")
         known = {c.id for c in stage.acceptance}
         unknown = sorted(set(met) - known)
         if unknown:
@@ -217,6 +223,8 @@ def submit(
             st["not_applicable_reason"] = rel
             runs.add_event(record, now, stage_id, "not-applicable", {"justification": rel, "sha256": sha})
         else:
+            # Resubmitting while awaiting approval re-evaluates the evidence (e.g. after drift).
+            st["awaiting_approval"] = False
             st["attempts"] += 1
             evidence: Dict[str, str] = {}
             missing: List[str] = []
@@ -240,6 +248,7 @@ def submit(
                 st["evidence"] = evidence
                 st["criteria_met"] = [c.id for c in stage.acceptance]
                 if stage.requires_approval:
+                    st["state"] = StageState.RUNNING.value
                     st["awaiting_approval"] = True
                     runs.add_event(record, now, stage_id, "gate-satisfied-awaiting-approval",
                                    {"attempt": st["attempts"], "evidence": evidence})

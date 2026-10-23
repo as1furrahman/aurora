@@ -197,3 +197,20 @@ class TestWorkflowParser(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestParserReviewRegressions(unittest.TestCase):
+    """Regressions for findings from the independent code review (2026-10-23)."""
+
+    def test_ids_and_outputs_reject_trailing_newline(self):
+        for old, new in (('id = "build"', 'id = "build\\n"'), ('outputs = ["out.md"]', 'outputs = ["out.md\\n"]'),
+                         ('id = "mini"', 'id = "mini\\n"')):
+            with self.assertRaises(WorkflowValidationError, msg=new):
+                parse_workflow_string(MINIMAL.replace(old, new), registry=REGISTRY)
+
+    def test_optional_stage_cannot_require_approval(self):
+        text = MINIMAL.replace('independent_of = ["build"]\n',
+                               'independent_of = ["build"]\noptional = true\nrequires_approval = true\n')
+        with self.assertRaises(WorkflowValidationError) as ctx:
+            parse_workflow_string(text, registry=REGISTRY)
+        self.assertIn("requires_approval", str(ctx.exception))

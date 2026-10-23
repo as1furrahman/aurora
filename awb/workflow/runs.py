@@ -47,7 +47,7 @@ class RunIntegrityError(RunError):
 
 
 def validate_run_id(run_id: str) -> str:
-    if not isinstance(run_id, str) or not RUN_ID_PATTERN.match(run_id) or run_id in (".", ".."):
+    if not isinstance(run_id, str) or not RUN_ID_PATTERN.fullmatch(run_id) or run_id in (".", ".."):
         raise RunError(f"Invalid run id '{run_id}': use letters, digits, '.', '_' or '-', starting alphanumeric")
     return run_id
 

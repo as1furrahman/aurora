@@ -11,8 +11,9 @@ accepted evidence.
 - One directory per run under an explicit, pre-existing `--run-root`. There is no implicit default
   location.
 - `run.json` is the single source of truth. Every update is a read-modify-write under
-  `ProcessLock(<run-dir>/.awb.lock)`, persisted with `SafeFS.safe_atomic_write`. Handoff bundles are
-  written before the record that references them.
+  `ProcessLock(<run-dir>/.awb.lock)`, persisted with `SafeFS.safe_atomic_write`. The initial record is
+  saved before any handoff bundle. After that, bundles are written before the record that references
+  them.
 - Every write path is validated with `validate_security_preconditions(path, [run_dir])`.
 - `schema_version: 1` and `kind: "aurora.workflow-run"` are mandatory. The loader rejects unknown
   versions. Any future version change requires an explicit migration function plus tests. v1 files

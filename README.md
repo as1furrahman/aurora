@@ -35,6 +35,32 @@ aurora remove principles --target /path/to/sandbox --root /path/to/sandbox
 
 ---
 
+## Role-Based Workflows (manual handoff)
+
+Aurora plans and tracks workflows whose stages are owned by provider-neutral **roles** and routed to
+coding CLIs (`claude`, `codex`, `antigravity`). Milestone 1 never launches a CLI. It writes a handoff
+prompt per stage and accepts a stage only when its declared evidence exists.
+
+```bash
+aurora providers                                   # execution providers + PATH detection (no process run)
+aurora workflow validate workflows/examples/plan-implement-review.toml
+aurora workflow show     workflows/examples/plan-implement-review.toml
+aurora workflow plan     workflows/examples/plan-implement-review.toml                    # multi-provider routing
+aurora workflow plan     workflows/examples/plan-implement-review.toml --provider codex   # single-provider override
+aurora workflow plan     workflows/examples/plan-implement-review.toml --route implement=claude
+
+mkdir -p /tmp/aurora-runs
+aurora workflow start  workflows/examples/plan-implement-review.toml --run-root /tmp/aurora-runs --run-id demo
+aurora workflow submit --run /tmp/aurora-runs/demo --stage plan --met plan-written
+aurora workflow status --run /tmp/aurora-runs/demo
+aurora workflow resume --run /tmp/aurora-runs/demo
+aurora workflow approve --run /tmp/aurora-runs/demo --stage final-verify --by "<name>"
+```
+
+See `docs/product-vision.md`, `docs/architecture/` and `docs/adr/` for the model and its guarantees.
+
+---
+
 ## Architecture & Layers
 
 - **Layer A — Manager Core:** Registry parser, version solver, capability discovery, operation planning, audit history, and transaction rollback engine.
