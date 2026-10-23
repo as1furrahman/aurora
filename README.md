@@ -4,7 +4,7 @@ Aurora (canonical CLI: `aurora`, compatibility alias: `awb`) is a universal, cen
 
 ---
 
-## Rust implementation (Milestones R1 and R2)
+## Rust implementation (Milestones R1–R3)
 
 Aurora is being rewritten in Rust (ADR-0006). The Python package below is the reference
 implementation until parity. In R1 the Rust `aurora` binary covers the **workflow engine**. It
@@ -64,6 +64,33 @@ Safeguards:
 - **Undo:** every apply is journaled under `.aurora/ops/` and can be undone.
 
 Commit `aurora.lock`; ignore `.aurora/`.
+
+### Terminal UI (Milestone R3)
+
+`aurora` with no arguments opens the TUI in a terminal, and so does `aurora tui`. In scripts and
+pipes it prints help instead.
+
+```bash
+aurora tui --project . --run-root ~/aurora-runs      # --preset bugfix (default), --clis claude,codex
+```
+
+| Tab | What it shows | Keys |
+|---|---|---|
+| **1 Skills** | Each skill × each CLI: `✓` installed, `+` create, `?` after review, `↑` update, `≠` modified, `!` foreign, `◐` via a shared dir, `·` not wanted; budget bars | `i` opt-in, `r` re-plan |
+| **2 Roles** | Stage → role → CLI → skills; enforcement strength for read-only roles | `p` another CLI for this role, `P` profile, `w` workflow |
+| **3 Install** | The plan's actions, review state, warnings | `Enter` read flagged files, `r` reviewed, `a` apply (asks; only `y` confirms), `u` undo |
+| **4 Runs** | Runs and their stage pipelines | `Enter` open / read handoff, `s` checkbox submit, `A` approve, `R` resume, `y` copy path |
+
+Keys that work everywhere:
+
+- `1`–`4` switch tabs, and `Tab` moves focus between the list and the detail pane.
+- `/` filters the list.
+- `?` shows help for every key; it is generated from the same table as the footer.
+- `Esc` backs out one level, and `q` quits.
+
+The mouse wheel and clicks also work. `NO_COLOR` turns colour off, and
+`AURORA_THEME=high-contrast` switches to a high-contrast theme. Each detail pane shows the
+equivalent CLI command. Real-terminal check: `scripts/tui-smoke.sh`.
 
 ## Command Line Interface
 

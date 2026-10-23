@@ -1,4 +1,21 @@
-# TUI Vision (recorded for a later milestone; not built in R1)
+# TUI Vision
+
+## Status (R3, 2026-10-24)
+
+**Built.** See `docs/reports/AURORA_R3_TUI_REPORT.md`.
+
+- The launch rules.
+- Four tabs: **Skills** (the skills × CLIs matrix), **Roles** (the board, with `p` reassigning a
+  CLI), **Install** (in the place of the planned Workflows tab: review, apply, undo) and **Runs**.
+- Help generated from the key table, the live filter, confirm dialogs that default to No, toasts.
+- Worker threads with a spinner; mouse support; the `NO_COLOR` and high-contrast themes.
+- Snapshot tests and a tmux smoke test.
+
+**Deferred.** The Workflows and Config tabs, the `:` / `Ctrl-P` command palette, the TOML
+keymap with a user patch file, and editing workflow files in the TUI.
+
+The original vision follows unchanged.
+
 
 The goal is ASM's interaction model, without ASM's known weaknesses, on top of Aurora's
 role/workflow core. Inputs:

@@ -114,8 +114,10 @@ hash matched the full-clone measurement, and tampering with a cached copy is ref
    in their eligible lists is one more Rust-only element.
 10. **The scanner is heuristic.** A clean scan is a signal; the catalog's review notes and the
     user's review remain the real gate.
-11. **Still open from R1:** the frozen Python `ProcessLock` follows a symlinked `.awb.lock` and
-    truncates its target. Rust is fixed; Python is unchanged, pending the owner's decision.
+11. **Accepted (owner, 2026-10-24):** the frozen Python `ProcessLock` follows a symlinked
+    `.awb.lock` and truncates its target. It is low severity: it affects only the test oracle,
+    needs a planted symlink in a user-owned directory, and can only truncate a user-owned file.
+    Rust refuses the case. It is left as is.
 
 ## Next: R3 TUI
 
