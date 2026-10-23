@@ -2,6 +2,7 @@
 //!
 //! Exit codes: 0 ok, 1 error, 2 usage error (clap), 3 plan/run has blocked stages.
 
+mod catalog;
 mod providers;
 mod registry;
 mod runs;
@@ -34,6 +35,31 @@ enum Command {
         #[command(subcommand)]
         command: WorkflowCommand,
     },
+    /// Browse the curated skill catalog and get per-stage recommendations (read-only)
+    Catalog {
+        #[command(subcommand)]
+        command: CatalogCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum CatalogCommand {
+    /// List catalog entries with kind, tier, trust and roles
+    List {
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Show one entry's pinned source, licence, flags and rationale
+    Show {
+        /// Entry id
+        id: String,
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Recommend each stage's CLI and skills for a solo, pair or trio setup (writes nothing)
+    Recommend(catalog::RecommendArgs),
 }
 
 #[derive(Debug, Subcommand)]
@@ -156,6 +182,11 @@ fn main() -> ExitCode {
             0
         }
         Some(Command::Providers { json }) => providers::run(json),
+        Some(Command::Catalog { command }) => match command {
+            CatalogCommand::List { json } => catalog::list(json),
+            CatalogCommand::Show { id, json } => catalog::show(&id, json),
+            CatalogCommand::Recommend(args) => catalog::recommend(&args),
+        },
         Some(Command::Workflow { command }) => match command {
             WorkflowCommand::Validate(def) => workflow::validate(&def),
             WorkflowCommand::Show(def) => workflow::show(&def),
