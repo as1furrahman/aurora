@@ -1,5 +1,5 @@
-//! Provider-neutral description of a definition plus its separate routing policy
-//! (the `workflow show --json` shape; port of `describe()` in `awb/workflow/commands.py`).
+//! Provider-neutral description of a definition plus its separate routing policy (the
+//! `workflow show --json` shape).
 
 use indexmap::IndexMap;
 use serde::Serialize;

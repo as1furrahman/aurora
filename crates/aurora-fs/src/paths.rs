@@ -4,7 +4,7 @@ use std::path::{Component, Path, PathBuf};
 
 use crate::FsError;
 
-/// `~` / `~/…` expansion against `$HOME`, as Python's `os.path.expanduser`.
+/// Expand `~` and `~/…` against `$HOME`.
 pub fn expand_tilde(p: &Path) -> PathBuf {
     let Ok(rest) = p.strip_prefix("~") else { return p.to_path_buf() };
     match std::env::home_dir() {

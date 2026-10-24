@@ -1,5 +1,4 @@
-//! Strict workflow definition parsing (schema v1). Ported case-by-case from
-//! `tests/test_workflow_parser.py`; uses the same fixtures.
+//! Strict workflow definition parsing (schema v1), using shared TOML fixtures.
 
 mod common;
 

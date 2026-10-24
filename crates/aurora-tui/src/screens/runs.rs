@@ -44,9 +44,57 @@ pub fn open_run(app: &App) -> Option<&StatusReport> {
     app.run_open.and_then(|i| app.runs.get(i)).and_then(|r| r.status.as_ref().ok())
 }
 
+/// The task-list indexes that match the current search, in display order.
+pub fn visible_runs(app: &App) -> Vec<usize> {
+    let filter = app.filter().to_lowercase();
+    app.runs
+        .iter()
+        .enumerate()
+        .filter(|(_, run)| {
+            if filter.is_empty() {
+                return true;
+            }
+            let name = run.dir.file_name().map(|n| n.to_string_lossy()).unwrap_or_default();
+            let text = match &run.status {
+                Ok(r) => format!("{name} {} {} {}", r.workflow.id, progress(r), task_state(r)),
+                Err(_) => format!("{name} can't be read"),
+            };
+            text.to_lowercase().contains(&filter)
+        })
+        .map(|(i, _)| i)
+        .collect()
+}
+
+/// The open task's stage indexes that match the current search, in display order.
+pub fn visible_stages(app: &App) -> Vec<usize> {
+    let filter = app.filter().to_lowercase();
+    open_run(app)
+        .map(|run| {
+            run.stages
+                .iter()
+                .enumerate()
+                .filter(|(_, stage)| {
+                    filter.is_empty()
+                        || format!(
+                            "{} {} {} {} {}",
+                            stage.id,
+                            stage.role,
+                            stage.provider,
+                            state_label(stage.state).1,
+                            step_note(stage)
+                        )
+                        .to_lowercase()
+                        .contains(&filter)
+                })
+                .map(|(i, _)| i)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 /// The selected step of the open task.
 pub fn selected_stage(app: &App) -> Option<&StageStatus> {
-    open_run(app).and_then(|r| r.stages.get(app.stage_cursor))
+    visible_stages(app).get(app.stage_cursor).and_then(|i| open_run(app).and_then(|r| r.stages.get(*i)))
 }
 
 fn step_note(s: &StageStatus) -> String {
@@ -98,11 +146,10 @@ pub fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
             "Open a step with Enter to see its instructions · Esc goes back to all tasks",
             theme,
         );
-        let rows: Vec<TableRow> = r
-            .stages
-            .iter()
-            .enumerate()
-            .map(|(i, s)| {
+        let rows: Vec<TableRow> = visible_stages(app)
+            .into_iter()
+            .map(|i| {
+                let s = &r.stages[i];
                 let (g, w) = state_label(s.state);
                 TableRow::new(vec![
                     format!("{}. {}", i + 1, words::step(&s.id)),
@@ -155,10 +202,10 @@ pub fn render_list(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
         f.render_widget(Paragraph::new(lines).wrap(Wrap { trim: true }), body);
         return;
     }
-    let rows: Vec<TableRow> = app
-        .runs
-        .iter()
-        .map(|run| {
+    let rows: Vec<TableRow> = visible_runs(app)
+        .into_iter()
+        .map(|i| {
+            let run = &app.runs[i];
             let name = run.dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
             match &run.status {
                 Ok(r) => {
@@ -232,7 +279,7 @@ pub fn render_detail(f: &mut Frame, app: &App, area: Rect, theme: Theme) {
         lines.push(dim(format!("  aurora workflow status --run {}", r.run_dir)));
         lines.push(dim(format!("  aurora workflow submit --run {} --stage {} --met <item>", r.run_dir, s.id)));
         lines.push(dim(format!("  aurora workflow approve --run {} --stage {} --by <name>", r.run_dir, s.id)));
-    } else if let Some(run) = app.runs.get(app.cursor[Tab::Runs.index()]) {
+    } else if let Some(run) = visible_runs(app).get(app.cursor[Tab::Runs.index()]).and_then(|i| app.runs.get(*i)) {
         match &run.status {
             Ok(r) => {
                 lines.push(Line::from(Span::styled(format!("Task {}", r.run_id), theme.accent())));

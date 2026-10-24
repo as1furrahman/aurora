@@ -1,6 +1,6 @@
 ---
 name: principles
-description: Core baseline engineering principles: correctness outranks token savings, deterministic safety, and test-first verification.
+description: "Core baseline engineering principles: correctness outranks token savings, deterministic safety, and test-first verification."
 ---
 
 # Baseline Engineering Principles

@@ -194,4 +194,4 @@ truncation breaking routing.
   - one provider headless, behind per-run approval;
   - a built-in bounded Ralph loop;
   - a pair-mode review loop with round caps.
-- **R5: retire the Python reference.** Make the protected-path list configurable.
+- **R5 completed:** retired the Python reference and made protected project paths configurable.

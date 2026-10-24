@@ -53,6 +53,8 @@ quit.
   adding them.
 - **Aurora never runs your AI tools for you.** It prepares the instructions, and you paste them
   into the tool you already use.
+- **Extra protection:** set `AURORA_PROTECTED_PROJECTS` to an OS path-list of projects Aurora
+  must never change. For example, on macOS/Linux: `export AURORA_PROTECTED_PROJECTS="$HOME/work/important:$HOME/work/client"`.
 
 ### Prefer to read the install script first?
 
@@ -84,19 +86,19 @@ Any skills Aurora added to a project stay there until you remove them: run `auro
 
 ## For developers
 
-Aurora (canonical CLI: `aurora`, compatibility alias: `awb`) is a universal, centralized manager for discovering, installing, validating, updating, removing, benchmarking, and rolling back reusable coding-agent skills and workflows across supported coding CLIs.
+Aurora is a Rust CLI and TUI for managing reusable coding-agent skills and evidence-gated workflows across supported coding CLIs.
 
-### Rust implementation (Milestones R1–R3)
+### Rust implementation
 
-Aurora is being rewritten in Rust (ADR-0006). The Python package below is the reference
-implementation until parity. In R1 the Rust `aurora` binary covers the **workflow engine**. It
-runs in **manual-handoff** mode: Aurora never launches a coding CLI; it writes a handoff prompt
-for each role and checks the evidence you submit.
+The Rust workspace is the canonical implementation (ADR-0006). Aurora runs in **manual-handoff**
+mode: it does not launch coding CLIs; it writes a handoff prompt for each role and checks the
+evidence you submit.
 
 ```bash
 cargo build --release                       # binary: target/release/aurora (MSRV 1.89)
 
 aurora providers                            # claude / codex / antigravity (agy): PATH detection only
+aurora doctor                              # registry, provider, staging and project write checks
 aurora workflow presets                     # feature, bugfix, refactor, docs, security-review, spike
 aurora workflow init feature                # writes ./feature.toml (never overwrites)
 aurora workflow plan feature.toml           # roles -> CLIs (preferred, with declared fallback)
@@ -114,9 +116,9 @@ aurora workflow approve --run ... --stage accept --by NAME
 
 A stage passes only when every declared output exists and every acceptance criterion is
 explicitly claimed. Exit codes never count. Reviewer verdicts (`pass | concerns | fail`) gate
-the stage, and concerns are carried into later handoffs. Dev checks: `cargo test`,
-`scripts/parity.sh` and `scripts/parity-runs.sh`, which compare the Rust and Python
-implementations. Design notes for the upcoming TUI and skill manager are in `docs/design/`.
+the stage, and concerns are carried into later handoffs. Dev checks: `cargo fmt --check`,
+`cargo clippy --workspace --all-targets -- -D warnings`, and `cargo test --workspace`. Design
+notes for the upcoming TUI and skill manager are in `docs/design/`.
 
 #### Skills (Milestone R2: curated catalog and safe installs)
 
@@ -164,7 +166,7 @@ Without `--run-root`, tasks live in the project's `.aurora/runs`.
 | **1 Skills** | Each skill × each AI tool: `✓` added, `+` will add, `?` check first, `↑` will update, `≠` you changed it, `!` yours (left alone), `◐` shared folder, `·` not used; room left in each tool's skill list | `i` add/remove optional, `r` refresh |
 | **2 Who does what** | Step → job → AI tool → skills, and how strongly each tool can be kept read-only | `p` another tool for this job, `P` 1, 2 or 3 tools, `w` task type |
 | **3 Add to project** | Exactly what will change, what to check first, warnings | `Enter` read it, `r` mark as checked, `a` add (asks; only `y` confirms), `u` undo |
-| **4 Tasks** | Tasks and their steps | `n` new task (asks), `Enter` open / show a step's instructions, `s` checklist, `A` give your OK, `R` check task, `y` copy path |
+| **4 Tasks** | Tasks and their steps | `n` new task (asks), `Enter` open / show a step's instructions, `s` checklist, `A` give your OK, `R` check task, `d` archive task (asks), `y` copy path |
 
 Keys that work everywhere:
 
@@ -192,32 +194,36 @@ end against a local stand-in for GitHub releases (run `dist build` first).
 
 ### Command Line Interface
 
-Aurora provides both the canonical `aurora` command and the legacy `awb` compatibility alias:
+Use the `aurora` command:
 
 ```bash
-# Non-mutating environment detection
-aurora detect
-# Or via alias
-awb detect
+# Check which supported AI tools are available (does not run them)
+aurora providers
 
-# List canonical skills from registry
-aurora list
-
-# Validate registry syntax, schema, and dependency graphs
-aurora validate
-
-# Run system readiness and adapter diagnostics
+# Check the registry, installed providers, staging leftovers and current-directory write access
 aurora doctor
 
-# Plan transactional skill operations (dry-run)
-aurora install principles --target /path/to/sandbox --root /path/to/sandbox --dry-run
+# Browse the pinned, curated skill catalog (read-only)
+aurora catalog list
 
-# Execute transactional installation under ProcessLock
-aurora install principles --target /path/to/sandbox --root /path/to/sandbox
+# Validate a workflow definition before starting it
+aurora workflow validate workflows/examples/plan-implement-review.toml
 
-# Remove managed skill
-aurora remove principles --target /path/to/sandbox --root /path/to/sandbox
+# See what skills Aurora would add (dry run)
+aurora skills plan --preset bugfix --project .
+
+# Add the planned skills after reviewing any flagged files
+aurora skills apply --preset bugfix --project . --reviewed <entry>
+
+# Restore Aurora's most recent change without overwriting your edits
+aurora skills undo --project .
 ```
+
+`aurora doctor` does not launch provider tools or delete leftovers. It checks the current
+directory and creates then removes a temporary file to verify write access. It exits nonzero when
+the configured registry is invalid, staging debris remains, the directory cannot be inspected, or
+the write probe fails. Missing provider CLIs are informational because manual handoffs remain
+available.
 
 ---
 
@@ -243,33 +249,50 @@ aurora workflow resume --run /tmp/aurora-runs/demo
 aurora workflow approve --run /tmp/aurora-runs/demo --stage final-verify --by "<name>"
 ```
 
+List and archive tasks managed in a project's default `.aurora/runs` directory. Archiving keeps
+the task files under `.aurora/archive/runs`:
+
+```bash
+aurora task list --project .
+aurora task list --project . --json
+aurora task list --project . --archived --json  # find an archived task id to restore
+aurora task archive <task-id> --project .   # asks for confirmation
+aurora task archive <task-id> --project . --yes  # non-interactive
+aurora task restore <task-id> --project .   # restores an archived task
+```
+
 See `docs/product-vision.md`, `docs/architecture/` and `docs/adr/` for the model and its guarantees.
 
 ---
 
-### Architecture & Layers
+### Architecture & Crates
 
-- **Layer A — Manager Core:** Registry parser, version solver, capability discovery, operation planning, audit history, and transaction rollback engine.
-- **Layer B — Canonical Registry:** Authoritative index of skill metadata, versions, triggers, and compatibility contracts (`registry/skills.toml`).
-- **Layer C — Agent Adapters:** Modular adapters for Google Antigravity CLI, OpenAI Codex CLI, and future agents.
-- **Layer D — Canonical Skills:** Core engineering baseline and conditional specialist skills.
-- **Layer E — Verification & Benchmarks:** Adversarial safety tests, failure injection suites, and crash recovery audits.
+- **`aurora-core`:** workflow parsing and planning, provider metadata, skill registry, and curated
+  catalog.
+- **`aurora-fs`:** safe filesystem operations, cross-process locking, run persistence, evidence
+  gates, and drift detection.
+- **`aurora-skills`:** skill parsing and scanning, pinned fetching, install planning, transactional
+  apply, and undo.
+- **`aurora-app`:** shared orchestration used by the CLI and TUI.
+- **`aurora-cli` and `aurora-tui`:** scriptable commands and interactive project UI.
+- **Tests:** Rust unit and integration tests, including static compatibility fixtures and
+  filesystem failure-injection coverage.
 
 ---
 
 ### Safety-First Invariants
 
 1. **Deterministic Path Boundaries:** Traversal outside declared roots is rejected; ancestor symlinks fail closed.
-2. **Non-Blocking Descriptor Inspection:** Sensitive file operations use `O_NONBLOCK | O_NOFOLLOW` with descriptor `fstat` validation to eliminate FIFO and named-pipe blocking hazards.
-3. **Descriptor-Relative Pinning:** Directory entries are opened and unlinked relative to pinned parent descriptors (`dir_fd`) using kernel `unlinkat(p_dfd, basename, AT_REMOVEDIR)`.
-4. **Crash Durability:** State changes use write-ahead durability logging (`.awb.journal.json`), staged atomic writes with `os.replace`, and parent directory `fsync`.
-5. **Mandatory Process Locking:** Every mutation runs under an exclusive `ProcessLock` (`.awb.lock`) with inode/device validation to prevent split-brain execution.
-6. **Zero Third-Party Runtime Dependencies:** Implemented strictly in Python 3.11+ using standard library modules (including `tomllib`).
+2. **No-Follow Filesystem Access:** Sensitive paths use descriptor-relative operations with `O_NOFOLLOW` checks.
+3. **Atomic Writes:** Files are staged, synced, and renamed atomically within the destination directory.
+4. **Crash Recovery:** Skill operations use durable journals and can be undone after interruption.
+5. **Cross-Process Locking:** Mutations use a kernel lock to prevent concurrent writers.
+6. **Native Runtime:** The product is built and distributed from the Rust workspace without a Python runtime.
 
 ---
 
 ### Running Safety & Reliability Tests
 
 ```bash
-python3 -m unittest discover -s tests -v
+cargo test --workspace
 ```

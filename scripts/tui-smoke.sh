@@ -2,20 +2,34 @@
 # Real-terminal smoke test of the TUI: the actual `aurora` binary in a tmux session, driven with
 # real key presses and mouse events, asserted on what the terminal shows and on the disk.
 #
-# Needs tmux, the python-tabulate clone from examples/real-bugfix-demo ($DEMO_DIR) and network or a
-# warm skill cache ($AURORA_CACHE_DIR). Writes only under $SMOKE_DIR (default /var/tmp/aurora-tui-smoke).
+# Needs tmux and network access or a warm skill cache ($AURORA_CACHE_DIR). The script prepares a
+# local Git seed from the Rust table fixture. Writes only under $SMOKE_DIR (default: a unique system-temp directory).
 #
 # Usage: scripts/tui-smoke.sh
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-DEMO="${DEMO_DIR:-/opt/aurora-demo}"
-WORK="${SMOKE_DIR:-/var/tmp/aurora-tui-smoke}"
+DEMO="${DEMO_DIR:-${TMPDIR:-/tmp}/aurora-demo}"
 AURORA="${AURORA:-$REPO/target/debug/aurora}"
+FIXTURE_SOURCE="$REPO/examples/real-bugfix-demo/rust-table-fixture"
+FIXTURE_REPO="$DEMO/rust-table-fixture"
 export AURORA_CACHE_DIR="${AURORA_CACHE_DIR:-$DEMO/skill-cache}"
 S="aurora-tui-smoke-$$"
 command -v tmux >/dev/null || { echo "tmux is required"; exit 1; }
-[[ -d "$DEMO/python-tabulate/.git" ]] || { echo "run examples/real-bugfix-demo/run-demo.sh first"; exit 1; }
+mkdir -p "$DEMO"
+if [[ ! -d "$FIXTURE_REPO/.git" ]]; then
+  cp -a "$FIXTURE_SOURCE" "$FIXTURE_REPO"
+  git -C "$FIXTURE_REPO" init -q
+  git -C "$FIXTURE_REPO" add -A
+  git -C "$FIXTURE_REPO" -c user.name=Aurora -c user.email=aurora@example.invalid commit -qm "Initial Rust demo fixture"
+fi
+if [[ -n "${SMOKE_DIR:-}" ]]; then
+  WORK="$SMOKE_DIR"
+  [[ ! -e "$WORK" ]] || { echo "SMOKE_DIR must not already exist: $WORK"; exit 1; }
+  mkdir -p "$WORK"
+else
+  WORK="$(mktemp -d "${TMPDIR:-/tmp}/aurora-tui-smoke.XXXXXX")"
+fi
 
 pass=0
 step() { printf '\n== %s\n' "$*"; }
@@ -30,9 +44,9 @@ click() { tmux send-keys -t "$S" -l "$(printf '\e[<0;%d;%dM\e[<0;%d;%dm' "$1" "$
 trap 'tmux kill-session -t "$S" 2>/dev/null || true; tmux kill-session -t "aurora-tui-beginner-$$" 2>/dev/null || true' EXIT
 
 step "Prepare a disposable project, a fresh clone to compare with, and a run root"
-rm -rf "$WORK"; mkdir -p "$WORK/runs"
-git clone -q "$DEMO/python-tabulate" "$WORK/project"
-git clone -q "$DEMO/python-tabulate" "$WORK/clean"
+mkdir -p "$WORK/runs"
+git clone -q "$FIXTURE_REPO" "$WORK/project"
+git clone -q "$FIXTURE_REPO" "$WORK/clean"
 (cd "$REPO" && cargo build -q -p aurora-cli)
 "$AURORA" workflow init bugfix --output "$WORK/bugfix.toml" >/dev/null
 "$AURORA" workflow start "$WORK/bugfix.toml" --profile pair --no-detect --run-root "$WORK/runs" --run-id fresh >/dev/null
@@ -98,7 +112,7 @@ key Space; key j; key Space; key Enter
 check "the gate passes the stage" 'wait_for "Reproduce: done" && wait_for "1 of 5 done"'
 
 step "6. Mouse"
-col=$(screen | sed -n 2p | python3 -I -c 'import sys; l=sys.stdin.read(); print(l.find("1 Skills") + 2)')
+col=$(screen | sed -n 2p | awk '{ p = index($0, "1 Skills"); print (p ? p + 1 : 1) }')
 click "$col" 2
 check "a click on a tab switches to it" 'shows "Skills for each AI tool"'
 
@@ -109,7 +123,7 @@ check "q quits with exit 0 and the terminal is restored" 'wait_for "AURORA_EXIT=
 step "8. A beginner's first run: setup, add skills, start a task, finish step 1, undo"
 tmux kill-session -t "$S" 2>/dev/null || true
 S="aurora-tui-beginner-$$"
-git clone -q "$DEMO/python-tabulate" "$WORK/beginner"
+git clone -q "$FIXTURE_REPO" "$WORK/beginner"
 # Plain `aurora` in the project, no flags; a PATH without AI tools, so nothing is pre-ticked.
 tmux new-session -d -s "$S" -x 140 -y 34 \
   "cd '$WORK/beginner' && env PATH=/usr/bin:/bin '$AURORA'; echo AURORA_EXIT=\$?; sleep 120"

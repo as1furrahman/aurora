@@ -5,7 +5,9 @@ use std::path::{Path, PathBuf};
 
 use aurora_core::workflow::record::{RECORD_FILE, WORKFLOW_FILE};
 use aurora_core::workflow::{PlanOptions, parse_workflow_bytes};
+use aurora_fs::dirs::{Entry, Root};
 use aurora_fs::engine::{ApproveResult, Engine, StatusReport, SubmitResult};
+use aurora_fs::runs::{RunStore, validate_run_id};
 use indexmap::IndexMap;
 
 const MAX_TEXT_BYTES: u64 = 1 << 20;
@@ -73,6 +75,61 @@ pub fn resume(run_dir: &Path) -> Result<StatusReport, String> {
 /// Where a project's tasks live when no run root is given: `<project>/.aurora/runs`.
 pub fn default_run_root(project: &Path) -> PathBuf {
     project.join(".aurora").join("runs")
+}
+
+/// Move a project-local task into `.aurora/archive/runs` without deleting or replacing anything.
+/// Custom run roots are intentionally rejected: their archive location must be chosen explicitly
+/// by a future API rather than silently moving project data across filesystems.
+pub fn archive_task(run_dir: &Path, project: &Path) -> Result<PathBuf, String> {
+    let project =
+        std::fs::canonicalize(project).map_err(|e| format!("cannot resolve project {}: {e}", project.display()))?;
+    let run_root = default_run_root(&project);
+    let run_root = std::fs::canonicalize(&run_root)
+        .map_err(|e| format!("cannot resolve task folder {}: {e}", run_root.display()))?;
+    let run_dir =
+        std::fs::canonicalize(run_dir).map_err(|e| format!("cannot resolve task {}: {e}", run_dir.display()))?;
+    let id = run_dir
+        .strip_prefix(&run_root)
+        .ok()
+        .filter(|rel| rel.components().count() == 1)
+        .and_then(Path::file_name)
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| "only tasks directly inside this project's .aurora/runs folder can be archived".to_string())?;
+    validate_run_id(id).map_err(|e| e.to_string())?;
+
+    let store = RunStore::host();
+    let _lock = store.lock(&run_dir).map_err(|e| e.to_string())?;
+    store.load_record(&run_dir).map_err(|e| e.to_string())?;
+
+    let aurora_root = Root::open(&project.join(".aurora")).map_err(|e| e.to_string())?;
+    if aurora_root.entry(&format!("runs/{id}")).map_err(|e| e.to_string())? != Entry::Dir {
+        return Err(format!("task '{}' is not a regular run directory", run_dir.display()));
+    }
+    aurora_root.ensure_dir("archive/runs").map_err(|e| e.to_string())?;
+    aurora_root.rename(&format!("runs/{id}"), &format!("archive/runs/{id}")).map_err(|e| e.to_string())?;
+    Ok(project.join(".aurora/archive/runs").join(id))
+}
+
+/// Restore an archived project-local task to `.aurora/runs` without replacing an active task.
+pub fn restore_task(id: &str, project: &Path) -> Result<PathBuf, String> {
+    validate_run_id(id).map_err(|e| e.to_string())?;
+    let project =
+        std::fs::canonicalize(project).map_err(|e| format!("cannot resolve project {}: {e}", project.display()))?;
+    let aurora_root = Root::open(&project.join(".aurora")).map_err(|e| e.to_string())?;
+    if aurora_root.entry(&format!("archive/runs/{id}")).map_err(|e| e.to_string())? != Entry::Dir {
+        return Err(format!("no archived task named '{id}'"));
+    }
+    aurora_root.ensure_dir("runs").map_err(|e| e.to_string())?;
+    if aurora_root.entry(&format!("runs/{id}")).map_err(|e| e.to_string())? != Entry::Absent {
+        return Err(format!("an active task named '{id}' already exists; nothing was replaced"));
+    }
+
+    let archived_dir = project.join(".aurora/archive/runs").join(id);
+    let store = RunStore::host();
+    let _lock = store.lock(&archived_dir).map_err(|e| e.to_string())?;
+    store.load_record(&archived_dir).map_err(|e| e.to_string())?;
+    aurora_root.rename(&format!("archive/runs/{id}"), &format!("runs/{id}")).map_err(|e| e.to_string())?;
+    Ok(project.join(".aurora/runs").join(id))
 }
 
 /// Which AI tool does each stage, and which catalog skills its handoff names.
@@ -204,6 +261,72 @@ mod tests {
         assert_eq!(review.provider, "codex", "pair: the reviewer is the second tool");
         start_task(&request(&dir)).expect("a second task reuses the workflow");
         assert_eq!(list_runs(&default_run_root(&dir)).expect("runs").len(), 2);
+    }
+
+    #[test]
+    fn archiving_moves_a_task_out_of_the_active_list_without_deleting_it() {
+        let (_tmp, dir) = project();
+        let run = start_task(&request(&dir)).expect("started");
+        let run_file = run.join(RECORD_FILE);
+
+        let archived = archive_task(&run, &dir).expect("archived");
+
+        assert_eq!(archived, dir.join(".aurora/archive/runs").join(run.file_name().expect("id")));
+        assert!(!run.exists(), "the task leaves the active folder");
+        assert!(archived.join(RECORD_FILE).is_file(), "the task remains recoverable");
+        assert!(run_file != archived.join(RECORD_FILE));
+        assert!(list_runs(&default_run_root(&dir)).expect("active tasks").is_empty());
+        assert_eq!(
+            Engine::host().status(&archived).expect("archived run remains readable").run_id,
+            archived.file_name().expect("archive id").to_string_lossy()
+        );
+    }
+
+    #[test]
+    fn archiving_rejects_custom_roots_and_never_replaces_an_archive() {
+        let (_tmp, dir) = project();
+        let run = start_task(&request(&dir)).expect("started");
+        let elsewhere = dir.join("elsewhere");
+        std::fs::create_dir(&elsewhere).expect("custom root");
+        let error = archive_task(&elsewhere, &dir).expect_err("not a task run");
+        assert!(error.contains(".aurora/runs"), "{error}");
+
+        let archive = dir.join(".aurora/archive/runs").join(run.file_name().expect("id"));
+        std::fs::create_dir_all(&archive).expect("archive collision");
+        let error = archive_task(&run, &dir).expect_err("destination collision");
+        assert!(error.contains("cannot move"), "{error}");
+        assert!(run.join(RECORD_FILE).is_file(), "source stays intact on collision");
+    }
+
+    #[test]
+    fn restoring_moves_an_archived_task_back_to_the_active_list() {
+        let (_tmp, dir) = project();
+        let run = start_task(&request(&dir)).expect("started");
+        let id = run.file_name().expect("id").to_string_lossy().into_owned();
+        let archived = archive_task(&run, &dir).expect("archived");
+
+        let restored = restore_task(&id, &dir).expect("restored");
+
+        assert_eq!(restored, run);
+        assert!(!archived.exists());
+        assert!(restored.join(RECORD_FILE).is_file());
+        assert_eq!(list_runs(&default_run_root(&dir)).expect("active tasks").len(), 1);
+    }
+
+    #[test]
+    fn restoring_never_replaces_an_active_task() {
+        let (_tmp, dir) = project();
+        let run = start_task(&request(&dir)).expect("started");
+        let id = run.file_name().expect("id").to_string_lossy().into_owned();
+        let archived = archive_task(&run, &dir).expect("archived");
+        let active = start_task(&request(&dir)).expect("active task with distinct id");
+        std::fs::rename(&active, &run).expect("recreate the colliding active task path");
+
+        let error = restore_task(&id, &dir).expect_err("collision must fail");
+
+        assert!(error.contains("already exists"), "{error}");
+        assert!(archived.join(RECORD_FILE).is_file());
+        assert!(run.join(RECORD_FILE).is_file());
     }
 
     #[test]

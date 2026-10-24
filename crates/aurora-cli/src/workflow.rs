@@ -1,4 +1,4 @@
-//! `aurora workflow validate|show|plan`. Port of `awb/workflow/commands.py` (read-only commands).
+//! `aurora workflow validate|show|plan` (read-only workflow commands).
 
 use anstream::{eprintln, println};
 use aurora_core::registry::Registry;
@@ -126,10 +126,10 @@ pub fn show(def: &DefinitionArgs) -> u8 {
     }
     println!("\nRouting (separate from roles):");
     for (rid, rr) in &data.routing.roles {
-        println!("  {rid}: eligible {}, preferred {}", py_list(&rr.eligible), rr.preferred);
+        println!("  {rid}: eligible {}, preferred {}", list_repr(&rr.eligible), rr.preferred);
     }
     for f in &data.routing.fallback {
-        println!("  fallback {}: {} -> {} on {}", f.role, f.from, f.to, py_list(&f.on));
+        println!("  fallback {}: {} -> {} on {}", f.role, f.from, f.to, list_repr(&f.on));
     }
     0
 }
@@ -138,8 +138,8 @@ fn or_none(items: &[String]) -> String {
     if items.is_empty() { "none".to_string() } else { items.join(", ") }
 }
 
-fn py_list(items: &[String]) -> String {
-    aurora_core::util::py_list(items)
+fn list_repr(items: &[String]) -> String {
+    aurora_core::util::list_repr(items)
 }
 
 /// Parse repeated `--route STAGE=PROVIDER` values, keeping their order.

@@ -1,6 +1,5 @@
-//! Handoff bundles are byte-identical to the Python renderer (ADR-0006). Goldens in
-//! `tests/fixtures/handoff/` come from `render_handoff` in `awb/workflow/handoff.py`
-//! (see `scripts/gen_run_goldens.py`), rendered for the fixed run path `/aurora-golden/run`.
+//! Handoff bundles are checked against reviewed static goldens for the fixed run path
+//! `/aurora-golden/run`.
 
 mod common;
 
@@ -13,7 +12,7 @@ use common::{read, repo_root};
 use serde_json::Value;
 
 #[test]
-fn rust_bundles_match_python_goldens() {
+fn rust_bundles_match_static_goldens() {
     let root = repo_root();
     let manifest: Value =
         serde_json::from_slice(&read(&root.join("tests/fixtures/handoff/cases.json"))).expect("manifest");

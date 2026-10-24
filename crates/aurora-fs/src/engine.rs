@@ -1,5 +1,5 @@
 //! Evidence-gated stage engine for manual-handoff runs (docs/architecture/workflow-schema.md
-//! §4–5). Port of `awb/workflow/engine.py`, including the review fixes. A stage never passes
+//! §4–5). A stage never passes
 //! on an exit code: only declared outputs plus explicitly claimed, evidenced criteria (and
 //! approval, when required) move it to PASSED.
 
@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use aurora_core::registry::Registry;
-use aurora_core::util::{format_utc, py_list, sha256_hex};
+use aurora_core::util::{format_utc, list_repr, sha256_hex};
 use aurora_core::workflow::handoff::{UpstreamNote, render_handoff_with_notes};
 use aurora_core::workflow::model::NOT_APPLICABLE_FILE;
 use aurora_core::workflow::record::{
@@ -22,7 +22,7 @@ use serde_json::json;
 
 use crate::runs::{EVIDENCE_MAX_BYTES, RECORD_MAX_BYTES, RunError, RunStore};
 
-/// Test seam mirroring the Python suite's monkeypatched crashes. Not part of the stable API.
+/// Test seam for deterministic crash-path coverage. Not part of the stable API.
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CrashPoint {
@@ -77,7 +77,7 @@ pub struct StatusReport {
     pub awaiting_approval: Vec<String>,
     pub drift: Vec<Drift>,
     pub reduced_independence: Vec<String>,
-    /// Stages that passed with concerns (omitted when empty, keeping Python parity).
+    /// Stages that passed with concerns (omitted when empty).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub concerns: Vec<String>,
     /// Stages accepted by recorded waiver (omitted when empty).
@@ -121,7 +121,7 @@ fn now_or(now: Option<&str>) -> String {
     })
 }
 
-/// Python-style repr of drift entries, used verbatim in error messages.
+/// Human-readable representation of drift entries used in error messages.
 fn drift_repr(drift: &[Drift]) -> String {
     let items: Vec<String> = drift
         .iter()
@@ -393,7 +393,10 @@ impl Engine {
         let _lock = self.store.lock(&run_dir)?;
         let (run_dir, mut record, wf) = self.open(&run_dir)?;
         if !record.stages.contains_key(stage_id) {
-            return Err(RunError::Run(format!("Unknown stage '{stage_id}'. Stages: {}", py_list(&record.plan.order))));
+            return Err(RunError::Run(format!(
+                "Unknown stage '{stage_id}'. Stages: {}",
+                list_repr(&record.plan.order)
+            )));
         }
         let Some(stage) = wf.stage(stage_id).cloned() else {
             return Err(RunError::Run(format!("Unknown stage '{stage_id}'")));
@@ -412,8 +415,8 @@ impl Engine {
         if !unknown.is_empty() {
             return Err(RunError::Run(format!(
                 "Unknown criteria for stage '{stage_id}': {}. Known: {}",
-                py_list(&unknown),
-                py_list(&known)
+                list_repr(&unknown),
+                list_repr(&known)
             )));
         }
 
@@ -464,7 +467,7 @@ impl Engine {
                     .filter(|e| !evidence.contains_key(&format!("artifacts/{stage_id}/{e}")))
                     .collect();
                 if !absent.is_empty() {
-                    missing.push(format!("criterion '{}' lacks evidence: {}", crit.id, py_list(&absent)));
+                    missing.push(format!("criterion '{}' lacks evidence: {}", crit.id, list_repr(&absent)));
                 }
             }
 
@@ -636,7 +639,7 @@ impl Engine {
         if !pending.is_empty() {
             return Err(RunError::Run(format!(
                 "Stage '{stage_id}' cannot be waived before its dependencies are done: {}",
-                py_list(&pending)
+                list_repr(&pending)
             )));
         }
         let Some(st) = record.stages.get_mut(stage_id) else {

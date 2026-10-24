@@ -4,12 +4,14 @@
 //! is blocked, 4 a skill scan needs review.
 
 mod catalog;
+mod doctor;
 mod install;
 mod providers;
 mod registry;
 mod runs;
 mod skills;
 mod style;
+mod tasks;
 mod workflow;
 
 use std::path::PathBuf;
@@ -32,6 +34,12 @@ struct Cli {
 enum Command {
     /// List execution providers (coding CLIs) and PATH detection; no binary is run
     Providers {
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Check the configured registry, project write access, staging files and execution providers
+    Doctor {
         /// Output in JSON format
         #[arg(long)]
         json: bool,
@@ -66,6 +74,21 @@ enum Command {
         #[command(subcommand)]
         command: SkillsCommand,
     },
+    /// List, archive and restore project-local workflow tasks
+    Task {
+        #[command(subcommand)]
+        command: TaskCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum TaskCommand {
+    /// List active tasks for a project
+    List(tasks::ProjectArgs),
+    /// Archive an active task while keeping all of its files
+    Archive(tasks::ArchiveArgs),
+    /// Restore an archived task to the active task list
+    Restore(tasks::RestoreArgs),
 }
 
 #[derive(Debug, Subcommand)]
@@ -266,6 +289,12 @@ fn main() -> ExitCode {
             tui(TuiOptions { project, run_root, preset, clis, ..TuiOptions::default() })
         }
         Some(Command::Providers { json }) => providers::run(json),
+        Some(Command::Doctor { json }) => doctor::run(json),
+        Some(Command::Task { command }) => match command {
+            TaskCommand::List(args) => tasks::list(&args),
+            TaskCommand::Archive(args) => tasks::archive(&args),
+            TaskCommand::Restore(args) => tasks::restore(&args),
+        },
         Some(Command::Skills { command }) => match command {
             SkillsCommand::Inspect { dir, json } => skills::inspect(&dir, json),
             SkillsCommand::Scan { dir, json } => skills::scan(&dir, json),

@@ -1,5 +1,4 @@
-//! Filesystem safety gates, ported from `tests/test_safety.py` (gates 1, 2, 3-read, 5) and the
-//! boundary rules of `awb/safety/boundaries.py`. All fixtures live in temporary directories;
+//! Filesystem safety gates and boundary rules. All fixtures live in temporary directories;
 //! protected/global locations are injected through `BoundaryPolicy`, never the real home.
 
 use std::fs;

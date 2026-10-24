@@ -1,7 +1,7 @@
 //! Strict parser and validator for workflow definitions (schema v1).
 //!
-//! Port of `awb/workflow/parser.py`. Like the Python version it collects every error it
-//! finds and reports them together, rather than stopping at the first.
+//! The parser collects every validation error it finds and reports them together, rather than
+//! stopping at the first.
 
 use std::collections::{HashMap, HashSet};
 
@@ -13,7 +13,7 @@ use super::model::{
 };
 use crate::providers::{CAPABILITIES, PROVIDER_IDS, is_known_provider};
 use crate::registry::Registry;
-use crate::util::{is_kebab_id, is_plain_file_name, is_semver, py_list, sha256_hex};
+use crate::util::{is_kebab_id, is_plain_file_name, is_semver, list_repr, sha256_hex};
 
 const TOP_KEYS: &[&str] = &["schema_version", "workflow", "roles", "stages", "routing"];
 const WORKFLOW_KEYS: &[&str] = &["id", "version", "name", "description", "task_types", "assurance"];
@@ -147,8 +147,8 @@ impl Checker {
     }
 }
 
-/// Python-style `repr` for the few value kinds that appear in messages.
-fn py_repr(value: Option<&Value>) -> String {
+/// legacy-compatible `repr` for the few value kinds that appear in messages.
+fn scalar_repr(value: Option<&Value>) -> String {
     match value {
         None => "None".into(),
         Some(Value::String(s)) => format!("'{s}'"),
@@ -175,7 +175,7 @@ fn parse(
 
     let version = data.get("schema_version");
     if !matches!(version, Some(Value::Integer(v)) if *v == SCHEMA_VERSION) {
-        c.error("<root>", format!("unsupported schema_version {}; expected {SCHEMA_VERSION}", py_repr(version)));
+        c.error("<root>", format!("unsupported schema_version {}; expected {SCHEMA_VERSION}", scalar_repr(version)));
     }
 
     let wf = c.table("workflow", data.get("workflow"));
@@ -191,7 +191,7 @@ fn parse(
     let task_types = c.str_list("workflow", &wf, "task_types");
     let assurance = c.string("workflow", &wf, "assurance", false, "standard");
     if !ASSURANCE_LEVELS.contains(&assurance.as_str()) {
-        c.error("workflow", format!("assurance '{assurance}' must be one of {}", py_list(&ASSURANCE_LEVELS)));
+        c.error("workflow", format!("assurance '{assurance}' must be one of {}", list_repr(&ASSURANCE_LEVELS)));
     }
 
     let roles = parse_roles(&mut c, data.get("roles"), registry);
@@ -246,7 +246,7 @@ fn parse_roles(c: &mut Checker, raw: Option<&Value>, registry: Option<&Registry>
         let requires = c.str_list(&loc, &body, "requires");
         for cap in &requires {
             if !CAPABILITIES.contains(&cap.as_str()) {
-                c.error(&loc, format!("unknown capability '{cap}'; known: {}", py_list(&CAPABILITIES)));
+                c.error(&loc, format!("unknown capability '{cap}'; known: {}", list_repr(&CAPABILITIES)));
             }
         }
         if let Some(registry) = registry {
@@ -340,7 +340,7 @@ fn parse_stages(c: &mut Checker, raw: Option<&Value>, roles: &[Role]) -> Vec<Sta
             );
         }
         if !ON_EXHAUSTED.contains(&on_exhausted.as_str()) {
-            c.error(&loc, format!("on_exhausted '{on_exhausted}' must be one of {}", py_list(&ON_EXHAUSTED)));
+            c.error(&loc, format!("on_exhausted '{on_exhausted}' must be one of {}", list_repr(&ON_EXHAUSTED)));
         }
 
         let acceptance = parse_acceptance(c, &loc, body.get("acceptance"), &outputs);
@@ -354,7 +354,7 @@ fn parse_stages(c: &mut Checker, raw: Option<&Value>, roles: &[Role]) -> Vec<Sta
             None => None,
             Some(Value::String(v)) => {
                 if !outputs.contains(v) {
-                    c.error(&loc, format!("verdict '{v}' must be one of the stage outputs {}", py_list(&outputs)));
+                    c.error(&loc, format!("verdict '{v}' must be one of the stage outputs {}", list_repr(&outputs)));
                 } else if !v.ends_with(".json") {
                     c.error(&loc, format!("verdict '{v}' must be a .json file"));
                 }
@@ -411,7 +411,7 @@ fn parse_acceptance(c: &mut Checker, loc: &str, raw: Option<&Value>, outputs: &[
         }
         for item in &evidence {
             if !outputs.contains(item) {
-                c.error(&cloc, format!("evidence '{item}' is not one of the stage outputs {}", py_list(outputs)));
+                c.error(&cloc, format!("evidence '{item}' is not one of the stage outputs {}", list_repr(outputs)));
             }
         }
         let description = c.string(&cloc, &body, "description", true, "");
@@ -421,7 +421,7 @@ fn parse_acceptance(c: &mut Checker, loc: &str, raw: Option<&Value>, outputs: &[
 }
 
 fn check_graph(c: &mut Checker, stages: &[Stage]) {
-    // Later duplicates win, matching the Python dict; duplicates are already reported.
+    // Later duplicates win; duplicates are already reported.
     let by_id: HashMap<&str, &Stage> = stages.iter().map(|s| (s.id.as_str(), s)).collect();
     for s in stages {
         let loc = format!("stages.{}", s.id);
@@ -562,13 +562,13 @@ fn parse_routing(c: &mut Checker, raw: Option<&Value>, roles: &[Role]) -> Routin
         }
         for pid in &eligible {
             if !is_known_provider(pid) {
-                c.error(&loc, format!("unknown provider '{pid}'; known providers: {}", py_list(&PROVIDER_IDS)));
+                c.error(&loc, format!("unknown provider '{pid}'; known providers: {}", list_repr(&PROVIDER_IDS)));
             }
         }
         let default = eligible.first().cloned().unwrap_or_default();
         let preferred = c.string(&loc, &body, "preferred", false, &default);
         if !eligible.is_empty() && !eligible.contains(&preferred) {
-            c.error(&loc, format!("preferred provider '{preferred}' is not in eligible {}", py_list(&eligible)));
+            c.error(&loc, format!("preferred provider '{preferred}' is not in eligible {}", list_repr(&eligible)));
         }
         routed.push(RoleRouting { role: role.id.clone(), eligible, preferred });
     }
@@ -604,13 +604,13 @@ fn parse_routing(c: &mut Checker, raw: Option<&Value>, roles: &[Role]) -> Routin
             c.error(&loc, "'from' and 'to' must not be the same provider");
         }
         if on.is_empty() {
-            c.error(&loc, format!("'on' must list at least one trigger from {}", py_list(&FALLBACK_TRIGGERS)));
+            c.error(&loc, format!("'on' must list at least one trigger from {}", list_repr(&FALLBACK_TRIGGERS)));
         }
         for trigger in &on {
             if !FALLBACK_TRIGGERS.contains(&trigger.as_str()) {
                 c.error(
                     &loc,
-                    format!("unknown fallback trigger '{trigger}'; allowed: {}", py_list(&FALLBACK_TRIGGERS)),
+                    format!("unknown fallback trigger '{trigger}'; allowed: {}", list_repr(&FALLBACK_TRIGGERS)),
                 );
             }
         }

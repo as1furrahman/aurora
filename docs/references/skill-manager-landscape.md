@@ -1,5 +1,7 @@
 # Skill-Manager Landscape
 
+**Status:** Historical comparison; superseded by [prior-art.md](prior-art.md) and the current
+[Rust architecture](../architecture/universal-skill-and-workflow-model.md).
 **Accessed:** 2026-10-23
 **Method:** a documentation-level review of each project's public README. Neither repository was
 cloned or audited line by line, and **no code was copied**. The *Observed* columns report only what
@@ -43,7 +45,7 @@ marked †.
 | Central canonical library | Skills Manager | `registry/skills.toml` + `skills/`; provenance, hash, license fields planned (model doc §1) |
 | Validation and security scanning | ASM | existing strict registry validation; a content security scan is a candidate for a future milestone |
 | Bundles / presets | both | a workflow role's `required_skills` / `recommended_skills` acts as a role-scoped bundle; standalone bundles deferred |
-| Reversible changes and history | Skills Manager | existing transactional journal and rollback (`awb.transactions`); Git-based backup not adopted |
+| Reversible changes and history | Skills Manager | `aurora-skills::apply` journals operations under `.aurora/ops/` and supports undo; Git-based backup not adopted |
 | Context-cost observability | ASM | deferred |
 | Pinned revisions | ASM | planned `revision` field |
 

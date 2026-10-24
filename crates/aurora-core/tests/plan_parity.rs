@@ -1,6 +1,5 @@
-//! Plan parity with the Python reference planner (ADR-0006). Every case in
-//! `tests/fixtures/parity/cases.json` was produced by `scripts/gen_plan_goldens.py` from the
-//! Python implementation; the Rust planner must produce identical JSON.
+//! The planner's reviewed static golden cases cover the fixture × option matrix. Expected JSON is
+//! checked in and reviewed as test data rather than generated from the implementation under test.
 
 mod common;
 
@@ -10,7 +9,7 @@ use common::{read, repo_root};
 use serde_json::Value;
 
 #[test]
-fn rust_plans_match_python_goldens() {
+fn rust_plans_match_static_goldens() {
     let root = repo_root();
     let manifest: Value =
         serde_json::from_slice(&read(&root.join("tests/fixtures/parity/cases.json"))).expect("manifest");

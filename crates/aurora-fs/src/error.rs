@@ -1,4 +1,4 @@
-//! Safety errors. Variants mirror the Python exception hierarchy in `awb/safety/exceptions.py`.
+//! Filesystem and safety errors returned by `aurora-fs`.
 
 #[derive(Debug, thiserror::Error)]
 pub enum FsError {

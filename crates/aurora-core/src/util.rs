@@ -1,4 +1,4 @@
-//! Small shared helpers: identifier rules, semver, hashing, Python-compatible formatting.
+//! Small shared helpers: identifier rules, semver, hashing, legacy-compatible formatting.
 
 use sha2::{Digest, Sha256};
 
@@ -26,8 +26,8 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
     Sha256::digest(bytes).iter().map(|b| format!("{b:02x}")).collect()
 }
 
-/// Render a list the way Python's `repr(list_of_str)` does: `['a', 'b']`.
-pub fn py_list<S: AsRef<str>>(items: &[S]) -> String {
+/// Render a quoted list in the legacy CLI diagnostic format: `['a', 'b']`.
+pub fn list_repr<S: AsRef<str>>(items: &[S]) -> String {
     let inner: Vec<String> = items.iter().map(|s| format!("'{}'", s.as_ref())).collect();
     format!("[{}]", inner.join(", "))
 }
@@ -88,8 +88,8 @@ mod tests {
     }
 
     #[test]
-    fn python_list_repr() {
-        assert_eq!(py_list(&["a", "b"]), "['a', 'b']");
-        assert_eq!(py_list::<&str>(&[]), "[]");
+    fn list_repr_uses_quoted_items() {
+        assert_eq!(list_repr(&["a", "b"]), "['a', 'b']");
+        assert_eq!(list_repr::<&str>(&[]), "[]");
     }
 }

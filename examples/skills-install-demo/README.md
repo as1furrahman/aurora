@@ -1,29 +1,31 @@
 # Skills install demo: the real CLIs load what Aurora installs
 
-R2 Step 6. A maintainer prepares
-[python-tabulate](https://github.com/astanin/python-tabulate) for the `bugfix` workflow. They use
-the most common setup, where Claude Code builds and Codex tests and reviews, and then try a
-Hermes-only setup.
+R2 Step 6. A maintainer prepares a local Rust sample project for the `bugfix` workflow. They use
+the common setup, where Claude Code builds and Codex tests and reviews, and then try a Hermes-only
+setup.
 
-No CLI is logged in and no model is called. Everything else is real:
+No CLI login or model call is needed. Everything else is real:
 
 - the catalog skills, fetched from GitHub at their pinned commits;
 - the installed files;
-- Codex's rendered prompt input (`codex debug prompt-input`);
-- Hermes' skill index (`hermes skills list`).
+- Codex's rendered prompt input (`codex debug prompt-input`), when Codex is installed;
+- Hermes' skill index (`hermes skills list`), when Hermes is installed.
 
 Claude Code has no offline skill listing, so its copies are checked with `aurora skills inspect`.
 
 ## Run it
 
-In the `dev` container:
+Run it with the Aurora Rust workspace, Git, and network access (or a warm skill cache). The demo
+uses a local Rust fixture without running the fixture's tests.
 
 ```bash
-source /opt/aurora-env.sh && source /opt/aurora-cli-env.sh
-examples/skills-install-demo/run-demo.sh      # DEMO_DIR defaults to /opt/aurora-demo
+examples/skills-install-demo/run-demo.sh      # DEMO_DIR defaults under the system temp directory
 ```
 
-## What it checks (21 checks)
+## What it checks (up to 21 checks)
+
+The Codex prompt and Hermes index checks run only when those CLIs are installed. All installer,
+handoff, and undo checks still run without them.
 
 1. **Recommend.** For a bug fix in pair mode, review runs on Codex with `code-review`.
 2. **Plan.** It lists 14 skill copies and 2 rule blocks, and the project is byte-identical

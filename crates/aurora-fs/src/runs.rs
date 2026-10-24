@@ -1,4 +1,4 @@
-//! Run directory and run-record persistence (ADR-0003; port of `awb/workflow/runs.py`).
+//! Run directory and run-record persistence (ADR-0003).
 //!
 //! Every write is boundary-checked against the run directory and staged atomically; records
 //! are read through the no-follow reader; record updates happen under the run's

@@ -1,4 +1,8 @@
-# Skill Core Vision (recorded for a later milestone; not built in R1)
+# Skill Core Vision (historical proposal)
+
+**Status:** Superseded by [ADR-0007](../adr/0007-skill-catalog-and-trust.md) and the implemented
+[Rust architecture](../architecture/universal-skill-and-workflow-model.md). This proposal records
+design exploration; its deployment paths and future-crate list are not the current product contract.
 
 ## Canonical skill
 
@@ -81,18 +85,15 @@ Install states follow skillm: linked / copy / drift / foreign / broken. `aurora 
 - **Security scan** before install: shell, network, credential and base64 patterns, with SARIF
   output. Never run install scripts.
 
-## Port from Python
+## Rust implementation delivered
 
-`awb.safety` (boundaries, no-follow descriptor reads, locking), `awb.transactions` (journal,
-rollback, recovery) and `awb.operations` (ownership manifest, drift checks, pruning) are ported
-with their tests (SEC-01…SEC-11) before any live install is enabled.
+`aurora-fs` provides boundary validation, no-follow reads, atomic writes, locks, run persistence,
+and evidence-gated transitions. `aurora-skills` provides scanning, pinned fetching, project-local
+planning, transactional apply, and undo. Rust tests cover these safety and recovery paths.
 
-## Future crates
+## Deferred ideas
 
-- `aurora-skills`: parser, validation, registry.
-- `aurora-proc`: spawning, process groups, timeouts.
-- `aurora-providers`: per-CLI adapters → `RunEvent`.
+- `aurora-proc`: provider process spawning, process groups, and timeouts.
 - `aurora-acp`: behind a feature flag.
 - `aurora-git`: worktrees via the git binary.
 - `aurora-runner`: budgets, stuck detection, merge queue.
-- `aurora-tui`.

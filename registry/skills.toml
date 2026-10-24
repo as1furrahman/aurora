@@ -1,5 +1,5 @@
 # Canonical Skill Registry for Aurora (formerly Agent Workbench, AWB)
-# Format: TOML (Parsed deterministically via Python standard library tomllib)
+# Format: TOML, parsed by Aurora's Rust workspace.
 
 [registry]
 version = "1.0.0"

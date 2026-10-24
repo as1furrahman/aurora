@@ -1,5 +1,4 @@
-//! Execution-provider specs: manual-handoff only, no bypass flags (ADR-0005). Ported from the
-//! provider half of `tests/test_providers.py`.
+//! Execution-provider specs: manual-handoff only, no bypass flags (ADR-0005).
 
 use aurora_core::providers::{PROVIDER_IDS, PROVIDERS, get_provider, is_known_provider};
 use aurora_core::registry::ALLOWED_AGENTS;

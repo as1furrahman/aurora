@@ -264,6 +264,9 @@ pub struct UndoArgs {
     /// Operation id (default: the most recent one)
     #[arg(long, value_name = "ID")]
     op: Option<String>,
+    /// Confirm a non-interactive rollback (accepted for script symmetry; undo never prompts)
+    #[arg(long)]
+    yes: bool,
     /// Output in JSON format
     #[arg(long)]
     json: bool,

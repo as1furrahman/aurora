@@ -144,6 +144,58 @@ fn runs_are_listed_and_open_into_a_stage_pipeline() {
     assert!(screen(&app, 130, 28).contains("0 of 5 done"), "Esc returns to the task list");
 }
 
+#[test]
+fn d_archives_only_after_confirmation_and_keeps_the_task_files() {
+    let f = fixture();
+    let run_root = aurora_app::runs::default_run_root(&f.project);
+    fs::create_dir_all(&run_root).expect("project task folder");
+    let run = start(&run_root, &bugfix_toml(), "keep-me");
+    let mut app = runs_app(&f, &run_root);
+
+    press(&mut app, &[KeyCode::Char('d')]);
+    let confirm = screen(&app, 130, 28);
+    assert!(confirm.contains("Archive task keep-me?") && confirm.contains("Nothing is deleted"), "{confirm}");
+    assert!(run.join("run.json").is_file(), "asking does not move the task");
+
+    press(&mut app, &[KeyCode::Char('n')]);
+    assert!(app.popup().is_none());
+    assert!(run.join("run.json").is_file(), "No cancels the archive");
+
+    press(&mut app, &[KeyCode::Char('d'), KeyCode::Char('y')]);
+    let Some(Command::ArchiveTask { run_dir, project }) = app.take_command() else { panic!("archive queued") };
+    assert_eq!(run_dir, run);
+    assert_eq!(project, f.project);
+    app.receive(execute(Command::ArchiveTask { run_dir, project }));
+    drain(&mut app);
+
+    let archived = f.project.join(".aurora/archive/runs/keep-me");
+    assert!(!run.exists());
+    assert!(archived.join("run.json").is_file(), "the task is preserved");
+    assert!(app.runs.is_empty(), "archived task leaves the active list");
+    assert!(screen(&app, 130, 28).contains("Task archived"));
+}
+
+#[test]
+fn search_filters_tasks_and_steps_without_breaking_open() {
+    let f = fixture();
+    let (_t, root) = runs_root();
+    start(&root, &bugfix_toml(), "first");
+    start(&root, &bugfix_toml(), "second");
+    let mut app = runs_app(&f, &root);
+
+    press(&mut app, &[KeyCode::Char('/'), KeyCode::Char('s'), KeyCode::Char('e'), KeyCode::Char('c'), KeyCode::Enter]);
+    assert_eq!(aurora_tui::screens::runs::visible_runs(&app), [1]);
+    let s = screen(&app, 130, 28);
+    assert!(s.contains("second") && !s.contains("first"), "{s}");
+    press(&mut app, &[KeyCode::Enter]);
+    assert_eq!(aurora_tui::screens::runs::open_run(&app).map(|r| r.run_id.as_str()), Some("second"));
+
+    press(&mut app, &[KeyCode::Esc]);
+    press(&mut app, &[KeyCode::Char('/'), KeyCode::Char('r'), KeyCode::Char('e'), KeyCode::Char('v'), KeyCode::Enter]);
+    assert_eq!(aurora_tui::screens::runs::visible_stages(&app), [3, 4]);
+    assert_eq!(aurora_tui::screens::runs::selected_stage(&app).map(|s| s.id.as_str()), Some("review"));
+}
+
 fn open_submit(app: &mut App) {
     press(app, &[KeyCode::Char('s')]);
     drain(app);

@@ -1,8 +1,11 @@
 //! R2 Step 4b: applying an install plan and undoing it. Temporary projects only.
 
 use std::collections::BTreeMap;
+use std::env;
 use std::fs;
+use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use aurora_skills::apply::{ApplyError, ApplyInput, OpStatus, apply, pending_op, undo};
 use aurora_skills::plan::{
@@ -252,6 +255,44 @@ fn a_crash_leaves_a_pending_operation_that_blocks_until_undone() {
     let after: Vec<_> = snapshot(&pr.dir).into_iter().filter(|(p, _)| !p.ends_with('/')).collect();
     let before: Vec<_> = before.into_iter().filter(|(p, _)| !p.ends_with('/')).collect();
     assert_eq!(after, before);
+}
+
+#[test]
+fn a_sigkilled_process_leaves_a_recoverable_pending_operation() {
+    const PROJECT_ENV: &str = "AURORA_TEST_SIGKILL_PROJECT";
+    if let Some(project) = env::var_os(PROJECT_ENV) {
+        let project = PathBuf::from(project);
+        let items = [prepared("tdd", "v1", &["claude"]), prepared("review", "v1", &["codex"])];
+        let skills: Vec<PreparedSkill> = items.iter().map(|(skill, _)| skill.clone()).collect();
+        let plan = plan_now(&project, &skills, false);
+        assert!(matches!(
+            run(&project, &plan, &contents(&items), "sigkill-op", Some(1)),
+            Err(ApplyError::InjectedFault(1))
+        ));
+        let status = Command::new("kill")
+            .arg("-KILL")
+            .arg(std::process::id().to_string())
+            .status()
+            .expect("send SIGKILL to test subprocess");
+        panic!("kill exited without terminating the subprocess: {status}");
+    }
+
+    let pr = project();
+    let before = snapshot(&pr.dir);
+    let status = Command::new(std::env::current_exe().expect("test executable"))
+        .args(["--exact", "a_sigkilled_process_leaves_a_recoverable_pending_operation", "--nocapture"])
+        .env(PROJECT_ENV, &pr.dir)
+        .status()
+        .expect("run crash subprocess");
+    assert_eq!(status.signal(), Some(9), "child should be terminated by SIGKILL: {status:?}");
+    assert_eq!(pending_op(&pr.dir).expect("pending operation"), Some("sigkill-op".into()));
+    assert_ne!(snapshot(&pr.dir), before, "the interrupted operation left its applied step on disk");
+
+    undo(&pr.dir, None).expect("recover interrupted operation");
+    assert!(pending_op(&pr.dir).expect("pending operation cleared").is_none());
+    let after: Vec<_> = snapshot(&pr.dir).into_iter().filter(|(path, _)| !path.ends_with('/')).collect();
+    let before: Vec<_> = before.into_iter().filter(|(path, _)| !path.ends_with('/')).collect();
+    assert_eq!(after, before, "recovery restores the project files");
 }
 
 #[test]

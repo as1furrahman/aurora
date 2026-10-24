@@ -1,5 +1,5 @@
-//! Evidence-gated run tracking. Ported from `tests/test_workflow_engine.py` (run layout,
-//! acceptance gates, optional/approval/completion, resume/integrity, review regressions).
+//! Evidence-gated run tracking: run layout, acceptance gates, optional stages, approval,
+//! completion, resume, integrity, and review regressions.
 //! Every run lives in a temporary directory; the boundary policy uses a fake home.
 
 use std::fs;
@@ -567,7 +567,7 @@ fn approver_must_be_named() {
 }
 
 #[test]
-fn status_json_shape_matches_python_fields() {
+fn status_json_shape_preserves_version_one_fields() {
     let t = setup();
     let run_dir = t.start("r1");
     let value: Value = serde_json::to_value(t.engine.status(&run_dir).expect("status")).expect("json");

@@ -1,8 +1,7 @@
 //! Skill-registry resolution, shared by the CLI and the TUI:
 //! `--registry` > `$AURORA_REGISTRY_PATH` > `$AWB_REGISTRY_PATH` > the registry built into the binary.
 //!
-//! The built-in fallback means an installed binary always has a registry, which fixes the
-//! Python packaging defect recorded as F6 in `docs/audits/STAGE0_RENAME_AUDIT.md`.
+//! The built-in fallback means an installed binary always has a registry.
 
 use std::path::{Path, PathBuf};
 

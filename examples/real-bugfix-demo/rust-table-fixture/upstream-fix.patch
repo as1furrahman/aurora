@@ -1,0 +1,12 @@
+diff --git a/src/lib.rs b/src/lib.rs
+index 97eeb3b..e95e0ad 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -3,5 +3,6 @@
+ /// This fixture starts with the issue demonstrated by the workflow: literal pipes in cell
+ /// content are emitted as column separators.
+ pub fn render_row(cells: &[&str]) -> String {
+-    format!("| {} |", cells.join(" | "))
++    let escaped: Vec<String> = cells.iter().map(|cell| cell.replace('|', r"\|")).collect();
++    format!("| {} |", escaped.join(" | "))
+ }

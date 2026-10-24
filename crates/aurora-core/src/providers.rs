@@ -1,13 +1,13 @@
 //! Execution providers (coding CLIs) as static specifications.
 //!
-//! Port of `awb/providers/{base,registry}.py`. Providers know how a CLI is invoked, never
-//! where it discovers skills (that is the skill-storage side). Milestone R1 supports manual
-//! handoff only; nothing here spawns a process. Facts verified 2026-10-23; sources in
+//! Providers describe how a CLI is invoked, never where it discovers skills (that is the
+//! skill-storage side). Aurora supports manual handoff only; nothing here spawns a process.
+//! Facts verified 2026-10-23; sources in
 //! `docs_urls` and `docs/architecture/provider-adapter-contract.md`.
 
 use serde::{Deserialize, Serialize};
 
-use crate::util::py_list;
+use crate::util::list_repr;
 
 pub const MANUAL_HANDOFF: &str = "manual-handoff";
 
@@ -236,7 +236,7 @@ pub struct ProviderNotEnabled {
 
 /// Unknown provider id.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[error("Unknown provider '{0}'. Known providers: {known}", known = py_list(&PROVIDER_IDS))]
+#[error("Unknown provider '{0}'. Known providers: {known}", known = list_repr(&PROVIDER_IDS))]
 pub struct UnknownProvider(pub String);
 
 pub fn get_provider(id: &str) -> Result<&'static ProviderSpec, UnknownProvider> {

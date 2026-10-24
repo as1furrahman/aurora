@@ -21,10 +21,10 @@ use sha2::{Digest, Sha256};
 use crate::FsError;
 use crate::paths::{open_dir_nofollow, validate_path};
 
-/// Staging-file prefix, shared with the Python implementation (gitignored as `.awb_stage_*`).
+/// Staging-file prefix retained for compatibility (gitignored as `.awb_stage_*`).
 pub const STAGE_PREFIX: &str = ".awb_stage_";
 
-/// Failure-injection points, the test seam used by the Python suite's `_fault_at`.
+/// Failure-injection points used by filesystem failure tests.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Fault {
     AfterCreate,
@@ -121,7 +121,7 @@ pub fn atomic_write_with_fault(
     })();
     match result {
         Ok(info) => {
-            // Flush the directory entry; best effort, as in Python.
+            // Flush the directory entry on a best-effort basis.
             let _ = rustix::fs::fsync(&dir);
             Ok(info)
         }

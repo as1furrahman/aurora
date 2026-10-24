@@ -165,6 +165,14 @@ static BINDINGS: &[Binding] = &[
     ),
     b(
         Ctx::Runs,
+        &[(KeyCode::Char('d'), NONE)],
+        "d archive task",
+        "Move the selected task into the archive after confirmation",
+        Action::ArchiveTask,
+        true,
+    ),
+    b(
+        Ctx::Runs,
         &[(KeyCode::Enter, NONE)],
         "Enter open",
         "Open a task; on a step, show its instructions",

@@ -1,6 +1,5 @@
-//! Deterministic, role-specific handoff bundles for manual execution (ADR-0005). Port of
-//! `awb/workflow/handoff.py`, byte-identical: no timestamps, so the same run directory, plan
-//! and stage always render the same bytes.
+//! Deterministic, role-specific handoff bundles for manual execution (ADR-0005). No timestamps
+//! are included, so the same run directory, plan, and stage always render the same bytes.
 
 use std::path::Path;
 
@@ -26,7 +25,7 @@ pub fn render_handoff(wf: &WorkflowDefinition, stage_plan: &PlannedStage, run_di
 }
 
 /// As [`render_handoff`], plus an "Open concerns" section when upstream gates passed with
-/// concerns or were waived. With no notes the output is byte-identical to the Python bundle.
+/// concerns or were waived. With no notes the output retains the original bundle format.
 pub fn render_handoff_with_notes(
     wf: &WorkflowDefinition,
     stage_plan: &PlannedStage,

@@ -18,7 +18,8 @@ ARCHIVE="$(cd "$DIST" && ls aurora-cli-*-unknown-linux-gnu.tar.xz aurora-cli-*-a
 
 rm -rf "$T"; REL="$T/srv/$SLUG/releases/download/v$VERSION"; mkdir -p "$REL"
 cp "$DIST"/*.tar.xz "$DIST"/*.sha256 "$DIST"/sha256.sum "$DIST"/aurora-cli-installer.sh "$REL/"
-(cd "$T/srv" && exec python3 -m http.server "$PORT" --bind 127.0.0.1 >"$T/http.log" 2>&1) &
+rustc --edition=2024 --deny warnings "$REPO/scripts/local_http_server.rs" -o "$T/local-http-server" || exit 2
+"$T/local-http-server" "$T/srv" "127.0.0.1:$PORT" >"$T/http.log" 2>&1 &
 SRV=$!
 trap 'kill $SRV 2>/dev/null; tmux kill-session -t aurora-installer-test 2>/dev/null' EXIT
 sleep 1

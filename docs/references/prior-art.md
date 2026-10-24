@@ -68,9 +68,9 @@ differ.
 
 Known disagreements:
 
-- **Codex.** Several tools, and Aurora's own Python `codex-cli` adapter, use `~/.codex/skills`.
-  The official docs say `~/.agents/skills`. Treat `~/.codex/skills` as legacy (?). Protect
-  `.system` under both paths.
+- **Codex.** Several tools and Aurora's retired prototype used `~/.codex/skills`; the official
+  docs say `~/.agents/skills`. Aurora's Rust installer uses the project-local `.agents/skills/`
+  directory and does not enumerate either global path (ADR-0007).
 - **Antigravity.** asm and skills-manager use stale paths.
 - **Shared directories.** `.agents/skills` is read by about six CLIs, and `.claude/skills` by
   Claude, Copilot, Cursor and OpenCode. **Codex has no exclusive project skill directory.**

@@ -350,7 +350,8 @@ fn apply_then_undo_round_trips() {
     assert_eq!(code, 0);
     assert!(out.contains("Nothing to do"), "{out}");
 
-    let (code, out, err) = undo(&f);
+    let project = f.project.to_str().expect("utf-8");
+    let (code, out, err) = aurora(&["skills", "undo", "--project", project, "--yes"]);
     assert_eq!(code, 0, "{out}{err}");
     assert!(out.contains("Restored"), "{out}");
     assert_eq!(files(&f.project), before, "the project is back to where it started");

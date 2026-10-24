@@ -1,6 +1,6 @@
 ---
 name: task-router
-description: Autonomous task router for coding agents: routes complex programming tasks to targeted, minimal skill specializations without context bloat.
+description: "Autonomous task router for coding agents: routes complex programming tasks to targeted, minimal skill specializations without context bloat."
 ---
 
 # Autonomous Task Router

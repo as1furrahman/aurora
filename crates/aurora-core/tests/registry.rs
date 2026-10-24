@@ -1,4 +1,4 @@
-//! Skill-registry reader (port of `awb/registry/{parser,validator}.py`).
+//! Skill-registry parsing, validation, and dependency ordering.
 
 mod common;
 

@@ -1,5 +1,5 @@
-//! `aurora workflow start|status|submit|approve|resume` (port of the run commands in
-//! `awb/workflow/commands.py`). Exit codes: 0 ok, 1 error / gate not satisfied, 3 blocked.
+//! `aurora workflow start|status|submit|approve|resume`. Exit codes: 0 ok, 1 error / gate not
+//! satisfied, 3 blocked.
 
 use std::path::PathBuf;
 

@@ -1,8 +1,7 @@
-//! Mandatory cross-process mutation lock (port of `awb/safety/locking.py`).
+//! Mandatory cross-process mutation lock.
 //!
-//! Uses `flock` (std `File::try_lock` on Unix), the same mechanism as the Python
-//! implementation, so Rust and Python processes exclude each other. The lock file is never
-//! unlinked or recreated (SEC-01/SEC-08): the kernel releases a dead holder's lock, and
+//! Uses `flock` (std `File::try_lock` on Unix). The lock file is never unlinked or recreated
+//! (SEC-01/SEC-08): the kernel releases a dead holder's lock, and
 //! after acquiring we verify the locked descriptor is still the file at the path.
 
 use std::fs::File;

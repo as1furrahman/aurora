@@ -1,6 +1,6 @@
 # Demo registry: the shipped registry, plus Hermes compatibility for the plain SKILL.md skills.
 # In real use, a team declares in its own registry which CLIs can load which skills.
-# Format: TOML (Parsed deterministically via Python standard library tomllib)
+# Format: TOML, parsed by Aurora's Rust workflow engine.
 
 [registry]
 version = "1.0.0"

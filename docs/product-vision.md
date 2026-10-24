@@ -73,8 +73,9 @@ It never claims independent verification in that case.
   model is a static dependency graph with declared gates.
 - **Lossy conversion of skills between agent formats.** Incompatibility is reported, not papered
   over.
-- **Third-party runtime dependencies.** Python standard library only, unless a concrete requirement
-  justifies one.
+- **Unnecessary runtime dependencies.** Cargo dependencies are kept focused and reviewed against
+  maintenance, license, and security policy; the distributed product does not require a Python
+  runtime.
 
 ## Principles
 

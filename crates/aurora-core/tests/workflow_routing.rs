@@ -1,7 +1,6 @@
 //! Routing semantics: multi-provider routing vs single-provider override, capability checks,
-//! declared fallback and independence reporting (ADR-0004). Ported from
-//! `tests/test_workflow_routing.py`. (The Python "planning performs no writes" test is covered
-//! structurally by `tests/purity.rs`.)
+//! declared fallback and independence reporting (ADR-0004). Planning purity is covered separately
+//! in `tests/purity.rs`.
 
 mod common;
 

@@ -1,12 +1,12 @@
 //! Read-only canonical skill registry (`registry/skills.toml`).
 //!
-//! Port of `awb/registry/{parser,validator}.py`: the same rules and messages, first error wins.
+//! Registry parsing and validation. The first validation error is returned to the caller.
 
 use std::collections::{HashMap, HashSet};
 
 use toml::{Table, Value};
 
-use crate::util::{is_kebab_id, is_semver, py_list};
+use crate::util::{is_kebab_id, is_semver, list_repr};
 
 /// Skill-storage adapter ids a skill may declare in `compatible_agents`.
 pub const ALLOWED_AGENTS: &[&str] =
@@ -117,7 +117,7 @@ pub fn parse_registry_str(content: &str) -> Result<Registry, RegistryError> {
             },
             id,
         };
-        // Later duplicates replace earlier ones (as the Python dict does); duplicates are rejected below.
+        // Later duplicates replace earlier entries; duplicates are rejected below.
         skills.retain(|s| s.id != skill.id);
         skills.push(skill);
     }
@@ -203,7 +203,7 @@ fn validate_skill(skill: &SkillDefinition) -> Result<(), RegistryError> {
             allowed.sort_unstable();
             return Err(Validation(format!(
                 "Skill '{id}' declares unrecognized agent '{agent}'. Allowed: {}",
-                py_list(&allowed)
+                list_repr(&allowed)
             )));
         }
     }

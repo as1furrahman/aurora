@@ -1,9 +1,8 @@
 //! Run record (`run.json`, schema v1) — pure types and strict validation (ADR-0003).
 //!
-//! Schema-compatible with the Python implementation (`awb/workflow/runs.py`): same keys and
-//! semantics, written with sorted keys and 2-space indentation, so either implementation can
-//! resume the other's run. Strictness mirrors Python: unknown top-level keys are tolerated,
-//! but stage records must have exactly the v1 keys and valid states.
+//! Compatible with existing schema-v1 run records: stable keys and semantics, written with sorted
+//! keys and 2-space indentation. Unknown top-level keys are tolerated, but stage records must
+//! have exactly the v1 keys and valid states.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -62,7 +61,7 @@ pub struct RunRecord {
     pub stages: IndexMap<String, StageRecord>,
     pub events: Vec<Event>,
     /// Gate outcomes beyond plain pass (structured verdicts, waivers). A top-level map keeps
-    /// stage records at exactly the v1 keys, so the Python implementation still loads the run.
+    /// stage records at exactly the v1 keys, preserving compatibility with older readers.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub gates: BTreeMap<String, GateOutcome>,
 }
@@ -206,7 +205,7 @@ impl RunRecord {
         if !missing.is_empty() {
             return Err(RecordError(format!("missing keys {missing:?}")));
         }
-        // Stage records must carry exactly the v1 keys, as in Python (serde alone would accept a
+        // Stage records must carry exactly the v1 keys (serde alone would accept a
         // missing optional key as null).
         if let Some(stages) = obj.get("stages").and_then(Value::as_object) {
             for (sid, st) in stages {
@@ -235,7 +234,7 @@ impl RunRecord {
         Ok(record)
     }
 
-    /// Canonical serialization: sorted keys, 2-space indent, trailing newline (as Python writes).
+    /// Canonical serialization: sorted keys, 2-space indent, trailing newline.
     pub fn to_json(&self) -> String {
         let value = serde_json::to_value(self).unwrap_or(Value::Null);
         let mut text = serde_json::to_string_pretty(&sort_keys(value)).unwrap_or_default();

@@ -1,6 +1,5 @@
-//! Run store (port of `awb/workflow/runs.py`): run-id rules, create-never-reuse, boundary-
-//! checked atomic writes, strict record loading, and schema compatibility with records written
-//! by the Python implementation (`tests/fixtures/runs/python-run/run.json`).
+//! Run store: run-id rules, create-never-reuse, boundary-checked atomic writes, strict record
+//! loading, and schema compatibility with the frozen v1 record fixture.
 
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
@@ -16,8 +15,8 @@ fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn python_run() -> Vec<u8> {
-    fs::read(repo_root().join("tests/fixtures/runs/python-run/run.json")).expect("python golden")
+fn compatibility_run() -> Vec<u8> {
+    fs::read(repo_root().join("tests/fixtures/runs/run-v1/run.json")).expect("v1 fixture")
 }
 
 struct Sandbox {
@@ -87,8 +86,8 @@ fn writes_stay_inside_the_run_dir() {
 }
 
 #[test]
-fn loads_records_written_by_python() {
-    let record = RunRecord::from_json(&python_run()).expect("python record is valid v1");
+fn loads_frozen_v1_record() {
+    let record = RunRecord::from_json(&compatibility_run()).expect("record is valid v1");
     assert_eq!(record.run_id, "golden");
     assert_eq!(record.stage("plan").expect("plan").state, StageState::Passed);
     assert_eq!(record.stage("plan").expect("plan").attempts, 2);
@@ -97,16 +96,16 @@ fn loads_records_written_by_python() {
 }
 
 #[test]
-fn save_and_load_round_trip_is_semantically_identical_to_python() {
+fn save_and_load_round_trip_preserves_v1_semantics() {
     let s = sandbox();
     let dir = s.store.create_run_dir(&s.root, "golden").expect("create");
-    let record = RunRecord::from_json(&python_run()).expect("valid");
+    let record = RunRecord::from_json(&compatibility_run()).expect("valid");
     s.store.save_record(&dir, &record).expect("save");
     let reloaded = s.store.load_record(&dir).expect("load");
     assert_eq!(reloaded, record);
     let ours: Value = serde_json::from_slice(&fs::read(dir.join("run.json")).expect("read")).expect("json");
-    let theirs: Value = serde_json::from_slice(&python_run()).expect("json");
-    assert_eq!(ours, theirs, "same JSON document as the Python writer");
+    let theirs: Value = serde_json::from_slice(&compatibility_run()).expect("json");
+    assert_eq!(ours, theirs, "round-trip preserves the v1 JSON document");
     let text = fs::read_to_string(dir.join("run.json")).expect("read");
     assert!(text.ends_with("}\n") && text.contains("\n  \"events\": ["), "sorted, 2-space indented");
 }
@@ -117,7 +116,7 @@ type Mutation = Box<dyn Fn(&mut Value)>;
 fn record_schema_is_strict() {
     let s = sandbox();
     let dir = s.store.create_run_dir(&s.root, "r1").expect("create");
-    let good: Value = serde_json::from_slice(&python_run()).expect("json");
+    let good: Value = serde_json::from_slice(&compatibility_run()).expect("json");
     let mutations: Vec<Mutation> = vec![
         Box::new(|r| r["schema_version"] = 2.into()),
         Box::new(|r| r["kind"] = "other".into()),
@@ -136,7 +135,7 @@ fn record_schema_is_strict() {
         fs::write(dir.join("run.json"), serde_json::to_vec(&bad).expect("json")).expect("write");
         assert!(matches!(s.store.load_record(&dir), Err(RunError::Record(_))), "mutation {i} accepted");
     }
-    // Unknown *top-level* keys are tolerated (forward compatibility), as in Python.
+    // Unknown *top-level* keys are tolerated for forward compatibility.
     let mut extra = good.clone();
     extra["future_field"] = 1.into();
     fs::write(dir.join("run.json"), serde_json::to_vec(&extra).expect("json")).expect("write");
@@ -156,7 +155,7 @@ fn symlinked_record_is_refused() {
     let s = sandbox();
     let dir = s.store.create_run_dir(&s.root, "r1").expect("create");
     let elsewhere = s.root.join("elsewhere.json");
-    fs::write(&elsewhere, python_run()).expect("write");
+    fs::write(&elsewhere, compatibility_run()).expect("write");
     std::os::unix::fs::symlink(&elsewhere, dir.join("run.json")).expect("symlink");
     assert!(s.store.load_record(&dir).is_err());
 }

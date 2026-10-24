@@ -1,5 +1,6 @@
 ---
 source: crates/aurora-tui/tests/install_tab.rs
+assertion_line: 55
 expression: s
 ---
 "Aurora · project · Fix a bug · Using Claude Code + Codex                                                                          "
@@ -28,7 +29,7 @@ expression: s
 "│                                                                      ││  Aurora records what it added in aurora.lock and keeps │"
 "│                                                                      ││  backups in .aurora/                                   │"
 "│Before adding, please check: scripted. Select it, press Enter to read ││  aurora skills apply --preset bugfix --project         │"
-"│it, then r.                                                           ││  [tmp]/project                │"
-"│                                                                      ││  aurora skills undo --project                          │"
+"│it, then r.                                                           ││  [tmp]/project                               │"
+"│                                                                      ││  aurora skills undo --project [tmp]/project  │"
 "└──────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────────────────┘"
 "Enter read it  r mark as checked  a add to project  u undo  1-4 pages  ↑↓ move  / search  t set up  ? help  q quit                "

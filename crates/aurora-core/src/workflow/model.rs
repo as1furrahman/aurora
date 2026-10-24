@@ -1,5 +1,5 @@
 //! Workflow definition model (schema v1). Roles are responsibilities; providers live only
-//! in [`RoutingPolicy`] (docs/architecture/workflow-schema.md). Port of `awb/workflow/model.py`.
+//! in [`RoutingPolicy`] (docs/architecture/workflow-schema.md).
 
 use std::fmt;
 

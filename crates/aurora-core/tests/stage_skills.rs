@@ -1,6 +1,5 @@
 //! R2 Step 5: catalog skills per stage travel in the plan and appear in handoffs with each
-//! CLI's invocation syntax. Plans and handoffs without them stay identical to before (and to
-//! the Python reference).
+//! CLI's invocation syntax. Plans and handoffs without them retain their original schema.
 
 mod common;
 

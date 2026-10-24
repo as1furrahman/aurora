@@ -1,11 +1,11 @@
 # Workflow Schema (v1)
 
-**Status:** implemented in Milestone 1 (`awb/workflow/`).
+**Status:** implemented in the Rust workspace (`aurora-core`).
 **Example:** [`workflows/examples/plan-implement-review.toml`](../../workflows/examples/plan-implement-review.toml)
 
 ## 1. Definition file (TOML, `schema_version = 1`)
 
-The parser (`awb.workflow.parser`) is strict. Unknown keys at any level are errors, and so are
+The parser (`aurora_core::workflow::parser`) is strict. Unknown keys at any level are errors, and so are
 wrong types and dangling references.
 
 ```toml
@@ -58,9 +58,9 @@ to = "codex"                      # must be eligible for the role
 on = ["incompatible", "unavailable"]
 ```
 
-Known provider ids: `claude`, `codex`, `antigravity` (see `awb/providers/registry.py`).
+Known provider ids: `claude`, `codex`, `antigravity`, and `hermes` (see `aurora_core::providers`).
 
-## 2. Planning semantics (`awb.workflow.planner`)
+## 2. Planning semantics (`aurora_core::workflow::planner`)
 
 **Order.** Stages are sorted topologically. Ties are broken by declaration order, so the same
 input always yields the same order.
@@ -197,14 +197,11 @@ The loader rejects unknown `schema_version` or `kind`, invalid states, and a sta
 match the pinned workflow. Future versions must add a migration rather than reinterpret v1
 (ADR-0003).
 
-## 7. Additive extensions to schema v1 (Rust implementation)
+## 7. Additive extensions to schema v1
 
-These fields were added after the Python reference was frozen (ADR-0006, R1 Step 6). They are
-**additive**. A definition that does not use them is valid in both implementations and produces
-identical plans and runs. The Python implementation rejects a definition that does use them,
-because of its strict unknown-key rule. It does still load and continue *runs* that carry the
-new data: gate data lives in a top-level `gates` map, which Python tolerates, while stage
-records keep exactly the v1 keys.
+These fields extend the v1 schema while retaining compatibility with existing workflow and run
+records (ADR-0006). Definitions that omit them keep their existing behavior. Gate data lives in a
+top-level `gates` map, while stage records retain the v1 keys.
 
 ### 7.1 Structured verdicts and gate outcomes
 
@@ -245,7 +242,7 @@ PENDING, RUNNING and PASSED stages cannot be waived.
 
 - `run.json` may contain `gates: {<stage>: {outcome, findings, waiver?}}`. It is omitted when empty.
 - `status --json` may contain `concerns: [...]` and `waived: [...]`. Both are omitted when empty,
-  so status output for runs without gates matches Python exactly.
+  so status output for runs without gates omits empty fields.
 
 ### 7.4 Capability requirements and enforcement strength
 
@@ -294,7 +291,7 @@ review and verification to a provider distinct from implementation, which the te
 and every preset ends with a human approval gate. `--provider X` still runs every role on one CLI
 and reports the reduced independence.
 
-### 7.6 Hermes provider (Rust only)
+### 7.6 Hermes provider
 
 `hermes` (Nous Research Hermes Agent) is the fourth provider. Its facts were verified on
 2026-10-24 against the installed CLI (`hermes --help`, Hermes Agent v0.22.5):
@@ -304,6 +301,5 @@ and reports the reduced independence.
 - skills: `~/.hermes/skills` (skill adapter id `hermes`);
 - forbidden flags: `--yolo` and `--accept-hooks`.
 
-The Python reference does not know this provider. Workflows that route to `hermes` therefore run
-only in the Rust implementation. The parity scripts compare only the providers both
-implementations know.
+Hermes is supported by the canonical Rust implementation and participates in normal provider
+routing and compatibility checks.

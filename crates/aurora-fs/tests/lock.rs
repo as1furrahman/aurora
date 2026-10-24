@@ -1,5 +1,5 @@
-//! Mandatory run locking, ported from `tests/test_locking.py`. The lock file persists across
-//! releases (SEC-01/SEC-08: never unlink or recreate it).
+//! Mandatory run locking. The lock file persists across releases (SEC-01/SEC-08: never unlink or
+//! recreate it).
 
 use std::fs;
 use std::time::{Duration, Instant};

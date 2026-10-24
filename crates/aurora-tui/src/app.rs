@@ -76,6 +76,8 @@ pub enum Action {
     OpenRun,
     /// Runs: reload the run list.
     ReloadRuns,
+    /// Tasks: ask to archive the selected task.
+    ArchiveTask,
     /// Runs: open the submit form for the selected stage.
     StartSubmit,
     /// Submit form: check or uncheck the selected criterion.
@@ -140,6 +142,10 @@ pub enum Command {
         text: String,
     },
     StartTask(aurora_app::runs::TaskRequest),
+    ArchiveTask {
+        run_dir: PathBuf,
+        project: PathBuf,
+    },
 }
 
 /// Results coming back from the event loop.
@@ -155,6 +161,7 @@ pub enum Msg {
     Undone(Result<UndoReport, String>),
     /// A new task's run directory, or why it could not start.
     TaskStarted(Result<PathBuf, String>),
+    TaskArchived(Result<PathBuf, String>),
     Runs(Result<Vec<RunSummary>, String>),
     Text {
         title: String,
@@ -219,11 +226,12 @@ pub enum Focus {
     Detail,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConfirmOp {
     Apply,
     Undo,
     StartTask,
+    ArchiveTask(PathBuf),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -483,7 +491,8 @@ impl App {
                     && let Some(i) = self.runs.iter().position(|r| r.dir == dir)
                 {
                     self.tab = Tab::Runs;
-                    self.cursor[Tab::Runs.index()] = i;
+                    self.cursor[Tab::Runs.index()] =
+                        crate::screens::runs::visible_runs(self).iter().position(|visible| *visible == i).unwrap_or(0);
                     self.run_open = Some(i);
                     self.stage_cursor = 0;
                     self.focus = Focus::List;
@@ -498,6 +507,17 @@ impl App {
                         self.open_after_load = Some(dir);
                     }
                     Err(e) => self.notify(format!("The task couldn't start: {e}")),
+                }
+                self.load_runs();
+            }
+            Msg::TaskArchived(result) => {
+                self.busy = None;
+                match result {
+                    Ok(path) => {
+                        self.run_open = None;
+                        self.notify(format!("Task archived. It is saved in {}.", path.display()));
+                    }
+                    Err(e) => self.notify(format!("The task couldn't be archived: {e}")),
                 }
                 self.load_runs();
             }
@@ -592,7 +612,14 @@ impl App {
             (Tab::Skills, crate::screens::skills::rows(self).len()),
             (Tab::Roles, crate::screens::roles::rows(self).len()),
             (Tab::Install, crate::screens::install::rows(self).len()),
-            (Tab::Runs, self.runs.len()),
+            (
+                Tab::Runs,
+                if self.run_open.is_some() {
+                    crate::screens::runs::visible_stages(self).len()
+                } else {
+                    crate::screens::runs::visible_runs(self).len()
+                },
+            ),
         ];
         for (tab, len) in lens {
             let c = &mut self.cursor[tab.index()];
@@ -601,7 +628,7 @@ impl App {
         if self.run_open.is_some_and(|i| i >= self.runs.len()) {
             self.run_open = None;
         }
-        let stages = crate::screens::runs::open_run(self).map_or(0, |r| r.stages.len());
+        let stages = crate::screens::runs::visible_stages(self).len();
         self.stage_cursor = self.stage_cursor.min(stages.saturating_sub(1));
     }
 
@@ -733,6 +760,7 @@ impl App {
             Action::ConfirmYes => self.confirm_yes(),
             Action::OpenRun => self.open_run(),
             Action::ReloadRuns => self.load_runs(),
+            Action::ArchiveTask => self.start_archive_task(),
             Action::StartSubmit => {
                 if let Some((dir, stage)) = self.selected_run_stage() {
                     self.commands.push_back(Command::LoadCriteria { run_dir: dir, stage });
@@ -807,8 +835,10 @@ impl App {
 
     fn open_run(&mut self) {
         if self.run_open.is_none() {
-            if self.runs.get(self.cursor[Tab::Runs.index()]).is_some_and(|r| r.status.is_ok()) {
-                self.run_open = Some(self.cursor[Tab::Runs.index()]);
+            if let Some(i) = crate::screens::runs::visible_runs(self).get(self.cursor[Tab::Runs.index()])
+                && self.runs.get(*i).is_some_and(|r| r.status.is_ok())
+            {
+                self.run_open = Some(*i);
                 self.stage_cursor = 0;
             }
             return;
@@ -1004,7 +1034,36 @@ impl App {
                     catalog: self.opts.catalog.clone(),
                 }));
             }
+            ConfirmOp::ArchiveTask(run_dir) => {
+                if let Some(b) = self.busy {
+                    return self.notify(format!("Please wait: {b}…"));
+                }
+                self.busy = Some("archiving the task");
+                self.commands.push_back(Command::ArchiveTask { run_dir, project: self.opts.project.clone() });
+            }
         }
+    }
+
+    fn start_archive_task(&mut self) {
+        if let Some(b) = self.busy {
+            return self.notify(format!("Please wait: {b}…"));
+        }
+        let Some(run_root) = self.opts.run_root.as_deref() else { return };
+        if run_root != aurora_app::runs::default_run_root(&self.opts.project) {
+            return self.notify("Tasks in a custom folder can't be archived from Aurora yet");
+        }
+        let index = self.run_open.unwrap_or_else(|| {
+            crate::screens::runs::visible_runs(self).get(self.cursor[Tab::Runs.index()]).copied().unwrap_or(usize::MAX)
+        });
+        let Some(run) = self.runs.get(index) else { return };
+        let id = run.dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let title = format!(" Archive task {id}? ");
+        let lines = vec![
+            "Moves this task out of your active task list.".to_string(),
+            "You can find its files in .aurora/archive/runs.".to_string(),
+            "Nothing is deleted.".to_string(),
+        ];
+        self.popups.push(Popup::Confirm { op: ConfirmOp::ArchiveTask(run.dir.clone()), title, lines });
     }
 
     /// Ask to start a task: the steps and who does them, then yes or no.

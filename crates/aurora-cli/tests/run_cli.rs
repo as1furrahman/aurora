@@ -1,5 +1,5 @@
-//! CLI tests for `aurora workflow start|status|submit|approve|resume`. Ported from the
-//! `TestRunCLI` class in `tests/test_workflow_engine.py`, plus exit-code and JSON checks.
+//! CLI tests for `aurora workflow start|status|submit|approve|resume`, including exit-code and
+//! JSON checks.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -124,6 +124,45 @@ fn start_requires_run_root() {
     let (_t, bin, _root) = setup();
     let r = aurora(&bin, &["workflow", "start", &example()]);
     assert_eq!(r.code, 2, "clap usage error");
+}
+
+#[test]
+fn task_list_and_archive_keep_task_files() {
+    let (_t, bin, _unused_root) = setup();
+    let project = bin.parent().expect("project");
+    let run_root = project.join(".aurora/runs");
+    fs::create_dir_all(&run_root).expect("run root");
+    let run_root_s = run_root.display().to_string();
+    let started = aurora(
+        &bin,
+        &["workflow", "start", &example(), "--run-root", &run_root_s, "--run-id", "task-1", "--no-detect"],
+    );
+    assert_eq!(started.code, 0, "{}{}", started.stdout, started.stderr);
+
+    let project_s = project.display().to_string();
+    let listed = aurora(&bin, &["task", "list", "--project", &project_s, "--json"]);
+    assert_eq!(listed.code, 0, "{}{}", listed.stdout, listed.stderr);
+    assert_eq!(json(&listed.stdout)[0]["id"], "task-1");
+
+    let archived = aurora(&bin, &["task", "archive", "task-1", "--project", &project_s, "--yes"]);
+    assert_eq!(archived.code, 0, "{}{}", archived.stdout, archived.stderr);
+    let archived_dir = project.join(".aurora/archive/runs/task-1");
+    assert!(archived_dir.join("run.json").is_file());
+    let listed = aurora(&bin, &["task", "list", "--project", &project_s, "--json"]);
+    assert_eq!(listed.code, 0, "{}{}", listed.stdout, listed.stderr);
+    assert_eq!(json(&listed.stdout), serde_json::json!([]));
+
+    let archived_list = aurora(&bin, &["task", "list", "--project", &project_s, "--archived", "--json"]);
+    assert_eq!(archived_list.code, 0, "{}{}", archived_list.stdout, archived_list.stderr);
+    assert_eq!(json(&archived_list.stdout)[0]["id"], "task-1");
+
+    let restored = aurora(&bin, &["task", "restore", "task-1", "--project", &project_s]);
+    assert_eq!(restored.code, 0, "{}{}", restored.stdout, restored.stderr);
+    assert!(run_root.join("task-1/run.json").is_file());
+    let archived_list = aurora(&bin, &["task", "list", "--project", &project_s, "--archived", "--json"]);
+    assert_eq!(json(&archived_list.stdout), serde_json::json!([]));
+    let listed = aurora(&bin, &["task", "list", "--project", &project_s, "--json"]);
+    assert_eq!(json(&listed.stdout)[0]["id"], "task-1");
 }
 
 #[test]

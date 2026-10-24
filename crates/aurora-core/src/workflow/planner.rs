@@ -1,6 +1,5 @@
-//! Deterministic, side-effect-free execution planning (ADR-0004). Port of
-//! `awb/workflow/planner.py`: same definition + registry + options + detected set ⇒ identical
-//! plan, with JSON field names identical to the Python plan.
+//! Deterministic, side-effect-free execution planning (ADR-0004). The same definition, registry,
+//! options, and detected-provider set produce the same plan and stable JSON field names.
 
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BinaryHeap, HashMap, HashSet};
@@ -11,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use super::model::{Role, Stage, WorkflowDefinition};
 use crate::providers::{PROVIDER_IDS, Strength, get_provider, is_known_provider};
 use crate::registry::Registry;
-use crate::util::py_list;
+use crate::util::list_repr;
 
 pub const PLAN_SCHEMA_VERSION: u32 = 1;
 
@@ -71,7 +70,7 @@ pub struct PlannedStage {
     pub required_skills: Vec<String>,
     pub recommended_skills: Vec<String>,
     /// Required capabilities and how strongly the assigned provider enforces them (omitted
-    /// when the role requires none, keeping plans identical to the Python plan).
+    /// when the role requires none, keeping the existing plan shape stable).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub enforcement: Vec<PlannedEnforcement>,
     pub independence: Vec<Independence>,
@@ -84,11 +83,11 @@ pub struct PlannedStage {
     pub max_attempts: u32,
     pub on_exhausted: String,
     /// Run-relative path of the structured verdict, when the stage declares one (omitted
-    /// otherwise, so plans without verdicts stay identical to the Python plan).
+    /// otherwise, so plans without verdicts keep the existing shape).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verdict: Option<String>,
     /// Catalog skills to use in this stage (from a CLI profile; omitted when none, keeping plans
-    /// identical to the Python plan).
+    /// stable across plan versions).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stage_skills: Vec<String>,
 }
@@ -224,20 +223,20 @@ fn check_options(
     }
     for pid in override_.into_iter().chain(routes.values().map(String::as_str)) {
         if !is_known_provider(pid) {
-            return Err(PlanError(format!("Unknown provider '{pid}'. Known providers: {}", py_list(&PROVIDER_IDS))));
+            return Err(PlanError(format!("Unknown provider '{pid}'. Known providers: {}", list_repr(&PROVIDER_IDS))));
         }
     }
     for (stage_id, pid) in routes {
         let Some(stage) = wf.stage(stage_id) else {
             let ids: Vec<&str> = wf.stages.iter().map(|s| s.id.as_str()).collect();
-            return Err(PlanError(format!("--route names unknown stage '{stage_id}'. Stages: {}", py_list(&ids))));
+            return Err(PlanError(format!("--route names unknown stage '{stage_id}'. Stages: {}", list_repr(&ids))));
         };
         let eligible = wf.routing.role(&stage.role).map(|r| r.eligible.as_slice()).unwrap_or(&[]);
         if !eligible.contains(pid) {
             return Err(PlanError(format!(
                 "--route {stage_id}={pid}: provider '{pid}' is not eligible for role '{}' (eligible: {})",
                 stage.role,
-                py_list(eligible)
+                list_repr(eligible)
             )));
         }
     }
@@ -343,7 +342,7 @@ fn plan_stage(
                 "not-eligible: provider '{p}' is not eligible for role '{}' (eligible: {}); single-provider mode \
                  never substitutes another",
                 role.id,
-                py_list(&eligible)
+                list_repr(&eligible)
             ));
         }
         (p.to_string(), "override", false)
@@ -385,7 +384,7 @@ fn plan_stage(
         blocked.push(format!(
             "incompatible: required skill(s) {} cannot be loaded by provider '{provider}'; no lossy conversion is \
              performed",
-            py_list(&skills)
+            list_repr(&skills)
         ));
     }
     for item in incompatibilities(&provider, registry, &role.recommended_skills) {

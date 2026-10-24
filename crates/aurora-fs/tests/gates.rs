@@ -1,6 +1,6 @@
 //! Step 6.1 — gate outcomes (additive to schema v1): structured verdicts (pass | concerns |
-//! fail), concerns carried into downstream handoffs, and recorded waivers. Records stay
-//! loadable by the Python implementation (new data lives in the top-level `gates` map).
+//! fail), concerns carried into downstream handoffs, and recorded waivers. Gate data lives in
+//! the top-level `gates` map while stage records retain their v1 shape.
 
 use std::fs;
 use std::path::{Path, PathBuf};

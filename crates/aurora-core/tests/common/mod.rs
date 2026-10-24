@@ -1,4 +1,4 @@
-//! Shared fixtures for aurora-core integration tests. Mirrors `tests/workflow_helpers.py`.
+//! Shared fixtures for aurora-core integration tests.
 #![allow(dead_code)]
 
 use std::path::PathBuf;

@@ -1,5 +1,5 @@
 //! CLI tests for `aurora workflow validate|show|plan` and `aurora providers` (read-only).
-//! Ported from `tests/test_workflow_cli.py`. Provider detection is controlled through a
+//! Provider detection is controlled through a
 //! temporary PATH containing empty executable files; nothing is ever executed.
 
 use std::fs;

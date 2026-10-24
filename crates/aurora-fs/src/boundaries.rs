@@ -1,6 +1,6 @@
 //! Mutation preconditions: protected projects, global agent skill directories, sensitive
-//! system paths, trusted roots, and parent ownership/permissions. Port of
-//! `awb/safety/boundaries.py`. The policy is a value (not globals) so tests can inject
+//! system paths, trusted roots, and parent ownership/permissions. The policy is a value (not
+//! globals) so tests can inject
 //! fake locations instead of touching the real home directory.
 
 use std::os::unix::fs::MetadataExt;
@@ -24,19 +24,23 @@ pub struct BoundaryPolicy {
 impl BoundaryPolicy {
     /// Policy for the current user (`$HOME`).
     pub fn host() -> Self {
-        BoundaryPolicy::for_home(&std::env::home_dir().unwrap_or_else(|| PathBuf::from("/nonexistent-home")))
+        let mut policy =
+            BoundaryPolicy::for_home(&std::env::home_dir().unwrap_or_else(|| PathBuf::from("/nonexistent-home")));
+        // A protected path can only narrow where Aurora writes.  It is deliberately opt-in:
+        // shipping a developer's local projects would be both ineffective for other users and a
+        // privacy leak.
+        policy.protected_projects = std::env::var_os("AURORA_PROTECTED_PROJECTS")
+            .map(|paths| std::env::split_paths(&paths).filter(|path| !path.as_os_str().is_empty()).collect())
+            .unwrap_or_default();
+        policy
     }
 
-    /// Policy for an explicit home directory. The protected-project list matches the Python
-    /// implementation (it is host-specific; see the Stage 0 audit, finding F4).
+    /// Policy for an explicit home directory. Tests and embedding applications can inject
+    /// `protected_projects` explicitly; host policy reads `AURORA_PROTECTED_PROJECTS`.
     pub fn for_home(home: &Path) -> Self {
         BoundaryPolicy {
             home: home.to_path_buf(),
-            protected_projects: vec![
-                PathBuf::from("/home/asif/projects/token-efficient-workflow"),
-                PathBuf::from("/home/asif/projects/dwl"),
-                PathBuf::from("/home/asif/projects/dwl-native-bar-lab"),
-            ],
+            protected_projects: Vec::new(),
             global_agent_dirs: [
                 ".codex/skills",
                 ".gemini/antigravity-cli/skills",

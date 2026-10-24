@@ -1,6 +1,6 @@
 ---
 name: verification-guard
-description: Verification and audit guard: independent pre- and post-mutation verification, cryptographic preservation auditing, and test assertions.
+description: "Verification and audit guard: independent pre- and post-mutation verification, cryptographic preservation auditing, and test assertions."
 ---
 
 # Verification and Audit Guard

@@ -1,52 +1,53 @@
 # Provider and Skill-Storage Adapter Contract
 
-**Status:** accepted for Milestone 1 (2026-10-23). See ADR-0002 for the decision to split the two
-contracts.
+**Status:** implemented in the Rust workspace. The provider facts below are a dated research
+snapshot; see [universal-skill-and-workflow-model.md](universal-skill-and-workflow-model.md) for
+the current crate ownership map. ADR-0002 records why the two concepts stay separate.
 
 Aurora uses **two independent contracts** for each agent. The fact that a skill-storage adapter
 exists for an agent says nothing about whether Aurora can execute that agent, and Aurora's code
 never assumes it does.
 
-## 1. Skill-storage adapter: `awb.adapters.SkillStorageAdapter`
+## 1. Skill-storage adapters
 
-This is an alias of `awb.adapters.base.BaseAdapter`. Every method must be non-mutating with respect
-to real agent directories.
+Rust represents adapter compatibility as stable identifiers in
+`aurora_core::providers::ProviderSpec::skill_adapters`. The skill planner maps providers to
+project-local skill directories in `aurora_skills::plan::skill_dir`; there is no runtime adapter
+trait, global skill inventory, or user-level directory mutation.
 
-| Member | Contract |
-|---|---|
-| `name` | Stable adapter id (`claude-code`, `codex-cli`, `antigravity-cli`, `antigravity-workspace`, `antigravity-ide`) |
-| `display_name` | Human-readable label |
-| `target_type` | `cli`, `workspace` or `ide` |
-| `discovery_path` | The directory this adapter reads skills from |
-| `is_detected()` | Read-only probe (binary on `PATH` and/or directory present). Never spawns a process. |
-| `list_installed_skills()` | Read-only listing. Rejects hidden entries, symlinks, `.system`, and entries without a regular-file `SKILL.md`. |
-| `validate_conformance(sandbox)` | Structural self-test. Writes **only** inside the supplied sandbox. |
+| Provider | Adapter identifiers | Project skill directory |
+|---|---|---|
+| `claude` | `claude-code` | `.claude/skills/` |
+| `codex` | `codex-cli` | `.agents/skills/` |
+| `antigravity` | `antigravity-cli`, `antigravity-workspace` | `.agents/skills/` |
+| `hermes` | `hermes` | `.hermes/skills/` |
 
-Agent-specific paths, formats and exclusions live **only** inside adapter classes. Shared install and
-remove logic (`awb.operations`, `awb.transactions`, `awb.safety`) is never duplicated per agent.
+The shared `.agents/skills/` directory is visible to both Codex and Antigravity. Hermes can also
+read that directory in trusted repositories. Skill parsing, scanning, planning, applying, and undo
+are handled by `aurora-skills` rather than provider-specific adapters.
 
-## 2. Execution provider: `awb.providers.ExecutionProvider`
+The provider skill locations described below are vendor documentation, not Aurora's scan scope.
+Aurora only installs into the project directories in the table and does not inventory global
+skill directories.
 
-| Member | Contract |
-|---|---|
-| `spec` | A frozen `ProviderSpec` (below) |
-| `detect()` | `shutil.which(binary)` only, returning a `ProviderDetection`. It never runs the binary, so it reports no version in Milestone 1. |
-| `build_handoff(...)` | Returns the role prompt text for manual mode. Pure function, no I/O. |
-| `execute(...)` | **Raises `ProviderNotEnabledError` in Milestone 1** (ADR-0005). |
+## 2. Execution providers
 
-`ProviderSpec` fields: `id`, `display_name`, `binary`, `skill_adapters` (adapter ids whose skills
-the CLI loads), `invocation_modes` (Milestone 1: `("manual-handoff",)`), `headless_enabled`
-(`False`), `documented_headless` (a short description of the documented non-interactive form, for
-future use only), `forbidden_flags` (permission-bypass flags Aurora must never emit),
-`docs_urls`, `verified_on`.
+Provider specifications live in `aurora_core::providers::ProviderSpec`. They are static metadata;
+`aurora_app::tools` checks whether each provider binary is present on `PATH` without launching it.
+Workflow handoffs are rendered by `aurora-core::workflow`. Aurora does not execute provider CLIs.
+
+The spec records `id`, `display_name`, `binary`, `skill_adapters`, `skill_invocation`, `run_hint`,
+`documented_headless`, `invocation_modes`, `headless_enabled`, capability `enforcement`,
+`forbidden_flags`, `docs_urls`, and `verified_on`. All supported providers use `manual-handoff`;
+`headless_enabled` is false. Permission-bypass flags are never emitted in handoffs.
 
 ### Responsibilities a future headless implementation must cover
 
-These items are specified now and **not implemented**:
+These items remain future design requirements and are **not implemented**:
 
 - **Invocation:** an argument vector only, never a shell string. The prompt goes in through stdin
   or a file, not interpolated into a command line.
-- **Working directory:** an explicit `cwd`, validated with `validate_security_preconditions`
+- **Working directory:** an explicit `cwd`, validated with `aurora_fs::boundaries::validate_security_preconditions`
   against the run's allowed roots.
 - **Environment:** an explicit allow-list. Credentials are inherited from the user's own
   configuration and never written by Aurora.
@@ -61,10 +62,11 @@ These items are specified now and **not implemented**:
 - **Failure classification:** one of `not-installed`, `invocation-error`, `timeout`, `cancelled`,
   `nonzero-exit`, `output-missing`. Only declared fallback rules may react to these.
 
-## 3. Per-provider facts (verified 2026-10-23)
+## 3. Per-provider facts (research snapshot from 2026-10-23)
 
 Sources are cited with the access date. "Local" means checked on the audit host. These facts inform
-the specs and future work. **Milestone 1 uses none of the invocation flags.**
+provider metadata and future work; they are not instructions to launch a provider. The Hermes
+provider was added later and is described in [workflow-schema.md](workflow-schema.md#76-hermes-provider).
 
 ### Claude Code (`claude`)
 - Local: `claude --version` → `2.1.309 (Claude Code)`. `claude --help` lists `-p/--print`,
@@ -97,10 +99,9 @@ the specs and future work. **Milestone 1 uses none of the invocation flags.**
   in the CWD, the parent directory and the repo root, plus `$HOME/.agents/skills` (user),
   `/etc/codex/skills` (admin), and bundled system skills.
   — https://developers.openai.com/codex/skills (308 → https://learn.chatgpt.com/docs/build-skills)
-- **Discrepancy:** the existing `codex-cli` adapter reads `~/.codex/skills`, which is not among the
-  locations documented on that page. The adapter is left unchanged in Milestone 1 (its tests and
-  `.system` protections belong to earlier phases). `~/.agents/skills` is added to the global block
-  list. Reconciling the Codex discovery path is listed as next-milestone work.
+- **Research note:** the documented Codex global skill paths differ from paths observed by the
+  original prototype. The Rust product does not inspect either set of global directories; its
+  project install location is `.agents/skills/`.
 - **Forbidden flags:** `--dangerously-bypass-approvals-and-sandbox`, `--yolo`,
   `--sandbox danger-full-access`, `--ask-for-approval never`.
 
@@ -121,8 +122,8 @@ the specs and future work. **Milestone 1 uses none of the invocation flags.**
 - Skills: `SKILL.md`, with `description` required and `name` optional. CLI global:
   `~/.gemini/antigravity-cli/skills/`. Workspace (all surfaces): `<root>/.agents/skills/` (legacy
   `.agent/skills`). App/IDE global: `~/.gemini/config/skills/`. — https://antigravity.google/docs/skills
-- These confirm the existing `antigravity-cli`, `antigravity-workspace` and `antigravity-ide` adapter
-  paths.
+- The Rust project install paths are listed in §1. The global paths above are documented for
+  provider context only and are not scanned or modified by Aurora.
 - **Forbidden flags:** `--dangerously-skip-permissions`.
 
 ### Shared directory hazard
