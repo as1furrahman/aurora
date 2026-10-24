@@ -1,0 +1,125 @@
+# Aurora built-in preset: bugfix. Edit freely, then: aurora workflow validate <file>
+# Uses schema v1 extensions (verdict, requires), so it is read by the Rust implementation only.
+schema_version = 1
+
+[workflow]
+id = "bugfix"
+version = "1.0.0"
+name = "Bug fix"
+description = "Reproduce first, fix the root cause, prove unchanged behaviour still holds, review, and accept."
+task_types = ["bugfix"]
+assurance = "standard"
+
+[roles.tester]
+responsibility = "Derive tests from the acceptance criteria, re-run them independently and record exact commands and results."
+required_skills = ["verification-guard"]
+
+[roles.implementer]
+responsibility = "Make the change in small, test-first steps without expanding scope."
+required_skills = ["principles"]
+
+[roles.reviewer]
+responsibility = "Review independently: first spec compliance, then code health; label findings by severity."
+required_skills = ["verification-guard", "principles"]
+requires = ["read_only"]
+
+[[stages]]
+id = "reproduce"
+role = "tester"
+outputs = ["bugfix.md", "repro-test.md"]
+
+  [[stages.acceptance]]
+  id = "behaviour-recorded"
+  description = "bugfix.md records current, expected and unchanged behaviour; the unchanged list becomes the regression requirement."
+  evidence = ["bugfix.md"]
+
+  [[stages.acceptance]]
+  id = "reproduced"
+  description = "repro-test.md records a failing test that reproduces the bug."
+  evidence = ["repro-test.md"]
+
+[[stages]]
+id = "root-cause"
+role = "implementer"
+depends_on = ["reproduce"]
+inputs = ["reproduce/bugfix.md", "reproduce/repro-test.md"]
+outputs = ["root-cause.md"]
+
+  [[stages.acceptance]]
+  id = "cause-evidenced"
+  description = "root-cause.md states the cause with evidence, not a guess."
+  evidence = ["root-cause.md"]
+
+[[stages]]
+id = "fix"
+role = "implementer"
+depends_on = ["root-cause"]
+inputs = ["root-cause/root-cause.md"]
+outputs = ["change-summary.md"]
+max_attempts = 3
+
+  [[stages.acceptance]]
+  id = "repro-passes"
+  description = "change-summary.md shows the reproduction test now passes and the unchanged-behaviour tests still pass."
+  evidence = ["change-summary.md"]
+
+[[stages]]
+id = "review"
+role = "reviewer"
+depends_on = ["fix"]
+inputs = ["reproduce/bugfix.md", "fix/change-summary.md"]
+outputs = ["review.md", "review.json"]
+independent_of = ["fix"]
+verdict = "review.json"
+
+  [[stages.acceptance]]
+  id = "fix-reviewed"
+  description = "review.md confirms the fix addresses the root cause without collateral change; review.json carries the outcome."
+  evidence = ["review.md", "review.json"]
+
+[[stages]]
+id = "accept"
+role = "tester"
+depends_on = ["review"]
+inputs = ["reproduce/bugfix.md"]
+outputs = ["final-report.md"]
+requires_approval = true
+independent_of = ["fix"]
+
+  [[stages.acceptance]]
+  id = "verified"
+  description = "final-report.md records a full green run and a verdict of verified, partial or failed."
+  evidence = ["final-report.md"]
+
+[routing]
+allow_override = true
+
+[routing.roles.tester]
+eligible = ["codex", "claude", "antigravity", "hermes"]
+preferred = "codex"
+
+[routing.roles.implementer]
+eligible = ["claude", "codex", "antigravity", "hermes"]
+preferred = "claude"
+
+[routing.roles.reviewer]
+eligible = ["codex", "claude", "antigravity", "hermes"]
+preferred = "codex"
+
+[[routing.fallback]]
+role = "tester"
+from = "codex"
+to = "claude"
+on = ["unavailable"]
+
+[[routing.fallback]]
+role = "implementer"
+from = "claude"
+to = "codex"
+on = ["unavailable"]
+
+[[routing.fallback]]
+role = "reviewer"
+from = "codex"
+to = "claude"
+on = ["unavailable"]

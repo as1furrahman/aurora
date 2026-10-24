@@ -1,0 +1,56 @@
+
+schema_version = 1
+
+[workflow]
+id = "mini"
+version = "1.0.0"
+name = "Minimal"
+assurance = "basic"
+
+[roles.builder]
+responsibility = "Build it."
+required_skills = ["alpha"]
+
+[roles.checker]
+responsibility = "Check it."
+required_skills = ["beta"]
+
+[[stages]]
+id = "build"
+role = "builder"
+outputs = ["out.md"]
+
+  [[stages.acceptance]]
+  id = "built"
+  description = "out.md exists."
+  evidence = ["out.md"]
+
+[[stages]]
+id = "check"
+role = "checker"
+depends_on = ["build"]
+inputs = ["build/out.md"]
+outputs = ["check.md"]
+independent_of = ["build"]
+
+  [[stages.acceptance]]
+  id = "checked"
+  description = "check.md exists."
+  evidence = ["check.md"]
+
+[routing]
+allow_override = true
+
+[routing.roles.builder]
+eligible = ["antigravity", "codex", "claude"]
+preferred = "antigravity"
+
+[routing.roles.checker]
+eligible = ["antigravity", "codex", "claude"]
+preferred = "antigravity"
+
+[[routing.fallback]]
+role = "checker"
+from = "antigravity"
+to = "codex"
+on = ["incompatible"]

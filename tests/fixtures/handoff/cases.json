@@ -1,0 +1,192 @@
+[
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [],
+    "stage": "plan",
+    "expected": "tests/fixtures/handoff/example-multi.plan.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [],
+    "stage": "implement",
+    "expected": "tests/fixtures/handoff/example-multi.implement.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [],
+    "stage": "test",
+    "expected": "tests/fixtures/handoff/example-multi.test.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [],
+    "stage": "review",
+    "expected": "tests/fixtures/handoff/example-multi.review.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [],
+    "stage": "remediate",
+    "expected": "tests/fixtures/handoff/example-multi.remediate.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [],
+    "stage": "final-verify",
+    "expected": "tests/fixtures/handoff/example-multi.final-verify.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": "claude",
+    "routes": [],
+    "stage": "plan",
+    "expected": "tests/fixtures/handoff/example-single-claude.plan.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": "claude",
+    "routes": [],
+    "stage": "implement",
+    "expected": "tests/fixtures/handoff/example-single-claude.implement.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": "claude",
+    "routes": [],
+    "stage": "test",
+    "expected": "tests/fixtures/handoff/example-single-claude.test.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": "claude",
+    "routes": [],
+    "stage": "review",
+    "expected": "tests/fixtures/handoff/example-single-claude.review.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": "claude",
+    "routes": [],
+    "stage": "remediate",
+    "expected": "tests/fixtures/handoff/example-single-claude.remediate.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": "claude",
+    "routes": [],
+    "stage": "final-verify",
+    "expected": "tests/fixtures/handoff/example-single-claude.final-verify.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [
+      [
+        "implement",
+        "codex"
+      ]
+    ],
+    "stage": "plan",
+    "expected": "tests/fixtures/handoff/example-route-implement-codex.plan.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [
+      [
+        "implement",
+        "codex"
+      ]
+    ],
+    "stage": "implement",
+    "expected": "tests/fixtures/handoff/example-route-implement-codex.implement.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [
+      [
+        "implement",
+        "codex"
+      ]
+    ],
+    "stage": "test",
+    "expected": "tests/fixtures/handoff/example-route-implement-codex.test.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [
+      [
+        "implement",
+        "codex"
+      ]
+    ],
+    "stage": "review",
+    "expected": "tests/fixtures/handoff/example-route-implement-codex.review.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [
+      [
+        "implement",
+        "codex"
+      ]
+    ],
+    "stage": "remediate",
+    "expected": "tests/fixtures/handoff/example-route-implement-codex.remediate.md"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "repo",
+    "provider_override": null,
+    "routes": [
+      [
+        "implement",
+        "codex"
+      ]
+    ],
+    "stage": "final-verify",
+    "expected": "tests/fixtures/handoff/example-route-implement-codex.final-verify.md"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal-ag-fallback.toml",
+    "registry": "fixture",
+    "provider_override": null,
+    "routes": [],
+    "stage": "build",
+    "expected": "tests/fixtures/handoff/fallback.build.md"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal-ag-fallback.toml",
+    "registry": "fixture",
+    "provider_override": null,
+    "routes": [],
+    "stage": "check",
+    "expected": "tests/fixtures/handoff/fallback.check.md"
+  }
+]

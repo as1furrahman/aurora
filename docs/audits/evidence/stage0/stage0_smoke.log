@@ -1,0 +1,150 @@
+$ python3 -m awb --help
+usage: aurora [-h] [--version]
+              {detect,list,validate,doctor,install,update,remove} ...
+
+Aurora: Universal Centralized Manager for Coding-Agent Skills (compatibility
+alias: awb).
+
+positional arguments:
+  {detect,list,validate,doctor,install,update,remove}
+                        Available subcommands
+    detect              Non-mutating probe of available agent environments
+    list                List canonical skills defined in registry
+    validate            Validate registry syntax, schema, and dependencies
+    doctor              Run system diagnostics and adapter readiness checks
+    install             Install a skill transactionally under ProcessLock
+    update              Update or re-install an AWB-managed skill
+                        transactionally under ProcessLock
+    remove              Remove an AWB-managed skill transactionally under
+                        ProcessLock
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+[exit=0]
+$ python3 -m awb --version
+Aurora (aurora) 0.1.0
+[exit=0]
+$ python3 -m awb detect
+Aurora — Environment Detection (Non-Mutating):
+-----------------------------------------------------------------
+ [NOT DETECTED]  Google Antigravity CLI (Global) [antigravity-cli]
+   Discovery Path: /home/thesriz/.gemini/antigravity-cli/skills
+   Installed Skills: 0 (none)
+
+ [NOT DETECTED]  Antigravity Workspace (.agents/skills) [antigravity-workspace]
+   Discovery Path: /home/thesriz/Development/aurora/.agents/skills
+   Installed Skills: 0 (none)
+
+ [NOT DETECTED]  OpenAI Codex CLI (~/.codex/skills) [codex-cli]
+   Discovery Path: /home/thesriz/.codex/skills
+   Installed Skills: 0 (none)
+
+ [NOT DETECTED]  Google Antigravity IDE (~/.gemini/config/skills) [antigravity-ide]
+   Discovery Path: /home/thesriz/.gemini/config/skills
+   Installed Skills: 0 (none)
+
+[exit=0]
+$ python3 -m awb detect --json
+[
+  {
+    "id": "antigravity-cli",
+    "name": "Google Antigravity CLI (Global)",
+    "type": "cli",
+    "detected": false,
+    "path": "/home/thesriz/.gemini/antigravity-cli/skills",
+    "installed_count": 0,
+    "installed_skills": []
+  },
+  {
+    "id": "antigravity-workspace",
+    "name": "Antigravity Workspace (.agents/skills)",
+    "type": "workspace",
+    "detected": false,
+    "path": "/home/thesriz/Development/aurora/.agents/skills",
+    "installed_count": 0,
+    "installed_skills": []
+  },
+  {
+    "id": "codex-cli",
+    "name": "OpenAI Codex CLI (~/.codex/skills)",
+    "type": "cli",
+    "detected": false,
+    "path": "/home/thesriz/.codex/skills",
+    "installed_count": 0,
+    "installed_skills": []
+  },
+  {
+    "id": "antigravity-ide",
+    "name": "Google Antigravity IDE (~/.gemini/config/skills)",
+    "type": "ide",
+    "detected": false,
+    "path": "/home/thesriz/.gemini/config/skills",
+    "installed_count": 0,
+    "installed_skills": []
+  }
+]
+[exit=0]
+$ python3 -m awb list
+Aurora — Canonical Skill Registry (v1.0.0):
+Source: /home/thesriz/Development/aurora/registry/skills.toml
+Total Skills: 4
+---------------------------------------------------------------------------
+* principles (v1.0.0)
+  Name: Baseline Engineering Principles
+  Category: core
+  Agents: antigravity-cli, antigravity-workspace, antigravity-ide, codex-cli
+  Description: Core rules: correctness outranks token savings, deterministic safety, test-first verification.
+
+* task-router (v1.0.0) [deps: principles]
+  Name: Autonomous Task Router
+  Category: workflow
+  Agents: antigravity-cli, antigravity-workspace, codex-cli
+  Description: Routes complex programming tasks to targeted, minimal skill specializations without context bloat.
+
+* verification-guard (v1.0.0) [deps: principles]
+  Name: Verification and Audit Guard
+  Category: verification
+  Agents: antigravity-cli, antigravity-workspace, codex-cli
+  Description: Independent pre- and post-mutation verification, cryptographic preservation auditing, and test assertions.
+
+* token-efficient-workflow (v1.0.0) [deps: principles, task-router]
+  Name: Token-Efficient Hardened Workflow
+  Category: optimization
+  Agents: antigravity-cli, antigravity-workspace, codex-cli
+  Description: Universal token-efficient workflow using descriptor pinning, atomic file safety, and minimal tool overhead.
+
+[exit=0]
+$ python3 -m awb validate
+Validating registry: /home/thesriz/Development/aurora/registry/skills.toml
+VALIDATION PASSED:
+  - Schema Version: 1.0.0
+  - Validated Skills: 4
+  - Duplicate IDs: None detected
+  - Dependency Graph: Acyclic (Cycle check OK)
+  - Topological Resolution Order: principles -> task-router -> token-efficient-workflow -> verification-guard
+[exit=0]
+$ python3 -m awb doctor
+Aurora — System Diagnostics (Doctor):
+-----------------------------------------------------------------
+[*] Python Runtime: 3.14.8 (OK)
+[*] Standard-Library TOML: tomllib available (OK)
+[*] Canonical Registry: /home/thesriz/Development/aurora/registry/skills.toml (4 skills, OK)
+
+[*] Agent Adapters Readiness:
+    - antigravity-cli        [NOT PRESENT]  (path: /home/thesriz/.gemini/antigravity-cli/skills)
+    - antigravity-workspace  [NOT PRESENT]  (path: /home/thesriz/Development/aurora/.agents/skills)
+    - codex-cli              [NOT PRESENT]  (path: /home/thesriz/.codex/skills)
+    - antigravity-ide        [NOT PRESENT]  (path: /home/thesriz/.gemini/config/skills)
+
+[*] Protected Assets Preservation Invariant:
+    - Preservation Baseline: None active
+
+[*] Staging File Hygiene:
+    - No orphaned staging files detected (Clean)
+
+All diagnostics complete. Host environment is healthy.
+[exit=0]
+$ python3 -m awb.cli --version
+Aurora (aurora) 0.1.0
+[exit=0]

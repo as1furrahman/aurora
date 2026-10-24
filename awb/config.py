@@ -18,6 +18,7 @@ class Config:
     antigravity_workspace_path: Path
     antigravity_ide_path: Path
     codex_cli_path: Path
+    claude_skills_path: Path
 
     @classmethod
     def load(cls, custom_root: Optional[Path] = None) -> "Config":
@@ -40,6 +41,9 @@ class Config:
         codex_env = os.environ.get("AURORA_CODEX_CLI_PATH") or os.environ.get("AWB_CODEX_CLI_PATH")
         codex_path = Path(codex_env) if codex_env else (user_home / ".codex" / "skills")
 
+        claude_env = os.environ.get("AURORA_CLAUDE_SKILLS_PATH") or os.environ.get("AWB_CLAUDE_SKILLS_PATH")
+        claude_path = Path(claude_env) if claude_env else (user_home / ".claude" / "skills")
+
         return cls(
             project_root=root,
             registry_path=registry_path,
@@ -47,4 +51,5 @@ class Config:
             antigravity_workspace_path=ag_ws_path,
             antigravity_ide_path=ag_ide_path,
             codex_cli_path=codex_path,
+            claude_skills_path=claude_path,
         )

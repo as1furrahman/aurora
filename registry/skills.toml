@@ -1,4 +1,4 @@
-# Canonical Skill Registry for Agent Workbench (AWB)
+# Canonical Skill Registry for Aurora (formerly Agent Workbench, AWB)
 # Format: TOML (Parsed deterministically via Python standard library tomllib)
 
 [registry]
@@ -13,7 +13,7 @@ version = "1.0.0"
 category = "core"
 description = "Core rules: correctness outranks token savings, deterministic safety, test-first verification."
 dependencies = []
-compatible_agents = ["antigravity-cli", "antigravity-workspace", "antigravity-ide", "codex-cli"]
+compatible_agents = ["antigravity-cli", "antigravity-workspace", "antigravity-ide", "codex-cli", "claude-code"]
 triggers = ["always", "on-start"]
 files = ["skills/principles/SKILL.md"]
 
@@ -24,7 +24,7 @@ version = "1.0.0"
 category = "workflow"
 description = "Routes complex programming tasks to targeted, minimal skill specializations without context bloat."
 dependencies = ["principles"]
-compatible_agents = ["antigravity-cli", "antigravity-workspace", "codex-cli"]
+compatible_agents = ["antigravity-cli", "antigravity-workspace", "codex-cli", "claude-code"]
 triggers = ["on-complex-task", "router"]
 files = ["skills/task-router/SKILL.md"]
 
@@ -35,7 +35,7 @@ version = "1.0.0"
 category = "verification"
 description = "Independent pre- and post-mutation verification, cryptographic preservation auditing, and test assertions."
 dependencies = ["principles"]
-compatible_agents = ["antigravity-cli", "antigravity-workspace", "codex-cli"]
+compatible_agents = ["antigravity-cli", "antigravity-workspace", "codex-cli", "claude-code"]
 triggers = ["pre-mutation", "post-mutation", "audit"]
 files = ["skills/verification-guard/SKILL.md"]
 

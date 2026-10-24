@@ -1,0 +1,46 @@
+schema_version = 1
+
+[workflow]
+id = "cyclic"
+version = "1.0.0"
+name = "Dependency cycle"
+assurance = "basic"
+
+[roles.worker]
+responsibility = "Work."
+
+[[stages]]
+id = "a"
+role = "worker"
+depends_on = ["c"]
+outputs = ["a.md"]
+
+  [[stages.acceptance]]
+  id = "a-done"
+  description = "a"
+  evidence = ["a.md"]
+
+[[stages]]
+id = "b"
+role = "worker"
+depends_on = ["a"]
+outputs = ["b.md"]
+
+  [[stages.acceptance]]
+  id = "b-done"
+  description = "b"
+  evidence = ["b.md"]
+
+[[stages]]
+id = "c"
+role = "worker"
+depends_on = ["b"]
+outputs = ["c.md"]
+
+  [[stages.acceptance]]
+  id = "c-done"
+  description = "c"
+  evidence = ["c.md"]
+
+[routing.roles.worker]
+eligible = ["codex"]

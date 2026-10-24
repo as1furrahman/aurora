@@ -1,0 +1,124 @@
+{
+  "blocked": true,
+  "detection": null,
+  "mode": "multi",
+  "order": [
+    "build",
+    "check"
+  ],
+  "plan_schema_version": 1,
+  "provider_override": null,
+  "routes": {
+    "check": "antigravity"
+  },
+  "stages": [
+    {
+      "acceptance": [
+        {
+          "description": "out.md exists.",
+          "evidence": [
+            "artifacts/build/out.md"
+          ],
+          "id": "built"
+        }
+      ],
+      "assignment_source": "preferred",
+      "blocked_reasons": [],
+      "depends_on": [],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/build.md",
+      "id": "build",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/build/out.md"
+      ],
+      "provider": "antigravity",
+      "recommended_skills": [],
+      "required_skills": [
+        "alpha"
+      ],
+      "requires_approval": false,
+      "responsibility": "Build it.",
+      "role": "builder",
+      "status": "assignable",
+      "warnings": []
+    },
+    {
+      "acceptance": [
+        {
+          "description": "check.md exists.",
+          "evidence": [
+            "artifacts/check/check.md"
+          ],
+          "id": "checked"
+        }
+      ],
+      "assignment_source": "route",
+      "blocked_reasons": [
+        "incompatible: required skill(s) ['beta'] cannot be loaded by provider 'antigravity'; no lossy conversion is performed"
+      ],
+      "depends_on": [
+        "build"
+      ],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/check.md",
+      "id": "check",
+      "incompatibilities": [
+        {
+          "checked_adapters": [
+            "antigravity-cli",
+            "antigravity-workspace"
+          ],
+          "compatible_agents": [
+            "codex-cli",
+            "claude-code"
+          ],
+          "provider": "antigravity",
+          "skill": "beta"
+        }
+      ],
+      "independence": [
+        {
+          "of": "build",
+          "other_provider": "antigravity",
+          "stage_provider": "antigravity",
+          "status": "same-provider"
+        }
+      ],
+      "inputs": [
+        "artifacts/build/out.md"
+      ],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/check/check.md"
+      ],
+      "provider": "antigravity",
+      "recommended_skills": [],
+      "required_skills": [
+        "beta"
+      ],
+      "requires_approval": false,
+      "responsibility": "Check it.",
+      "role": "checker",
+      "status": "blocked",
+      "warnings": []
+    }
+  ],
+  "warnings": [
+    "Stages declaring independent_of share a provider with the stage they should be independent of: reduced independence. Do not treat these reviews as independent verification. Running them in a fresh-session context is a weaker control and is not verified by Aurora."
+  ],
+  "workflow": {
+    "id": "mini",
+    "sha256": "3ed68e238ec1fbd3722035b0bbdebd685f30911966796fa6fed73517ae9f7b60",
+    "version": "1.0.0"
+  }
+}

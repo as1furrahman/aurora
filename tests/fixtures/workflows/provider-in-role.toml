@@ -1,0 +1,24 @@
+schema_version = 1
+
+[workflow]
+id = "bad-role"
+version = "1.0.0"
+name = "Provider baked into a role"
+assurance = "basic"
+
+[roles.builder]
+responsibility = "Build it."
+provider = "claude"
+
+[[stages]]
+id = "build"
+role = "builder"
+outputs = ["out.md"]
+
+  [[stages.acceptance]]
+  id = "built"
+  description = "out.md exists."
+  evidence = ["out.md"]
+
+[routing.roles.builder]
+eligible = ["claude"]

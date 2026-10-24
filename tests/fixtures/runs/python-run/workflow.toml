@@ -1,0 +1,132 @@
+# Aurora workflow example (schema v1): plan → implement → test → independent review
+# → remediation (optional) → final verification. Uses only skills from registry/skills.toml.
+# Schema reference: docs/architecture/workflow-schema.md
+
+schema_version = 1
+
+[workflow]
+id = "plan-implement-review"
+version = "1.0.0"
+name = "Plan, implement, test, review"
+description = "General change workflow with an independent review gate and a human-approved final verification."
+task_types = ["feature", "bugfix", "refactor"]
+assurance = "standard"
+
+# Roles are responsibilities only. Providers are assigned in [routing].
+
+[roles.planner]
+responsibility = "Turn the task into a scoped implementation plan with risks, non-goals and a test strategy."
+required_skills = ["principles"]
+recommended_skills = ["task-router"]
+
+[roles.implementer]
+responsibility = "Make the planned change in small, reviewable steps without expanding scope."
+required_skills = ["principles"]
+
+[roles.tester]
+responsibility = "Run and extend the test suite; report exact commands, counts and failures."
+required_skills = ["verification-guard"]
+
+[roles.reviewer]
+responsibility = "Independently review the change against the plan for correctness, safety and scope."
+required_skills = ["verification-guard", "principles"]
+
+[[stages]]
+id = "plan"
+role = "planner"
+outputs = ["plan.md"]
+
+  [[stages.acceptance]]
+  id = "plan-written"
+  description = "plan.md states scope, non-goals, risks and the test strategy."
+  evidence = ["plan.md"]
+
+[[stages]]
+id = "implement"
+role = "implementer"
+depends_on = ["plan"]
+inputs = ["plan/plan.md"]
+outputs = ["change-summary.md"]
+
+  [[stages.acceptance]]
+  id = "change-described"
+  description = "change-summary.md lists every file changed and why, traced to the plan."
+  evidence = ["change-summary.md"]
+
+[[stages]]
+id = "test"
+role = "tester"
+depends_on = ["implement"]
+inputs = ["implement/change-summary.md"]
+outputs = ["test-report.md"]
+max_attempts = 3
+
+  [[stages.acceptance]]
+  id = "suite-green"
+  description = "test-report.md records the exact test command and a run with zero failures and errors."
+  evidence = ["test-report.md"]
+
+[[stages]]
+id = "review"
+role = "reviewer"
+depends_on = ["test"]
+inputs = ["plan/plan.md", "implement/change-summary.md", "test/test-report.md"]
+outputs = ["review.md"]
+independent_of = ["implement"]
+
+  [[stages.acceptance]]
+  id = "review-complete"
+  description = "review.md lists findings by severity, or states that none were found."
+  evidence = ["review.md"]
+
+[[stages]]
+id = "remediate"
+role = "implementer"
+depends_on = ["review"]
+inputs = ["review/review.md"]
+outputs = ["remediation.md"]
+optional = true
+
+  [[stages.acceptance]]
+  id = "findings-addressed"
+  description = "remediation.md maps each review finding to a fix or a justified deferral."
+  evidence = ["remediation.md"]
+
+[[stages]]
+id = "final-verify"
+role = "tester"
+depends_on = ["remediate"]
+inputs = ["test/test-report.md"]
+outputs = ["final-report.md"]
+independent_of = ["implement"]
+requires_approval = true
+
+  [[stages.acceptance]]
+  id = "final-suite-green"
+  description = "final-report.md records a full test run after remediation with zero failures."
+  evidence = ["final-report.md"]
+
+[routing]
+allow_override = true
+
+[routing.roles.planner]
+eligible = ["claude", "codex", "antigravity"]
+preferred = "claude"
+
+[routing.roles.implementer]
+eligible = ["antigravity", "codex", "claude"]
+preferred = "antigravity"
+
+[routing.roles.tester]
+eligible = ["codex", "claude", "antigravity"]
+preferred = "codex"
+
+[routing.roles.reviewer]
+eligible = ["codex", "claude", "antigravity"]
+preferred = "codex"
+
+[[routing.fallback]]
+role = "implementer"
+from = "antigravity"
+to = "codex"
+on = ["unavailable", "incompatible"]

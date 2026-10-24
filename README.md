@@ -1,10 +1,196 @@
-# Aurora — Universal Agent Skill Manager
+# Aurora
 
-Aurora (canonical CLI: `aurora`, compatibility alias: `awb`) is a universal, centralized manager for discovering, installing, validating, updating, removing, benchmarking, and rolling back reusable coding-agent skills and workflows across supported coding CLIs.
+**Aurora helps AI coding tools do better work.** It gives tools like Claude Code, Codex,
+Antigravity and Hermes ready-made *skills*: instructions that teach them one kind of work well,
+such as finding the real cause of a bug or writing tests first. It can also split your work into
+steps, each done by one tool, with a quick check before moving on.
+
+It's built for people starting out with AI coding ("vibe coding") as well as experienced
+developers. Aurora never changes your project without asking first, and every change can be
+undone.
+
+## Quick start
+
+**1. Install** (macOS and Linux). Paste this into a terminal:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/as1furrahman/aurora/releases/latest/download/aurora-cli-installer.sh | sh
+```
+
+Then **close the terminal and open a new one**, so it can find the `aurora` command.
+
+**2. Open your project.** Go to your project's folder and start Aurora:
+
+```sh
+cd path/to/your-project
+aurora
+```
+
+**3. Answer three questions.** Aurora asks which AI tools you use and what you're working on,
+then shows exactly what it would add. Nothing is saved until you press `y`.
+
+After that, Aurora has four pages (press `1` to `4`, or click them):
+
+| Page | What it's for |
+|---|---|
+| **Skills** | The skills that fit your task, and which AI tool gets each one |
+| **Who does what** | Which tool does each job. Using two tools means one checks the other's work |
+| **Add to project** | Exactly what will be added. Read anything marked "check first", then press `a` |
+| **Tasks** | Your work split into steps. Press `n` for a new task, `Enter` to see a step's instructions, `s` to tick its checklist |
+
+Press `?` at any time for help and a short glossary, `t` to run the setup again, or `q` to
+quit.
+
+### Good to know
+
+- **Undo:** on the *Add to project* page, `u` puts your project back the way it was before
+  Aurora's last change. Files you edited yourself are left alone.
+- **Where things go:** skills are copied into your project (for example `.claude/skills/` and
+  `.agents/skills/`), with always-on rules in `CLAUDE.md` or `AGENTS.md`. `aurora.lock` records
+  what Aurora added, and `.aurora/` holds its backups and your tasks. Commit the skills and
+  `aurora.lock`; most people add `.aurora/` to `.gitignore`.
+- **Community skills** are marked *check first*. Have a quick read (press `Enter`) before
+  adding them.
+- **Aurora never runs your AI tools for you.** It prepares the instructions, and you paste them
+  into the tool you already use.
+
+### Prefer to read the install script first?
+
+That's a good habit. Download it, read it, then run it:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf -o aurora-installer.sh https://github.com/as1furrahman/aurora/releases/latest/download/aurora-cli-installer.sh
+less aurora-installer.sh
+sh aurora-installer.sh
+```
+
+The installer downloads the `aurora` program for your computer from this project's GitHub
+releases and checks its SHA-256 checksum. You can also download the archive from the
+[releases page](https://github.com/as1furrahman/aurora/releases) yourself, or build from source
+with `cargo install --git https://github.com/as1furrahman/aurora aurora-cli`.
+
+### Uninstall
+
+```sh
+rm "$(command -v aurora)"
+```
+
+Any skills Aurora added to a project stay there until you remove them: run `aurora`, go to
+*Add to project* and press `u`, or delete the files.
+
+**Windows** isn't supported yet. On Windows, use WSL (Ubuntu) and follow the Linux steps.
 
 ---
 
-## Command Line Interface
+## For developers
+
+Aurora (canonical CLI: `aurora`, compatibility alias: `awb`) is a universal, centralized manager for discovering, installing, validating, updating, removing, benchmarking, and rolling back reusable coding-agent skills and workflows across supported coding CLIs.
+
+### Rust implementation (Milestones R1–R3)
+
+Aurora is being rewritten in Rust (ADR-0006). The Python package below is the reference
+implementation until parity. In R1 the Rust `aurora` binary covers the **workflow engine**. It
+runs in **manual-handoff** mode: Aurora never launches a coding CLI; it writes a handoff prompt
+for each role and checks the evidence you submit.
+
+```bash
+cargo build --release                       # binary: target/release/aurora (MSRV 1.89)
+
+aurora providers                            # claude / codex / antigravity (agy): PATH detection only
+aurora workflow presets                     # feature, bugfix, refactor, docs, security-review, spike
+aurora workflow init feature                # writes ./feature.toml (never overwrites)
+aurora workflow plan feature.toml           # roles -> CLIs (preferred, with declared fallback)
+aurora workflow plan feature.toml --provider codex          # every role on one CLI (reduced independence reported)
+aurora workflow plan feature.toml --route implement=claude  # move one stage to another CLI
+
+mkdir -p ~/aurora-runs
+aurora workflow start feature.toml --run-root ~/aurora-runs --run-id my-feature
+#   -> paste ~/aurora-runs/my-feature/handoff/intake.md into the assigned CLI, save its outputs, then:
+aurora workflow submit --run ~/aurora-runs/my-feature --stage intake --met criteria-testable
+aurora workflow status --run ~/aurora-runs/my-feature
+aurora workflow waive  --run ... --stage S --reason "..." --by NAME   # recorded human decision
+aurora workflow approve --run ... --stage accept --by NAME
+```
+
+A stage passes only when every declared output exists and every acceptance criterion is
+explicitly claimed. Exit codes never count. Reviewer verdicts (`pass | concerns | fail`) gate
+the stage, and concerns are carried into later handoffs. Dev checks: `cargo test`,
+`scripts/parity.sh` and `scripts/parity-runs.sh`, which compare the Rust and Python
+implementations. Design notes for the upcoming TUI and skill manager are in `docs/design/`.
+
+#### Skills (Milestone R2: curated catalog and safe installs)
+
+Aurora recommends popular, maintained agent skills per workflow stage for the CLIs you actually use.
+It installs them into a project with safeguards. The catalog pins every skill to a commit and a
+content hash, and ships no third-party skill text (ADR-0007,
+`docs/research/agent-skills-landscape-2026-10.md`).
+
+```bash
+aurora catalog list                                   # skills, rules, frameworks, infra; trust and roles
+aurora catalog recommend --preset bugfix              # pair (claude + codex) by default
+aurora catalog recommend --preset bugfix --clis claude          # solo: reduced independence reported
+aurora skills fetch code-review                       # fetch at the pinned commit, verify, scan
+aurora skills plan  --preset bugfix --project .       # dry run: what would change, what each CLI loads
+aurora skills apply --preset bugfix --project .       # asks first; --reviewed ENTRY for flagged skills
+aurora skills undo  --project .                       # restores; nothing is ever deleted
+aurora workflow start bugfix.toml --profile pair --run-root ~/aurora-runs   # handoffs name the skills
+```
+
+Safeguards:
+
+- **Integrity:** fetched content must match the pin.
+- **Scanning:** the scanner blocks symlinks, binaries, archives and padding, and flags scripts,
+  hooks and `!`cmd`` for review.
+- **No pre-approved tools:** `allowed-tools` and `hooks` are removed from installed copies.
+- **Ownership:** Aurora only changes what `aurora.lock` says it installed and that is unchanged.
+- **Undo:** every apply is journaled under `.aurora/ops/` and can be undone.
+
+Commit `aurora.lock`; ignore `.aurora/`.
+
+#### Terminal UI (Milestones R3 and R3.1)
+
+`aurora` with no arguments opens the TUI in a terminal, and so does `aurora tui`. In scripts and
+pipes it prints help instead. On first launch in a project (no `aurora.lock`) a guided setup asks
+which AI tools you use (detected on PATH) and what you're working on; `t` reopens it.
+
+```bash
+aurora tui --project . --run-root ~/aurora-runs      # --preset bugfix (default), --clis claude,codex
+```
+
+Without `--run-root`, tasks live in the project's `.aurora/runs`.
+
+| Page | What it shows | Keys |
+|---|---|---|
+| **1 Skills** | Each skill × each AI tool: `✓` added, `+` will add, `?` check first, `↑` will update, `≠` you changed it, `!` yours (left alone), `◐` shared folder, `·` not used; room left in each tool's skill list | `i` add/remove optional, `r` refresh |
+| **2 Who does what** | Step → job → AI tool → skills, and how strongly each tool can be kept read-only | `p` another tool for this job, `P` 1, 2 or 3 tools, `w` task type |
+| **3 Add to project** | Exactly what will change, what to check first, warnings | `Enter` read it, `r` mark as checked, `a` add (asks; only `y` confirms), `u` undo |
+| **4 Tasks** | Tasks and their steps | `n` new task (asks), `Enter` open / show a step's instructions, `s` checklist, `A` give your OK, `R` check task, `y` copy path |
+
+Keys that work everywhere:
+
+- `1`–`4` switch pages, and `Tab` moves focus between the list and the details pane.
+- `/` searches the list.
+- `?` shows how Aurora works, a glossary and every key; the keys come from the same table as the
+  footer.
+- `Esc` goes back one level, and `q` quits.
+
+The mouse wheel and clicks also work. `NO_COLOR` turns colour off, and
+`AURORA_THEME=high-contrast` switches to a high-contrast theme. The TUI uses plain words (AI
+tool, job, step, task, checklist); the engine's terms, source links and the equivalent CLI
+commands are under **More details** in each details pane. Real-terminal check:
+`scripts/tui-smoke.sh`.
+
+#### Releases
+
+Releases are built by [cargo-dist](https://github.com/axodotdev/cargo-dist) (MIT OR
+Apache-2.0) from `dist-workspace.toml`: macOS (Apple Silicon and Intel) and Linux (x86_64 and
+arm64 glibc, plus x86_64 static musl, which the installer uses on older distributions), each
+with a SHA-256 checksum, and a shell installer. Pushing a tag `vX.Y.Z` that matches the
+workspace version runs `.github/workflows/release.yml`, which builds every target on its own
+runner and publishes a GitHub release. `scripts/test-installer.sh` tests the installer end to
+end against a local stand-in for GitHub releases (run `dist build` first).
+
+### Command Line Interface
 
 Aurora provides both the canonical `aurora` command and the legacy `awb` compatibility alias:
 
@@ -35,7 +221,33 @@ aurora remove principles --target /path/to/sandbox --root /path/to/sandbox
 
 ---
 
-## Architecture & Layers
+### Role-Based Workflows (manual handoff)
+
+Aurora plans and tracks workflows whose stages are owned by provider-neutral **roles** and routed to
+coding CLIs (`claude`, `codex`, `antigravity`). Milestone 1 never launches a CLI. It writes a handoff
+prompt per stage and accepts a stage only when its declared evidence exists.
+
+```bash
+aurora providers                                   # execution providers + PATH detection (no process run)
+aurora workflow validate workflows/examples/plan-implement-review.toml
+aurora workflow show     workflows/examples/plan-implement-review.toml
+aurora workflow plan     workflows/examples/plan-implement-review.toml                    # multi-provider routing
+aurora workflow plan     workflows/examples/plan-implement-review.toml --provider codex   # single-provider override
+aurora workflow plan     workflows/examples/plan-implement-review.toml --route implement=claude
+
+mkdir -p /tmp/aurora-runs
+aurora workflow start  workflows/examples/plan-implement-review.toml --run-root /tmp/aurora-runs --run-id demo
+aurora workflow submit --run /tmp/aurora-runs/demo --stage plan --met plan-written
+aurora workflow status --run /tmp/aurora-runs/demo
+aurora workflow resume --run /tmp/aurora-runs/demo
+aurora workflow approve --run /tmp/aurora-runs/demo --stage final-verify --by "<name>"
+```
+
+See `docs/product-vision.md`, `docs/architecture/` and `docs/adr/` for the model and its guarantees.
+
+---
+
+### Architecture & Layers
 
 - **Layer A — Manager Core:** Registry parser, version solver, capability discovery, operation planning, audit history, and transaction rollback engine.
 - **Layer B — Canonical Registry:** Authoritative index of skill metadata, versions, triggers, and compatibility contracts (`registry/skills.toml`).
@@ -45,7 +257,7 @@ aurora remove principles --target /path/to/sandbox --root /path/to/sandbox
 
 ---
 
-## Safety-First Invariants
+### Safety-First Invariants
 
 1. **Deterministic Path Boundaries:** Traversal outside declared roots is rejected; ancestor symlinks fail closed.
 2. **Non-Blocking Descriptor Inspection:** Sensitive file operations use `O_NONBLOCK | O_NOFOLLOW` with descriptor `fstat` validation to eliminate FIFO and named-pipe blocking hazards.
@@ -56,7 +268,7 @@ aurora remove principles --target /path/to/sandbox --root /path/to/sandbox
 
 ---
 
-## Running Safety & Reliability Tests
+### Running Safety & Reliability Tests
 
 ```bash
 python3 -m unittest discover -s tests -v

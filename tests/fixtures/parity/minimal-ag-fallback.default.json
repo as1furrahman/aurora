@@ -1,0 +1,111 @@
+{
+  "blocked": false,
+  "detection": null,
+  "mode": "multi",
+  "order": [
+    "build",
+    "check"
+  ],
+  "plan_schema_version": 1,
+  "provider_override": null,
+  "routes": {},
+  "stages": [
+    {
+      "acceptance": [
+        {
+          "description": "out.md exists.",
+          "evidence": [
+            "artifacts/build/out.md"
+          ],
+          "id": "built"
+        }
+      ],
+      "assignment_source": "preferred",
+      "blocked_reasons": [],
+      "depends_on": [],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/build.md",
+      "id": "build",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/build/out.md"
+      ],
+      "provider": "antigravity",
+      "recommended_skills": [],
+      "required_skills": [
+        "alpha"
+      ],
+      "requires_approval": false,
+      "responsibility": "Build it.",
+      "role": "builder",
+      "status": "assignable",
+      "warnings": []
+    },
+    {
+      "acceptance": [
+        {
+          "description": "check.md exists.",
+          "evidence": [
+            "artifacts/check/check.md"
+          ],
+          "id": "checked"
+        }
+      ],
+      "assignment_source": "fallback",
+      "blocked_reasons": [],
+      "depends_on": [
+        "build"
+      ],
+      "description": "",
+      "fallback_trail": [
+        {
+          "from": "antigravity",
+          "reason": "incompatible",
+          "to": "codex"
+        }
+      ],
+      "handoff_path": "handoff/check.md",
+      "id": "check",
+      "incompatibilities": [],
+      "independence": [
+        {
+          "of": "build",
+          "other_provider": "antigravity",
+          "stage_provider": "codex",
+          "status": "distinct-provider"
+        }
+      ],
+      "inputs": [
+        "artifacts/build/out.md"
+      ],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/check/check.md"
+      ],
+      "provider": "codex",
+      "recommended_skills": [],
+      "required_skills": [
+        "beta"
+      ],
+      "requires_approval": false,
+      "responsibility": "Check it.",
+      "role": "checker",
+      "status": "assignable",
+      "warnings": []
+    }
+  ],
+  "warnings": [],
+  "workflow": {
+    "id": "mini",
+    "sha256": "3ed68e238ec1fbd3722035b0bbdebd685f30911966796fa6fed73517ae9f7b60",
+    "version": "1.0.0"
+  }
+}

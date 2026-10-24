@@ -1,0 +1,28 @@
+
+[registry]
+version = "1.0.0"
+updated_at = "2026-10-23T00:00:00Z"
+
+[[skills]]
+id = "alpha"
+name = "Alpha"
+version = "1.0.0"
+description = "a"
+compatible_agents = ["universal"]
+files = ["skills/alpha/SKILL.md"]
+
+[[skills]]
+id = "beta"
+name = "Beta"
+version = "1.0.0"
+description = "b"
+compatible_agents = ["codex-cli", "claude-code"]
+files = ["skills/beta/SKILL.md"]
+
+[[skills]]
+id = "gamma"
+name = "Gamma"
+version = "1.0.0"
+description = "g"
+compatible_agents = ["claude-code"]
+files = ["skills/gamma/SKILL.md"]

@@ -1,0 +1,21 @@
+[package]
+name = "aurora-app"
+description = "Aurora application layer: install planning, apply and undo shared by the CLI and the TUI."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+aurora-core.workspace = true
+aurora-fs.workspace = true
+aurora-skills.workspace = true
+indexmap = "2"
+which = "8"
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

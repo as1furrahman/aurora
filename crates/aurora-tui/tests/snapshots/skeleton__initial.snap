@@ -1,0 +1,28 @@
+---
+source: crates/aurora-tui/tests/skeleton.rs
+expression: s
+---
+"Aurora · demo · Fix a bug   ⠋ working out what to add…                                              "
+" 1 Skills │ 2 Who does what │ 3 Add to project │ 4 Tasks                                            "
+"┌▶ Skills for each AI tool────────────────────────────┐┌  About this skill─────────────────────────┐"
+"│Working out which skills your project needs…         ││What the symbols mean                      │"
+"│                                                     ││  ✓  added and up to date                  │"
+"│                                                     ││  +  will be added                         │"
+"│                                                     ││  ?  will be added once you've checked it  │"
+"│                                                     ││  ↑  will be updated to a newer version    │"
+"│                                                     ││  −  will be removed (no longer needed)    │"
+"│                                                     ││  ≠  you changed it, so Aurora leaves it   │"
+"│                                                     ││  alone                                    │"
+"│                                                     ││  !  already here and not added by Aurora, │"
+"│                                                     ││    so it's left alone                     │"
+"│                                                     ││  ✗  blocked by Aurora's safety check      │"
+"│                                                     ││  ◐  not meant for this tool, but it can   │"
+"│                                                     ││  see it (shared folder)                   │"
+"│                                                     ││  ·  not used                              │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"│                                                     ││                                           │"
+"└─────────────────────────────────────────────────────┘└───────────────────────────────────────────┘"
+"i add/remove optional  1-4 pages  ↑↓ move  / search  t set up  ? help  q quit                       "

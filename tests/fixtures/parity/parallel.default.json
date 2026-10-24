@@ -1,0 +1,177 @@
+{
+  "blocked": false,
+  "detection": null,
+  "mode": "multi",
+  "order": [
+    "build",
+    "zeta-docs",
+    "alpha-lint",
+    "merge"
+  ],
+  "plan_schema_version": 1,
+  "provider_override": null,
+  "routes": {},
+  "stages": [
+    {
+      "acceptance": [
+        {
+          "description": "out.md exists.",
+          "evidence": [
+            "artifacts/build/out.md"
+          ],
+          "id": "built"
+        }
+      ],
+      "assignment_source": "preferred",
+      "blocked_reasons": [],
+      "depends_on": [],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/build.md",
+      "id": "build",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/build/out.md"
+      ],
+      "provider": "claude",
+      "recommended_skills": [],
+      "required_skills": [
+        "alpha"
+      ],
+      "requires_approval": false,
+      "responsibility": "Build it.",
+      "role": "builder",
+      "status": "assignable",
+      "warnings": []
+    },
+    {
+      "acceptance": [
+        {
+          "description": "docs.md exists.",
+          "evidence": [
+            "artifacts/zeta-docs/docs.md"
+          ],
+          "id": "documented"
+        }
+      ],
+      "assignment_source": "preferred",
+      "blocked_reasons": [],
+      "depends_on": [
+        "build"
+      ],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/zeta-docs.md",
+      "id": "zeta-docs",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/zeta-docs/docs.md"
+      ],
+      "provider": "codex",
+      "recommended_skills": [],
+      "required_skills": [
+        "beta"
+      ],
+      "requires_approval": false,
+      "responsibility": "Check it.",
+      "role": "checker",
+      "status": "assignable",
+      "warnings": []
+    },
+    {
+      "acceptance": [
+        {
+          "description": "lint.md exists.",
+          "evidence": [
+            "artifacts/alpha-lint/lint.md"
+          ],
+          "id": "linted"
+        }
+      ],
+      "assignment_source": "preferred",
+      "blocked_reasons": [],
+      "depends_on": [
+        "build"
+      ],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/alpha-lint.md",
+      "id": "alpha-lint",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/alpha-lint/lint.md"
+      ],
+      "provider": "codex",
+      "recommended_skills": [],
+      "required_skills": [
+        "beta"
+      ],
+      "requires_approval": false,
+      "responsibility": "Check it.",
+      "role": "checker",
+      "status": "assignable",
+      "warnings": []
+    },
+    {
+      "acceptance": [
+        {
+          "description": "merge.md exists.",
+          "evidence": [
+            "artifacts/merge/merge.md"
+          ],
+          "id": "merged"
+        }
+      ],
+      "assignment_source": "preferred",
+      "blocked_reasons": [],
+      "depends_on": [
+        "alpha-lint",
+        "zeta-docs"
+      ],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/merge.md",
+      "id": "merge",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/merge/merge.md"
+      ],
+      "provider": "claude",
+      "recommended_skills": [],
+      "required_skills": [
+        "alpha"
+      ],
+      "requires_approval": false,
+      "responsibility": "Build it.",
+      "role": "builder",
+      "status": "assignable",
+      "warnings": []
+    }
+  ],
+  "warnings": [],
+  "workflow": {
+    "id": "parallel",
+    "sha256": "9d8f5972edc020c21d565bafb0c07d19c572f88713feee21111c6060461c6f1e",
+    "version": "1.0.0"
+  }
+}

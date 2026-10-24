@@ -1,0 +1,117 @@
+{
+  "blocked": false,
+  "detection": {
+    "antigravity": false,
+    "claude": true,
+    "codex": false
+  },
+  "mode": "multi",
+  "order": [
+    "build",
+    "check"
+  ],
+  "plan_schema_version": 1,
+  "provider_override": null,
+  "routes": {},
+  "stages": [
+    {
+      "acceptance": [
+        {
+          "description": "out.md exists.",
+          "evidence": [
+            "artifacts/build/out.md"
+          ],
+          "id": "built"
+        }
+      ],
+      "assignment_source": "preferred",
+      "blocked_reasons": [],
+      "depends_on": [],
+      "description": "",
+      "fallback_trail": [],
+      "handoff_path": "handoff/build.md",
+      "id": "build",
+      "incompatibilities": [],
+      "independence": [],
+      "inputs": [],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/build/out.md"
+      ],
+      "provider": "antigravity",
+      "recommended_skills": [],
+      "required_skills": [
+        "alpha"
+      ],
+      "requires_approval": false,
+      "responsibility": "Build it.",
+      "role": "builder",
+      "status": "assignable",
+      "warnings": [
+        "provider 'antigravity' is not installed on this host; the handoff can still be run elsewhere"
+      ]
+    },
+    {
+      "acceptance": [
+        {
+          "description": "check.md exists.",
+          "evidence": [
+            "artifacts/check/check.md"
+          ],
+          "id": "checked"
+        }
+      ],
+      "assignment_source": "fallback",
+      "blocked_reasons": [],
+      "depends_on": [
+        "build"
+      ],
+      "description": "",
+      "fallback_trail": [
+        {
+          "from": "antigravity",
+          "reason": "unavailable",
+          "to": "claude"
+        }
+      ],
+      "handoff_path": "handoff/check.md",
+      "id": "check",
+      "incompatibilities": [],
+      "independence": [
+        {
+          "of": "build",
+          "other_provider": "antigravity",
+          "stage_provider": "claude",
+          "status": "distinct-provider"
+        }
+      ],
+      "inputs": [
+        "artifacts/build/out.md"
+      ],
+      "max_attempts": 2,
+      "on_exhausted": "escalate",
+      "optional": false,
+      "outputs": [
+        "artifacts/check/check.md"
+      ],
+      "provider": "claude",
+      "recommended_skills": [],
+      "required_skills": [
+        "beta"
+      ],
+      "requires_approval": false,
+      "responsibility": "Check it.",
+      "role": "checker",
+      "status": "assignable",
+      "warnings": []
+    }
+  ],
+  "warnings": [],
+  "workflow": {
+    "id": "mini",
+    "sha256": "1c715315acbdca73a92028de43d83201c74fbaf71c9015eab40404507e202859",
+    "version": "1.0.0"
+  }
+}

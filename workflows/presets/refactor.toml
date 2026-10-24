@@ -1,0 +1,129 @@
+# Aurora built-in preset: refactor. Edit freely, then: aurora workflow validate <file>
+# Uses schema v1 extensions (verdict, requires), so it is read by the Rust implementation only.
+schema_version = 1
+
+[workflow]
+id = "refactor"
+version = "1.0.0"
+name = "Refactor"
+description = "Pin behaviour with characterization tests, change structure in small steps, and prove nothing else changed."
+task_types = ["refactor"]
+assurance = "standard"
+
+[roles.tester]
+responsibility = "Derive tests from the acceptance criteria, re-run them independently and record exact commands and results."
+required_skills = ["verification-guard"]
+
+[roles.architect]
+responsibility = "Design the smallest change that meets the criteria; record trade-offs and break the work into small tasks."
+required_skills = ["principles"]
+recommended_skills = ["task-router"]
+
+[roles.implementer]
+responsibility = "Make the change in small, test-first steps without expanding scope."
+required_skills = ["principles"]
+
+[roles.reviewer]
+responsibility = "Review independently: first spec compliance, then code health; label findings by severity."
+required_skills = ["verification-guard", "principles"]
+requires = ["read_only"]
+
+[[stages]]
+id = "baseline"
+role = "tester"
+outputs = ["baseline-report.md"]
+
+  [[stages.acceptance]]
+  id = "characterized"
+  description = "baseline-report.md records characterization tests and a green run before any change."
+  evidence = ["baseline-report.md"]
+
+[[stages]]
+id = "plan"
+role = "architect"
+depends_on = ["baseline"]
+inputs = ["baseline/baseline-report.md"]
+outputs = ["refactor-plan.md"]
+
+  [[stages.acceptance]]
+  id = "small-steps"
+  description = "refactor-plan.md lists small, independently testable steps and declares any public API change."
+  evidence = ["refactor-plan.md"]
+
+[[stages]]
+id = "implement"
+role = "implementer"
+depends_on = ["plan"]
+inputs = ["plan/refactor-plan.md"]
+outputs = ["change-summary.md"]
+max_attempts = 3
+
+  [[stages.acceptance]]
+  id = "no-behaviour-change"
+  description = "change-summary.md shows the same tests green after every step."
+  evidence = ["change-summary.md"]
+
+[[stages]]
+id = "verify"
+role = "tester"
+depends_on = ["implement"]
+inputs = ["baseline/baseline-report.md"]
+outputs = ["test-report.md"]
+independent_of = ["implement"]
+
+  [[stages.acceptance]]
+  id = "same-tests-green"
+  description = "test-report.md re-runs the baseline suite independently with zero failures and no undeclared API change."
+  evidence = ["test-report.md"]
+
+[[stages]]
+id = "review"
+role = "reviewer"
+depends_on = ["verify"]
+inputs = ["plan/refactor-plan.md"]
+outputs = ["review.md", "review.json"]
+requires_approval = true
+independent_of = ["implement"]
+verdict = "review.json"
+
+  [[stages.acceptance]]
+  id = "code-health"
+  description = "review.md reviews code health only (behaviour is pinned); review.json carries the outcome."
+  evidence = ["review.md", "review.json"]
+
+[routing]
+allow_override = true
+
+[routing.roles.tester]
+eligible = ["codex", "claude", "antigravity", "hermes"]
+preferred = "codex"
+
+[routing.roles.architect]
+eligible = ["claude", "codex", "antigravity", "hermes"]
+preferred = "claude"
+
+[routing.roles.implementer]
+eligible = ["claude", "codex", "antigravity", "hermes"]
+preferred = "claude"
+
+[routing.roles.reviewer]
+eligible = ["codex", "claude", "antigravity", "hermes"]
+preferred = "codex"
+
+[[routing.fallback]]
+role = "tester"
+from = "codex"
+to = "claude"
+on = ["unavailable"]
+
+[[routing.fallback]]
+role = "implementer"
+from = "claude"
+to = "codex"
+on = ["unavailable"]
+
+[[routing.fallback]]
+role = "reviewer"
+from = "codex"
+to = "claude"
+on = ["unavailable"]

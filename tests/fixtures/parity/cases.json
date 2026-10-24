@@ -1,0 +1,201 @@
+[
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "registry/skills.toml",
+    "provider_override": null,
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/example.default.json"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "registry/skills.toml",
+    "provider_override": "claude",
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/example.provider-claude.json"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "registry/skills.toml",
+    "provider_override": "codex",
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/example.provider-codex.json"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "registry/skills.toml",
+    "provider_override": "antigravity",
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/example.provider-antigravity.json"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "registry/skills.toml",
+    "provider_override": null,
+    "routes": [
+      [
+        "implement",
+        "codex"
+      ]
+    ],
+    "detected": null,
+    "expected": "tests/fixtures/parity/example.default.route-implement-codex.json"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "registry/skills.toml",
+    "provider_override": null,
+    "routes": [
+      [
+        "implement",
+        "codex"
+      ],
+      [
+        "plan",
+        "codex"
+      ]
+    ],
+    "detected": null,
+    "expected": "tests/fixtures/parity/example.default.route-implement-codex.route-plan-codex.json"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "registry/skills.toml",
+    "provider_override": null,
+    "routes": [],
+    "detected": {
+      "antigravity": false,
+      "claude": true,
+      "codex": true
+    },
+    "expected": "tests/fixtures/parity/example.default.detect-claude-codex.json"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": "registry/skills.toml",
+    "provider_override": null,
+    "routes": [],
+    "detected": {
+      "antigravity": false,
+      "claude": false,
+      "codex": false
+    },
+    "expected": "tests/fixtures/parity/example.default.detect-none.json"
+  },
+  {
+    "workflow": "workflows/examples/plan-implement-review.toml",
+    "registry": null,
+    "provider_override": null,
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/example.default.no-registry.json"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": null,
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/minimal.default.json"
+  },
+  {
+    "workflow": "tests/fixtures/workflows/parallel.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": null,
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/parallel.default.json"
+  },
+  {
+    "workflow": "tests/fixtures/workflows/parallel.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": "codex",
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/parallel.provider-codex.json"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": "antigravity",
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/minimal.provider-antigravity.json"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": null,
+    "routes": [],
+    "detected": {
+      "antigravity": false,
+      "claude": false,
+      "codex": false
+    },
+    "expected": "tests/fixtures/parity/minimal.default.detect-none.json"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal-ag-checker.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": null,
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/minimal-ag-checker.default.json"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal-ag-fallback.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": null,
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/minimal-ag-fallback.default.json"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal-ag-fallback.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": "antigravity",
+    "routes": [],
+    "detected": null,
+    "expected": "tests/fixtures/parity/minimal-ag-fallback.provider-antigravity.json"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal-ag-fallback.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": null,
+    "routes": [
+      [
+        "check",
+        "antigravity"
+      ]
+    ],
+    "detected": null,
+    "expected": "tests/fixtures/parity/minimal-ag-fallback.default.route-check-antigravity.json"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal-skip-target.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": null,
+    "routes": [],
+    "detected": {
+      "antigravity": false,
+      "codex": false,
+      "claude": true
+    },
+    "expected": "tests/fixtures/parity/minimal-skip-target.default.detect-claude.json"
+  },
+  {
+    "workflow": "tests/fixtures/parity/minimal-skip-target.toml",
+    "registry": "tests/fixtures/parity/fixture-registry.toml",
+    "provider_override": null,
+    "routes": [],
+    "detected": {
+      "antigravity": false,
+      "claude": false,
+      "codex": false
+    },
+    "expected": "tests/fixtures/parity/minimal-skip-target.default.detect-none.json"
+  }
+]

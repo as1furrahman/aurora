@@ -1,0 +1,67 @@
+# Two stages become ready together after `build`. They are declared in non-alphabetical order
+# so that a correct planner (declaration-order tie-break) and an alphabetical or reversed one
+# produce different orders: build, zeta-docs, alpha-lint, merge.
+schema_version = 1
+
+[workflow]
+id = "parallel"
+version = "1.0.0"
+name = "Parallel tie-break"
+assurance = "basic"
+
+[roles.builder]
+responsibility = "Build it."
+required_skills = ["alpha"]
+
+[roles.checker]
+responsibility = "Check it."
+required_skills = ["beta"]
+
+[[stages]]
+id = "build"
+role = "builder"
+outputs = ["out.md"]
+
+  [[stages.acceptance]]
+  id = "built"
+  description = "out.md exists."
+  evidence = ["out.md"]
+
+[[stages]]
+id = "zeta-docs"
+role = "checker"
+depends_on = ["build"]
+outputs = ["docs.md"]
+
+  [[stages.acceptance]]
+  id = "documented"
+  description = "docs.md exists."
+  evidence = ["docs.md"]
+
+[[stages]]
+id = "alpha-lint"
+role = "checker"
+depends_on = ["build"]
+outputs = ["lint.md"]
+
+  [[stages.acceptance]]
+  id = "linted"
+  description = "lint.md exists."
+  evidence = ["lint.md"]
+
+[[stages]]
+id = "merge"
+role = "builder"
+depends_on = ["alpha-lint", "zeta-docs"]
+outputs = ["merge.md"]
+
+  [[stages.acceptance]]
+  id = "merged"
+  description = "merge.md exists."
+  evidence = ["merge.md"]
+
+[routing.roles.builder]
+eligible = ["claude", "codex"]
+
+[routing.roles.checker]
+eligible = ["codex", "claude"]

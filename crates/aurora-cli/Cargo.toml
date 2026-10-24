@@ -1,0 +1,34 @@
+[package]
+name = "aurora-cli"
+description = "The `aurora` command-line interface."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "aurora"
+path = "src/main.rs"
+
+[dependencies]
+anstream = "1"
+anstyle = "1"
+aurora-core.workspace = true
+aurora-fs.workspace = true
+aurora-skills.workspace = true
+aurora-app.workspace = true
+aurora-tui.workspace = true
+clap.workspace = true
+indexmap = "2"
+serde = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+serde_json = { version = "1", features = ["preserve_order"] }
+tempfile = "3"
+
+[lints]
+workspace = true

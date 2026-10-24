@@ -1,0 +1,301 @@
+//! `aurora` — role-based agent skill manager and workflow orchestrator.
+//!
+//! Exit codes: 0 ok, 1 error, 2 usage error (clap), 3 plan/run has blocked stages or a skill scan
+//! is blocked, 4 a skill scan needs review.
+
+mod catalog;
+mod install;
+mod providers;
+mod registry;
+mod runs;
+mod skills;
+mod style;
+mod workflow;
+
+use std::path::PathBuf;
+use std::process::ExitCode;
+
+use std::io::{IsTerminal, Write};
+
+use aurora_tui::TuiOptions;
+use clap::{Args, CommandFactory, Parser, Subcommand};
+
+/// Aurora: assign skills and roles to coding CLIs and track evidence-gated workflows.
+#[derive(Debug, Parser)]
+#[command(name = "aurora", version = aurora_core::VERSION, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(Debug, Subcommand)]
+enum Command {
+    /// List execution providers (coding CLIs) and PATH detection; no binary is run
+    Providers {
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Validate, plan and track role-based workflows (manual handoff)
+    Workflow {
+        #[command(subcommand)]
+        command: WorkflowCommand,
+    },
+    /// Browse the curated skill catalog and get per-stage recommendations (read-only)
+    Catalog {
+        #[command(subcommand)]
+        command: CatalogCommand,
+    },
+    /// Open the terminal UI (also what `aurora` with no arguments does in a terminal)
+    Tui {
+        /// Project directory to manage skills for (default: the current directory)
+        #[arg(long, default_value = ".")]
+        project: PathBuf,
+        /// Directory holding workflow runs (for the Runs tab)
+        #[arg(long)]
+        run_root: Option<PathBuf>,
+        /// Workflow preset to plan for
+        #[arg(long, default_value = "bugfix")]
+        preset: String,
+        /// CLIs filling the profile slots, comma-separated (default: the profile's own)
+        #[arg(long, value_delimiter = ',')]
+        clis: Vec<String>,
+    },
+    /// Inspect agent skills (SKILL.md) for spec compliance and per-CLI portability
+    Skills {
+        #[command(subcommand)]
+        command: SkillsCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum SkillsCommand {
+    /// Check one skill directory: spec issues, per-CLI support, listing cost, shell injections
+    Inspect {
+        /// Directory containing SKILL.md
+        dir: PathBuf,
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Fetch one skill at its pinned commit into the cache and check it (installs nothing)
+    Fetch(skills::FetchArgs),
+    /// Dry run: what installing a workflow's recommended skills into a project would do
+    Plan(install::PlanArgs),
+    /// Install the plan into the project (shows the plan, asks, journals every step)
+    Apply(install::ApplyArgs),
+    /// Undo the last apply (or --op ID); never deletes, never overwrites your changes
+    Undo(install::UndoArgs),
+    /// Hash every file and run the static scanner (exit 0 clean, 4 needs review, 3 blocked)
+    Scan {
+        /// Skill directory
+        dir: PathBuf,
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum CatalogCommand {
+    /// List catalog entries with kind, tier, trust and roles
+    List {
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Show one entry's pinned source, licence, flags and rationale
+    Show {
+        /// Entry id
+        id: String,
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Recommend each stage's CLI and skills for a solo, pair or trio setup (writes nothing)
+    Recommend(catalog::RecommendArgs),
+}
+
+#[derive(Debug, Subcommand)]
+enum WorkflowCommand {
+    /// Validate a workflow definition
+    Validate(DefinitionArgs),
+    /// Show roles, stages, skills, routing and acceptance gates
+    Show(DefinitionArgs),
+    /// Produce a deterministic execution plan (writes nothing)
+    Plan {
+        #[command(flatten)]
+        definition: DefinitionArgs,
+        #[command(flatten)]
+        routing: RoutingArgs,
+    },
+    /// List the built-in workflow presets
+    Presets {
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+    },
+    /// Write a built-in preset to a file you can edit (never overwrites)
+    Init {
+        /// Preset name (see `aurora workflow presets`)
+        preset: String,
+        /// Output file (default: ./<preset>.toml)
+        #[arg(long)]
+        output: Option<PathBuf>,
+    },
+    /// Create a run, pin the definition, and issue handoff bundles
+    Start {
+        #[command(flatten)]
+        definition: DefinitionArgs,
+        #[command(flatten)]
+        routing: RoutingArgs,
+        /// Existing directory that will contain the run directory
+        #[arg(long)]
+        run_root: PathBuf,
+        /// Run directory name (default: <workflow-id>-<UTC time>)
+        #[arg(long)]
+        run_id: Option<String>,
+    },
+    /// Show run state, completion, escalations and evidence drift
+    Status(runs::RunArgs),
+    /// Verify integrity and re-issue missing handoffs (never re-runs PASSED stages)
+    Resume(runs::RunArgs),
+    /// Submit a stage's evidence and evaluate its acceptance gate
+    Submit {
+        #[command(flatten)]
+        run: runs::RunArgs,
+        /// Stage id
+        #[arg(long)]
+        stage: String,
+        /// Claim an acceptance criterion as met (repeatable)
+        #[arg(long, value_name = "CRITERION")]
+        met: Vec<String>,
+        /// Mark an optional stage NOT_APPLICABLE (requires NOT_APPLICABLE.md)
+        #[arg(long)]
+        not_applicable: bool,
+    },
+    /// Accept a FAILED or BLOCKED stage by recorded decision (reason and approver are kept)
+    Waive {
+        #[command(flatten)]
+        run: runs::RunArgs,
+        /// Stage id
+        #[arg(long)]
+        stage: String,
+        /// Why the gate is waived (shown to every downstream role)
+        #[arg(long)]
+        reason: String,
+        /// Name of the person waiving the gate
+        #[arg(long)]
+        by: String,
+    },
+    /// Record human approval for a stage awaiting approval
+    Approve {
+        #[command(flatten)]
+        run: runs::RunArgs,
+        /// Stage id
+        #[arg(long)]
+        stage: String,
+        /// Name of the approving person
+        #[arg(long)]
+        by: String,
+    },
+}
+
+#[derive(Debug, Args)]
+struct DefinitionArgs {
+    /// Workflow definition (.toml)
+    file: PathBuf,
+    /// Path to a custom skills.toml (default: $AURORA_REGISTRY_PATH, else the built-in registry)
+    #[arg(long)]
+    registry: Option<PathBuf>,
+    /// Output in JSON format
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Args)]
+struct RoutingArgs {
+    /// Single-provider mode: run every eligible stage through this provider
+    #[arg(long, conflicts_with = "route")]
+    provider: Option<String>,
+    /// Route one stage to a provider (repeatable)
+    #[arg(long, value_name = "STAGE=PROVIDER")]
+    route: Vec<String>,
+    /// Skip PATH detection of provider binaries
+    #[arg(long)]
+    no_detect: bool,
+    /// Route every stage through a catalog CLI profile (solo, pair, trio) and name its skills
+    #[arg(long, conflicts_with_all = ["provider", "route"])]
+    profile: Option<String>,
+    /// CLIs filling the profile slots, comma-separated (picks solo/pair/trio by count)
+    #[arg(long, value_delimiter = ',', conflicts_with_all = ["provider", "route"])]
+    clis: Vec<String>,
+    /// Include an opt-in catalog entry in the stage skills (repeatable)
+    #[arg(long, value_name = "ENTRY")]
+    with: Vec<String>,
+}
+
+fn tui(mut opts: TuiOptions) -> u8 {
+    // Show the folder's own name, not ".", and offer the setup until Aurora has added something.
+    if let Ok(p) = std::fs::canonicalize(&opts.project) {
+        opts.project = p;
+    }
+    opts.setup = !opts.project.join(aurora_app::install::LOCK_FILE).exists();
+    opts.installed = aurora_app::tools::installed();
+    match aurora_tui::run(opts) {
+        Ok(()) => 0,
+        Err(e) => {
+            eprintln!("Error: cannot run the terminal UI: {e}");
+            1
+        }
+    }
+}
+
+fn main() -> ExitCode {
+    let cli = Cli::parse();
+    let code = match cli.command {
+        // In a terminal, no arguments opens the TUI; otherwise (scripts, pipes) print help.
+        None if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() => tui(TuiOptions::default()),
+        None => {
+            // A closed pipe (`aurora | head`) is not an error worth a panic.
+            let mut out = std::io::stdout();
+            let _ = Cli::command().write_help(&mut out).and_then(|()| writeln!(out));
+            0
+        }
+        Some(Command::Tui { project, run_root, preset, clis }) => {
+            tui(TuiOptions { project, run_root, preset, clis, ..TuiOptions::default() })
+        }
+        Some(Command::Providers { json }) => providers::run(json),
+        Some(Command::Skills { command }) => match command {
+            SkillsCommand::Inspect { dir, json } => skills::inspect(&dir, json),
+            SkillsCommand::Scan { dir, json } => skills::scan(&dir, json),
+            SkillsCommand::Fetch(args) => skills::fetch(&args),
+            SkillsCommand::Plan(args) => install::run_plan(&args),
+            SkillsCommand::Apply(args) => install::run_apply(&args),
+            SkillsCommand::Undo(args) => install::run_undo(&args),
+        },
+        Some(Command::Catalog { command }) => match command {
+            CatalogCommand::List { json } => catalog::list(json),
+            CatalogCommand::Show { id, json } => catalog::show(&id, json),
+            CatalogCommand::Recommend(args) => catalog::recommend(&args),
+        },
+        Some(Command::Workflow { command }) => match command {
+            WorkflowCommand::Validate(def) => workflow::validate(&def),
+            WorkflowCommand::Show(def) => workflow::show(&def),
+            WorkflowCommand::Plan { definition, routing } => workflow::plan(&definition, &routing),
+            WorkflowCommand::Start { definition, routing, run_root, run_id } => {
+                runs::start(&definition, &routing, &run_root, run_id.as_deref())
+            }
+            WorkflowCommand::Status(args) => runs::status(&args),
+            WorkflowCommand::Presets { json } => workflow::presets(json),
+            WorkflowCommand::Init { preset, output } => workflow::init(&preset, output.as_deref()),
+            WorkflowCommand::Resume(args) => runs::resume(&args),
+            WorkflowCommand::Submit { run, stage, met, not_applicable } => {
+                runs::submit(&run, &stage, &met, not_applicable)
+            }
+            WorkflowCommand::Approve { run, stage, by } => runs::approve(&run, &stage, &by),
+            WorkflowCommand::Waive { run, stage, reason, by } => runs::waive(&run, &stage, &reason, &by),
+        },
+    };
+    ExitCode::from(code)
+}
