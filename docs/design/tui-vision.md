@@ -1,5 +1,15 @@
 # TUI Vision
 
+## Status (R3.1, 2026-10-24)
+
+**Beginner pass.** See `docs/reports/AURORA_R3_1_BEGINNER_REPORT.md`.
+
+- Plain words throughout (AI tool, job, step, task, checklist), with engine terms under
+  "More details". The tabs are now Skills, Who does what, Add to project and Tasks.
+- A guided setup on first launch (`t` reopens it).
+- `n` starts a task in the project's `.aurora/runs`.
+- A one-line installer built with cargo-dist.
+
 ## Status (R3, 2026-10-24)
 
 **Built.** See `docs/reports/AURORA_R3_TUI_REPORT.md`.

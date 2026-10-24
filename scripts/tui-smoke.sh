@@ -27,7 +27,7 @@ shows() { screen | grep -qF -- "$1"; }
 wait_for() { local i; for i in $(seq 1 60); do shows "$1" && return 0; sleep 0.5; done; return 1; }
 gone() { local i; for i in $(seq 1 40); do shows "$1" || return 0; sleep 0.5; done; return 1; }
 click() { tmux send-keys -t "$S" -l "$(printf '\e[<0;%d;%dM\e[<0;%d;%dm' "$1" "$2" "$1" "$2")"; sleep 0.6; }
-trap 'tmux kill-session -t "$S" 2>/dev/null || true' EXIT
+trap 'tmux kill-session -t "$S" 2>/dev/null || true; tmux kill-session -t "aurora-tui-beginner-$$" 2>/dev/null || true' EXIT
 
 step "Prepare a disposable project, a fresh clone to compare with, and a run root"
 rm -rf "$WORK"; mkdir -p "$WORK/runs"
@@ -105,5 +105,49 @@ check "a click on a tab switches to it" 'shows "Skills for each AI tool"'
 step "7. Quit"
 key q
 check "q quits with exit 0 and the terminal is restored" 'wait_for "AURORA_EXIT=0"'
+
+step "8. A beginner's first run: setup, add skills, start a task, finish step 1, undo"
+tmux kill-session -t "$S" 2>/dev/null || true
+S="aurora-tui-beginner-$$"
+git clone -q "$DEMO/python-tabulate" "$WORK/beginner"
+# Plain `aurora` in the project, no flags; a PATH without AI tools, so nothing is pre-ticked.
+tmux new-session -d -s "$S" -x 140 -y 34 \
+  "cd '$WORK/beginner' && env PATH=/usr/bin:/bin '$AURORA'; echo AURORA_EXIT=\$?; sleep 120"
+check "aurora opens the guided setup" 'wait_for "Which AI tools do you use?" && shows "None of these were found"'
+key Space; key j; key Space; key Enter
+check "two tools ticked, on to the kind of task" 'wait_for "What are you working on?"'
+key Enter
+check "the preview says what each tool gets" 'wait_for "Check first" && shows "Claude Code  as" && shows "Codex  as"'
+key Enter
+check "Enter opens Add to project; nothing written yet" 'wait_for "What will change" && [[ ! -e "$WORK/beginner/CLAUDE.md" ]]'
+key /; type_text ponytail; key Enter
+key r; key j; key r; key Escape
+key a
+check "Aurora asks before adding" 'wait_for "Add these"'
+key y
+check "y adds the skills" 'wait_for "Last change: Added" && [[ -f "$WORK/beginner/.claude/skills/ponytail/SKILL.md" ]]'
+key 4
+check "the Tasks page explains n" 'wait_for "No tasks yet" && shows "Press n"'
+key n
+check "n shows the steps and asks first" 'wait_for "Start a new task: Fix a bug?"'
+key y
+check "the task starts and opens at step 1" 'wait_for "1. Reproduce" && wait_for "0 of 5 done"'
+key Enter
+check "Enter shows the instructions to paste" 'wait_for "Instructions for Reproduce"'
+key Escape
+RUN="$(ls -d "$WORK/beginner/.aurora/runs"/*/ | head -1)"
+mkdir -p "$RUN/artifacts/reproduce"
+echo "current, expected and unchanged behaviour" >"$RUN/artifacts/reproduce/bugfix.md"
+echo "a failing test" >"$RUN/artifacts/reproduce/repro-test.md"
+key s
+check "s opens the step's checklist" 'wait_for "(behaviour-recorded)"'
+key Space; key j; key Space; key Enter
+check "the files exist, so step 1 is done" 'wait_for "Reproduce: done" && wait_for "1 of 5 done"'
+check "the CLI sees the same task" '"$AURORA" workflow status --run "$RUN" | grep -q "reproduce"'
+key 3; key u; key y
+check "u y undoes the skills" 'wait_for "Last change: Undone"'
+check "the project matches a fresh clone (tasks stay in .aurora)" 'diff -r -q --exclude=.git --exclude=.aurora --exclude=.claude --exclude=.agents "$WORK/clean" "$WORK/beginner"'
+key q
+check "q quits with exit 0" 'wait_for "AURORA_EXIT=0"'
 
 step "Done: $pass checks passed"
